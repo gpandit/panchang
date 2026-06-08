@@ -3,7 +3,7 @@
 # Each service has its own pyproject.toml for its dependencies.
 
 [tool.uv.workspace]
-members = ["services/panchang", "services/api"]
+members = ["services/panchang", "services/api", "services/festivals"]
 
 # ─── Ruff (lint + format) ─────────────────────────────────────────────────────
 

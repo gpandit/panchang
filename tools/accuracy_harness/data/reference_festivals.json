@@ -1,0 +1,30 @@
+{
+  "_meta": {
+    "version": 1,
+    "description": "Curated known-good festival dates used to cross-check the Festival & Vrat rule engine (services/festivals) resolution against an established published Panchang for the same location/year/scheme.",
+    "source": "drikpanchang.com (Drik Ganita method, Lahiri ayanamsa) — an established published Panchang",
+    "tolerance_policy": "A resolved date must fall within ±1 civil day of the reference. Sources can headline a festival on a different sunrise than the engine's udaya-vyApti pick when the defining Tithi spans a sunrise only marginally (Vriddhi) — a one-day spread here is a known, accepted divergence between published Panchangs, not an engine defect. See docs/accuracy-tolerances.md."
+  },
+  "location": {
+    "label": "New Delhi, India",
+    "lat": 28.6139,
+    "lon": 77.2090,
+    "tz": "Asia/Kolkata",
+    "month_scheme": "amanta"
+  },
+  "year": 2024,
+  "fixtures": [
+    { "rule_id": "makar-sankranti", "name": "Makar Sankranti", "date": "2024-01-15" },
+    { "rule_id": "maha-shivaratri", "name": "Maha Shivaratri", "date": "2024-03-08" },
+    { "rule_id": "holi", "name": "Holi", "date": "2024-03-25" },
+    { "rule_id": "gudi-padwa-ugadi", "name": "Gudi Padwa / Ugadi", "date": "2024-04-09" },
+    { "rule_id": "ram-navami", "name": "Ram Navami", "date": "2024-04-17" },
+    { "rule_id": "raksha-bandhan", "name": "Raksha Bandhan", "date": "2024-08-19" },
+    { "rule_id": "krishna-janmashtami", "name": "Krishna Janmashtami", "date": "2024-08-26" },
+    { "rule_id": "ganesh-chaturthi", "name": "Ganesh Chaturthi", "date": "2024-09-07" },
+    { "rule_id": "onam-thiruvonam", "name": "Onam (Thiruvonam)", "date": "2024-09-15" },
+    { "rule_id": "sharad-navaratri-start", "name": "Sharad Navaratri start", "date": "2024-10-03" },
+    { "rule_id": "vijayadashami", "name": "Vijayadashami", "date": "2024-10-12" },
+    { "rule_id": "diwali", "name": "Diwali", "date": "2024-11-01" }
+  ]
+}
