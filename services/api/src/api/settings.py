@@ -36,6 +36,16 @@ class Settings(BaseSettings):
     # ── Downstream services ───────────────────────────────────────────────────
     panchang_service_url: str = "http://localhost:8001"
 
+    # ── Users module: vault encryption ────────────────────────────────────────
+    # Fernet key protecting birth/family data at rest. MUST come from the
+    # managed secret store in staging/prod — never commit a real value.
+    # Generate one with `VaultCipher.generate_key()`.
+    vault_encryption_key: str = "x6n6F8h6genBJ8qfWZHlA0sX2DhniGtY1k1MfRwGVC0="  # noqa: S105 — dev-only placeholder
+
+    # ── Users module: OAuth client ids (set via secret store) ────────────────
+    google_oauth_client_id: str = ""
+    apple_oauth_client_id: str = ""
+
 
 _settings: Settings | None = None
 

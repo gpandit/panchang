@@ -4,8 +4,37 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.settings import get_settings
+from api.users.db import make_session_factory
+from api.users.encryption import VaultCipher
+from api.users.oauth import AppleVerifier, GoogleVerifier
+from api.users.router import get_secret_key, get_user_service, router as users_router
+from api.users.models import AuthProvider
+from api.users.service import UserService
+from api.users.vault import Vault
 
 settings = get_settings()
+
+_session_factory = make_session_factory(settings.database_url)
+_vault = Vault(VaultCipher(settings.vault_encryption_key))
+_oauth_verifiers = {
+    AuthProvider.GOOGLE: GoogleVerifier(settings.google_oauth_client_id),
+    AuthProvider.APPLE: AppleVerifier(settings.apple_oauth_client_id),
+}
+
+
+async def _provide_user_service() -> UserService:
+    async with _session_factory() as session:
+        yield UserService(
+            session,
+            secret_key=settings.secret_key,
+            vault=_vault,
+            oauth_verifiers=_oauth_verifiers,
+        )
+        await session.commit()
+
+
+def _provide_secret_key() -> str:
+    return settings.secret_key
 
 app = FastAPI(
     title="The Pandit API",
@@ -18,6 +47,10 @@ app = FastAPI(
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
 )
+
+app.dependency_overrides[get_user_service] = _provide_user_service
+app.dependency_overrides[get_secret_key] = _provide_secret_key
+app.include_router(users_router)
 
 app.add_middleware(
     CORSMiddleware,
