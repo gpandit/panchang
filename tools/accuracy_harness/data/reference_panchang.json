@@ -1,0 +1,111 @@
+{
+  "_meta": {
+    "version": 1,
+    "description": "Curated known-good Panchang values used to regression-test the Swiss-Ephemeris-backed engine in services/panchang.",
+    "source": "drikpanchang.com (Drik Ganita method, Lahiri ayanamsa) — an established published Panchang",
+    "tolerance_policy": "docs/accuracy-tolerances.md",
+    "notes": [
+      "Each fixture validates the anga (Tithi/Nakshatra/Yoga/Karana) that is active at the moment the Panchang day opens (sunrise) — the anga a published Panchang headlines for that day — by exact name and end-boundary time within tolerance.",
+      "Vara/weekday names are normalized to the engine's canonical transliteration spelling (e.g. 'Somavara' not 'Somawara') — spelling-only normalization, not a value change.",
+      "Times are stored as local ISO-8601 datetimes (no offset) in the location's IANA timezone given by `request.tz`; they may roll into the following civil date when an anga's boundary falls after local midnight."
+    ]
+  },
+  "fixtures": [
+    {
+      "id": "new-delhi-2024-01-15",
+      "label": "New Delhi, India — ordinary day, Amanta scheme",
+      "source_url": "https://www.drikpanchang.com/panchang/day-panchang.html?date=15/01/2024&geoname-id=1273294",
+      "fetched": "2026-06-08",
+      "request": {
+        "date": "2024-01-15",
+        "lat": 28.6139,
+        "lon": 77.2090,
+        "tz": "Asia/Kolkata",
+        "ayanamsa": "lahiri",
+        "month_scheme": "amanta"
+      },
+      "expected": {
+        "sunrise": "2024-01-15T07:15:00",
+        "sunset": "2024-01-15T17:46:00",
+        "vara": "Somavara",
+        "tithi": { "name": "Shukla Panchami", "end": "2024-01-16T02:16:00" },
+        "nakshatra": { "name": "Shatabhisha", "end": "2024-01-15T08:07:00" },
+        "yoga": { "name": "Variyana", "end": "2024-01-15T23:11:00" },
+        "karana": { "name": "Bava", "end": "2024-01-15T15:35:00" }
+      }
+    },
+    {
+      "id": "new-york-2024-06-21",
+      "label": "New York City, USA (diaspora) — Purnimanta scheme",
+      "source_url": "https://www.drikpanchang.com/panchang/day-panchang.html?date=21/06/2024&geoname-id=5128581",
+      "fetched": "2026-06-08",
+      "request": {
+        "date": "2024-06-21",
+        "lat": 40.7128,
+        "lon": -74.0060,
+        "tz": "America/New_York",
+        "ayanamsa": "lahiri",
+        "month_scheme": "purnimanta"
+      },
+      "expected": {
+        "sunrise": "2024-06-21T05:25:00",
+        "sunset": "2024-06-21T20:31:00",
+        "vara": "Shukravara",
+        "lunar_month": "Jyeshtha",
+        "tithi": { "name": "Purnima", "end": "2024-06-21T21:07:00" },
+        "nakshatra": { "name": "Jyeshtha", "end": "2024-06-21T08:49:00" },
+        "yoga": { "name": "Shubha", "end": "2024-06-21T09:12:00" },
+        "karana": { "name": "Vishti", "end": "2024-06-21T09:38:00" }
+      }
+    },
+    {
+      "id": "sydney-2024-03-10",
+      "label": "Sydney, Australia (diaspora, southern hemisphere) — Amanta scheme",
+      "source_url": "https://www.drikpanchang.com/panchang/day-panchang.html?date=10/03/2024&geoname-id=2147714",
+      "fetched": "2026-06-08",
+      "request": {
+        "date": "2024-03-10",
+        "lat": -33.8688,
+        "lon": 151.2093,
+        "tz": "Australia/Sydney",
+        "ayanamsa": "lahiri",
+        "month_scheme": "amanta"
+      },
+      "expected": {
+        "sunrise": "2024-03-10T06:50:00",
+        "sunset": "2024-03-10T19:20:00",
+        "vara": "Ravivara",
+        "tithi": { "name": "Amavasya", "end": "2024-03-10T19:59:00" },
+        "nakshatra": { "name": "Shatabhisha", "end": "2024-03-10T10:26:00" },
+        "yoga": { "name": "Sadhya", "end": "2024-03-10T21:44:00" },
+        "karana": { "name": "Chatushpada", "end": "2024-03-10T09:54:00" }
+      }
+    },
+    {
+      "id": "new-delhi-2023-08-01-adhika-shravan",
+      "label": "New Delhi, India — Adhika (leap) Shravan edge case (cf. Step 1.2 / docs/edge-cases.md)",
+      "source_url": "https://www.drikpanchang.com/panchang/day-panchang.html?date=01/08/2023&geoname-id=1273294",
+      "fetched": "2026-06-08",
+      "request": {
+        "date": "2023-08-01",
+        "lat": 28.6139,
+        "lon": 77.2090,
+        "tz": "Asia/Kolkata",
+        "ayanamsa": "lahiri",
+        "month_scheme": "amanta"
+      },
+      "expected": {
+        "sunrise": "2023-08-01T05:42:00",
+        "sunset": "2023-08-01T19:12:00",
+        "vara": "Mangalavara",
+        "lunar_month": "Shravana",
+        "is_adhika_month": true,
+        "is_kshaya_month": false,
+        "tithi": { "name": "Purnima", "end": "2023-08-02T00:01:00" },
+        "nakshatra": { "name": "Uttara Ashadha", "end": "2023-08-01T16:03:00" },
+        "yoga": { "name": "Priti", "end": "2023-08-01T18:53:00" },
+        "karana": { "name": "Vishti", "end": "2023-08-01T13:57:00" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Jobs
+# ─────────────────────────────────────────────────────────────────────────────
+
+jobs:
+  # ── Python: lint, typecheck, test ──────────────────────────────────────────
+  python-ci:
+    name: Python (ruff · mypy · pytest)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install workspace dependencies
+        run: uv sync --all-packages --dev
+
+      - name: Lint (ruff)
+        run: uv run ruff check services/
+
+      - name: Format check (ruff)
+        run: uv run ruff format --check services/
+
+      - name: Typecheck (mypy)
+        run: uv run mypy services/ --config-file pyproject.toml
+
+      - name: Test (pytest)
+        run: uv run pytest services/ tools/ -v --tb=short
+
+      - name: Launch-readiness gate (dev profile — must pass)
+        run: python tools/check_launch_readiness.py
+        env:
+          PANCHANG_BUILD_PROFILE: development
+          PANCHANG_EPHEMERIS_LICENSE: agpl
+
+  # ── TypeScript: lint, typecheck, test ─────────────────────────────────────
+  typescript-ci:
+    name: TypeScript (eslint · tsc · vitest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (ESLint)
+        run: pnpm run lint
+
+      - name: Format check (Prettier)
+        run: pnpm run format:check
+
+      - name: Typecheck (tsc)
+        run: pnpm run typecheck
+
+      - name: Test (vitest)
+        run: pnpm run test
+
+  # ── Panchang Accuracy Harness ──────────────────────────────────────────────
+  # Compares engine output against the curated reference dataset
+  # (tools/accuracy_harness/data/reference_panchang.json) within the tolerances
+  # documented in docs/accuracy-tolerances.md, and blocks merges on any
+  # regression. See tools/accuracy_harness/run.py.
+  accuracy-harness:
+    name: Panchang Accuracy Harness
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install workspace dependencies
+        run: uv sync --all-packages --dev
+
+      - name: Run accuracy harness
+        run: uv run python tools/accuracy_harness/run.py
+
+  # ── Required-status gate ───────────────────────────────────────────────────
+  # This job exists so branch protection can require a single status check
+  # ("ci / all-checks-pass") rather than listing each job individually.
+  # It only passes when all non-skipped jobs above succeed.
+  all-checks-pass:
+    name: All checks pass
+    runs-on: ubuntu-latest
+    needs: [python-ci, typescript-ci, accuracy-harness]
+    if: always()
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [[ "${{ needs.python-ci.result }}" != "success" ]]; then
+            echo "python-ci failed"
+            exit 1
+          fi
+          if [[ "${{ needs.accuracy-harness.result }}" != "success" ]]; then
+            echo "accuracy-harness failed"
+            exit 1
+          fi
+          if [[ "${{ needs.typescript-ci.result }}" != "success" ]]; then
+            echo "typescript-ci failed"
+            exit 1
+          fi
+          echo "All required checks passed."

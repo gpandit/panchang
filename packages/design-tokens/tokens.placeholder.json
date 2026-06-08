@@ -1,0 +1,50 @@
+{
+  "_comment": "TODO(design): ALL values in this file are neutral dev placeholders. Replace with the Aqualeo design system tokens. Do NOT invent values — swap the whole file when the design system arrives.",
+  "color": {
+    "primary": "TODO(design)",
+    "primary-foreground": "TODO(design)",
+    "secondary": "TODO(design)",
+    "secondary-foreground": "TODO(design)",
+    "background": "TODO(design)",
+    "foreground": "TODO(design)",
+    "muted": "TODO(design)",
+    "muted-foreground": "TODO(design)",
+    "accent": "TODO(design)",
+    "accent-foreground": "TODO(design)",
+    "destructive": "TODO(design)",
+    "border": "TODO(design)",
+    "ring": "TODO(design)",
+    "auspicious": "TODO(design)",
+    "inauspicious": "TODO(design)"
+  },
+  "typography": {
+    "font-family-base": "TODO(design)",
+    "font-family-display": "TODO(design)",
+    "font-family-devanagari": "TODO(design)",
+    "scale-xs": "TODO(design)",
+    "scale-sm": "TODO(design)",
+    "scale-base": "TODO(design)",
+    "scale-lg": "TODO(design)",
+    "scale-xl": "TODO(design)",
+    "scale-2xl": "TODO(design)",
+    "scale-3xl": "TODO(design)"
+  },
+  "spacing": {
+    "xs": "TODO(design)",
+    "sm": "TODO(design)",
+    "md": "TODO(design)",
+    "lg": "TODO(design)",
+    "xl": "TODO(design)"
+  },
+  "radius": {
+    "sm": "TODO(design)",
+    "md": "TODO(design)",
+    "lg": "TODO(design)",
+    "full": "TODO(design)"
+  },
+  "shadow": {
+    "sm": "TODO(design)",
+    "md": "TODO(design)",
+    "lg": "TODO(design)"
+  }
+}

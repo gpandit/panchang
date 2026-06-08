@@ -1,0 +1,19 @@
+{
+  "name": "@pandit/admin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The Pandit — Admin console (React + TypeScript)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "echo 'TODO(step-3): wire eslint when admin scaffold is built'",
+    "typecheck": "echo 'TODO(step-3): wire tsc when admin scaffold is built'",
+    "format": "echo 'TODO(step-3)'",
+    "format:check": "echo 'TODO(step-3)'",
+    "test": "echo 'TODO(step-3): wire vitest when admin scaffold is built'"
+  },
+  "dependencies": {
+    "@pandit/api-client-ts": "workspace:*",
+    "@pandit/design-tokens": "workspace:*"
+  }
+}

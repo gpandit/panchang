@@ -1,0 +1,63 @@
+# ── Node / pnpm ──────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+coverage/
+
+# ── Python / uv ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+.uv/
+*.egg-info/
+.eggs/
+dist/
+build/
+*.so
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+.secrets.baseline
+
+# ── Docker ───────────────────────────────────────────────────────────────────
+# (docker-compose.yml is committed — override files are not)
+docker-compose.override.yml
+
+# ── IDEs ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+
+# ── iOS / Xcode ───────────────────────────────────────────────────────────────
+apps/ios/build/
+apps/ios/*.xcworkspace/xcuserdata/
+apps/ios/Pods/
+apps/ios/DerivedData/
+
+# ── Android ──────────────────────────────────────────────────────────────────
+apps/android/.gradle/
+apps/android/local.properties
+apps/android/build/
+apps/android/app/build/
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+*.log
+*.lock.bak

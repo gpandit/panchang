@@ -1,0 +1,37 @@
+{
+  "name": "the-pandit",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "turbo run format",
+    "format:check": "turbo run format:check",
+    "build": "turbo run build",
+    "py:lint": "uv run ruff check services/",
+    "py:lint:fix": "uv run ruff check --fix services/",
+    "py:format": "uv run ruff format services/",
+    "py:format:check": "uv run ruff format --check services/",
+    "py:typecheck": "uv run mypy services/ --config-file pyproject.toml",
+    "py:test": "uv run pytest services/ -v",
+    "ci:lint": "pnpm run lint && pnpm run py:lint",
+    "ci:typecheck": "pnpm run typecheck && pnpm run py:typecheck",
+    "ci:test": "pnpm run test && pnpm run py:test",
+    "ci:format:check": "pnpm run format:check && pnpm run py:format:check"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "prettier": "^3.4.2",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/parser": "^8.19.0",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2"
+  }
+}

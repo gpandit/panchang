@@ -1,0 +1,28 @@
+name: Launch Readiness Gate
+
+on:
+  push:
+    branches: [main]
+    tags: ["production-*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ephemeris-licence-gate:
+    name: Swiss Ephemeris licence gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run launch-readiness check
+        env:
+          # In a real production deploy, override these from GitHub Secrets.
+          # For CI on non-production branches this will always pass (dev profile).
+          PANCHANG_BUILD_PROFILE: ${{ vars.PANCHANG_BUILD_PROFILE || 'development' }}
+          PANCHANG_EPHEMERIS_LICENSE: ${{ secrets.PANCHANG_EPHEMERIS_LICENSE || 'agpl' }}
+        run: python tools/check_launch_readiness.py
