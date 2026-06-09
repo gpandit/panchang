@@ -36,6 +36,7 @@ export function TodayScreen({
   ssrData = null,
 }: TodayScreenProps): React.JSX.Element {
   const today = todayISODate();
+  const minDate = minNavigableDate();
   const [date, setDate] = useState(initialDate ?? today);
 
   const { data, loadState, fromCache, error, refresh } = useTodayPanchang({
@@ -96,7 +97,7 @@ export function TodayScreen({
             onLocationChange={handleLocationChange}
             onPrevDay={() => navigateDay(-1)}
             onNextDay={() => navigateDay(1)}
-            canGoBack={date > MIN_DATE}
+            canGoBack={date > minDate}
             canGoForward={date < today}
           />
 
@@ -177,10 +178,10 @@ function todayISODate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Earliest navigable date — one year before the current date.
-// The API does not guarantee precomputed data before this window.
-const MIN_DATE = (() => {
+// Computed per render (not at module load) so it stays correct on long-running
+// SSR processes that would otherwise hold a stale date from server start.
+function minNavigableDate(): string {
   const d = new Date();
   d.setFullYear(d.getFullYear() - 1);
   return d.toISOString().slice(0, 10);
-})();
+}
