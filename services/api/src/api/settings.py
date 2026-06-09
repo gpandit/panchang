@@ -46,6 +46,21 @@ class Settings(BaseSettings):
     google_oauth_client_id: str = ""
     apple_oauth_client_id: str = ""
 
+    # ── Subscriptions: Apple IAP (set via secret store) ───────────────────────
+    apple_iap_shared_secret: str = ""
+    apple_iap_bundle_id: str = "com.pandit.app"
+    apple_iap_sandbox: bool = True  # flip to False in production
+
+    # ── Subscriptions: Google Play (set via secret store) ─────────────────────
+    google_play_package_name: str = "com.pandit.app"
+    # Service account JSON key path or inline JSON — loaded from secret store
+    google_play_service_account_json: str = ""
+
+    # ── Subscriptions: Stripe (set via secret store) ──────────────────────────
+    stripe_secret_key: str = ""
+    # Comma-separated "price_id:tier" pairs, e.g. "price_abc:silver,price_xyz:gold"
+    stripe_price_tier_map: str = ""
+
 
 _settings: Settings | None = None
 

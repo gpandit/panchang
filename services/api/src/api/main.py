@@ -14,6 +14,17 @@ from api.content.router import get_content_service
 from api.content.router import router as content_router
 from api.content.service import ContentService
 from api.settings import get_settings
+from api.subscriptions.models import BillingSource
+from api.subscriptions.router import get_subscription_service
+from api.subscriptions.router import router as subscriptions_router
+from api.subscriptions.service import SubscriptionService
+from api.subscriptions.verifiers import (
+    AppleIAPVerifier,
+    ReceiptVerifier,
+    StaticAccessTokenProvider,
+    GooglePlayVerifier,
+    StripeVerifier,
+)
 from api.users.db import make_session_factory
 from api.users.encryption import VaultCipher
 from api.users.models import AuthProvider
@@ -28,6 +39,44 @@ from panchang.compute import compute_panchang
 settings = get_settings()
 
 _session_factory = make_session_factory(settings.database_url)
+
+# ── Subscription verifiers ────────────────────────────────────────────────────
+
+
+def _build_stripe_price_tier_map() -> dict[str, "Tier"]:  # type: ignore[name-defined]
+    from api.subscriptions.models import Tier
+
+    result: dict[str, Tier] = {}
+    raw = settings.stripe_price_tier_map
+    if not raw:
+        return result
+    for pair in raw.split(","):
+        pair = pair.strip()
+        if ":" not in pair:
+            continue
+        price_id, tier_str = pair.split(":", 1)
+        try:
+            result[price_id.strip()] = Tier(tier_str.strip())
+        except ValueError:
+            pass
+    return result
+
+
+_receipt_verifiers: dict[BillingSource, ReceiptVerifier] = {
+    BillingSource.APPLE: AppleIAPVerifier(
+        shared_secret=settings.apple_iap_shared_secret,
+        bundle_id=settings.apple_iap_bundle_id,
+        sandbox=settings.apple_iap_sandbox,
+    ),
+    BillingSource.GOOGLE: GooglePlayVerifier(
+        package_name=settings.google_play_package_name,
+        access_token_provider=StaticAccessTokenProvider(""),  # replaced by SA in prod
+    ),
+    BillingSource.STRIPE: StripeVerifier(
+        api_key=settings.stripe_secret_key,
+        price_tier_map=_build_stripe_price_tier_map(),
+    ),
+}
 _vault = Vault(VaultCipher(settings.vault_encryption_key))
 _oauth_verifiers: dict[AuthProvider, IdentityVerifier] = {
     AuthProvider.GOOGLE: GoogleVerifier(settings.google_oauth_client_id),
@@ -64,6 +113,12 @@ async def _provide_content_service() -> AsyncGenerator[ContentService, None]:
         await session.commit()
 
 
+async def _provide_subscription_service() -> AsyncGenerator[SubscriptionService, None]:
+    async with _session_factory() as session:
+        yield SubscriptionService(session, _receipt_verifiers)
+        await session.commit()
+
+
 def _provide_calendar_service() -> CalendarService:
     return _calendar_service
 
@@ -88,9 +143,11 @@ app.dependency_overrides[get_user_service] = _provide_user_service
 app.dependency_overrides[get_secret_key] = _provide_secret_key
 app.dependency_overrides[get_content_service] = _provide_content_service
 app.dependency_overrides[get_calendar_service] = _provide_calendar_service
+app.dependency_overrides[get_subscription_service] = _provide_subscription_service
 app.include_router(users_router)
 app.include_router(content_router)
 app.include_router(calendar_router)
+app.include_router(subscriptions_router)
 
 app.add_middleware(
     CORSMiddleware,
