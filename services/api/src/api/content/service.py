@@ -9,8 +9,7 @@ Drafts and in_review items are never returned by the public query methods.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +24,7 @@ class ContentError(Exception):
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class ContentService:
@@ -69,7 +68,9 @@ class ContentService:
         """Replace the working body of a DRAFT item."""
         item = await self._get(item_id)
         if item.status not in (ContentStatus.DRAFT.value, ContentStatus.IN_REVIEW.value):
-            raise ContentError(f"Item {item_id} is {item.status}; only draft/in_review items can be updated")
+            raise ContentError(
+                f"Item {item_id} is {item.status}; only draft/in_review items can be updated"
+            )
 
         pending = await self._pending_version(item_id)
         pending.body = req.body
@@ -83,7 +84,9 @@ class ContentService:
     async def submit_for_review(self, item_id: str) -> ContentItem:
         item = await self._get(item_id)
         if item.status != ContentStatus.DRAFT.value:
-            raise ContentError(f"Item {item_id} must be in draft to submit for review (current: {item.status})")
+            raise ContentError(
+                f"Item {item_id} must be in draft to submit for review (current: {item.status})"
+            )
         item.status = ContentStatus.IN_REVIEW.value
         await self._s.flush()
         return item
@@ -92,7 +95,9 @@ class ContentService:
         """Publish the item: snapshot the working body as the next version."""
         item = await self._get(item_id)
         if item.status != ContentStatus.IN_REVIEW.value:
-            raise ContentError(f"Item {item_id} must be in_review to publish (current: {item.status})")
+            raise ContentError(
+                f"Item {item_id} must be in_review to publish (current: {item.status})"
+            )
 
         pending = await self._pending_version(item_id)
 
@@ -175,7 +180,9 @@ class ContentService:
             out.append((item, ver))
         return out
 
-    async def get_published_one(self, slug: str, locale: str | None = None) -> tuple[ContentItem, ContentVersion]:
+    async def get_published_one(
+        self, slug: str, locale: str | None = None
+    ) -> tuple[ContentItem, ContentVersion]:
         pairs = await self.get_published(slug=slug, locale=locale)
         if not pairs:
             raise ContentError(f"No published content found for slug={slug!r}")
@@ -219,10 +226,12 @@ class ContentService:
 
         # Re-use or create the pending (version_number=0) slot.
         existing_pending = await self._s.execute(
-            select(ContentVersion).where(
+            select(ContentVersion)
+            .where(
                 ContentVersion.item_id == item_id,
                 ContentVersion.version_number == 0,
-            ).limit(1)
+            )
+            .limit(1)
         )
         pending = existing_pending.scalar_one_or_none()
         if pending is None:
@@ -251,9 +260,7 @@ class ContentService:
         return flag
 
     async def list_flags(self, item_id: str) -> list[ContentFlag]:
-        result = await self._s.execute(
-            select(ContentFlag).where(ContentFlag.item_id == item_id)
-        )
+        result = await self._s.execute(select(ContentFlag).where(ContentFlag.item_id == item_id))
         return list(result.scalars().all())
 
     # ── Internal helpers ──────────────────────────────────────────────────────
@@ -275,10 +282,12 @@ class ContentService:
     async def _pending_version(self, item_id: str) -> ContentVersion:
         """Return the mutable pending version (version_number == 0)."""
         result = await self._s.execute(
-            select(ContentVersion).where(
+            select(ContentVersion)
+            .where(
                 ContentVersion.item_id == item_id,
                 ContentVersion.version_number == 0,
-            ).limit(1)
+            )
+            .limit(1)
         )
         pending = result.scalar_one_or_none()
         if pending is None:

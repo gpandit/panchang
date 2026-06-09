@@ -23,8 +23,7 @@ class ExternalIdentity:
 class IdentityVerifier(Protocol):
     """Verifies a provider identity token and returns the external identity."""
 
-    def verify(self, identity_token: str) -> ExternalIdentity:
-        ...
+    def verify(self, identity_token: str) -> ExternalIdentity: ...
 
 
 class InvalidIdentityToken(Exception):

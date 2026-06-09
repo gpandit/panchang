@@ -58,41 +58,57 @@ def _auth_error(exc: AuthError) -> HTTPException:
 
 # ── Sign-up / sign-in ──────────────────────────────────────────────────────
 
+
 @router.post("/signup/password", response_model=TokenPairOut, status_code=201)
 async def signup_password(body: SignUpWithPassword, svc: UserService = Depends(get_user_service)):
     try:
         result = await svc.sign_up_with_password(
-            email=body.email, phone=body.phone, password=body.password, display_name=body.display_name
+            email=body.email,
+            phone=body.phone,
+            password=body.password,
+            display_name=body.display_name,
         )
     except AuthError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
-    return TokenPairOut(access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token)
+    return TokenPairOut(
+        access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token
+    )
 
 
 @router.post("/signup/guest", response_model=TokenPairOut, status_code=201)
 async def signup_guest(svc: UserService = Depends(get_user_service)):
     result = await svc.sign_up_guest()
-    return TokenPairOut(access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token)
+    return TokenPairOut(
+        access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token
+    )
 
 
 @router.post("/signup/oauth", response_model=TokenPairOut, status_code=201)
 async def signup_oauth(body: SignUpWithOAuth, svc: UserService = Depends(get_user_service)):
     try:
         result = await svc.sign_up_or_sign_in_with_oauth(
-            provider=body.provider, identity_token=body.identity_token, display_name=body.display_name
+            provider=body.provider,
+            identity_token=body.identity_token,
+            display_name=body.display_name,
         )
     except AuthError as exc:
         raise _auth_error(exc) from exc
-    return TokenPairOut(access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token)
+    return TokenPairOut(
+        access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token
+    )
 
 
 @router.post("/login/password", response_model=TokenPairOut)
 async def login_password(body: LoginWithPassword, svc: UserService = Depends(get_user_service)):
     try:
-        result = await svc.sign_in_with_password(email=body.email, phone=body.phone, password=body.password)
+        result = await svc.sign_in_with_password(
+            email=body.email, phone=body.phone, password=body.password
+        )
     except AuthError as exc:
         raise _auth_error(exc) from exc
-    return TokenPairOut(access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token)
+    return TokenPairOut(
+        access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token
+    )
 
 
 @router.post("/token/refresh", response_model=TokenPairOut)
@@ -106,8 +122,11 @@ async def refresh_token(body: RefreshRequest, svc: UserService = Depends(get_use
 
 # ── Profile & preferences ──────────────────────────────────────────────────
 
+
 @router.get("/me", response_model=UserOut)
-async def get_me(user_id: str = Depends(get_current_user_id), svc: UserService = Depends(get_user_service)):
+async def get_me(
+    user_id: str = Depends(get_current_user_id), svc: UserService = Depends(get_user_service)
+):
     try:
         return await svc.get_user(user_id)
     except NotFoundError as exc:
@@ -124,6 +143,7 @@ async def update_preferences(
 
 
 # ── Locations ──────────────────────────────────────────────────────────────
+
 
 @router.post("/me/locations", response_model=LocationOut, status_code=201)
 async def add_location(
@@ -149,7 +169,9 @@ async def update_location(
     svc: UserService = Depends(get_user_service),
 ):
     try:
-        return await svc.update_location(user_id, location_id, **body.model_dump(exclude_unset=True))
+        return await svc.update_location(
+            user_id, location_id, **body.model_dump(exclude_unset=True)
+        )
     except NotFoundError as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
 
@@ -167,6 +189,7 @@ async def delete_location(
 
 
 # ── Vault ──────────────────────────────────────────────────────────────────
+
 
 @router.put("/me/vault/birth-profile", status_code=204)
 async def set_birth_profile(
@@ -202,6 +225,7 @@ async def list_family_members(
 
 
 # ── Account lifecycle ──────────────────────────────────────────────────────
+
 
 @router.get("/me/export")
 async def export_data(

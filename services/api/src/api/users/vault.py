@@ -17,14 +17,13 @@ Hard boundary (per Architecture §5.1 / project context §3.5):
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, LargeBinary, String
+from sqlalchemy import DateTime, ForeignKey, LargeBinary, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import select
+from sqlalchemy.orm import Mapped, mapped_column
 
 from api.users.db import Base
 from api.users.encryption import VaultCipher
@@ -35,7 +34,7 @@ def _uuid() -> str:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 # Tables the analytics pipeline must never read or export. This is the
@@ -46,7 +45,7 @@ ANALYTICS_EXCLUDED_TABLES: frozenset[str] = frozenset(
 )
 
 
-class VaultAction(str, Enum):
+class VaultAction(StrEnum):
     CREATE = "create"
     READ = "read"
     UPDATE = "update"
@@ -59,10 +58,14 @@ class BirthProfile(Base):
     __tablename__ = "vault_birth_profiles"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), unique=True, index=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id"), unique=True, index=True
+    )
     encrypted_data: Mapped[bytes] = mapped_column(LargeBinary)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
 
 
 class FamilyMember(Base):
@@ -81,7 +84,9 @@ class FamilyMember(Base):
     relation_label: Mapped[str] = mapped_column(String(64))
     encrypted_data: Mapped[bytes] = mapped_column(LargeBinary)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
 
 
 class VaultAccessLog(Base):
@@ -92,7 +97,9 @@ class VaultAccessLog(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
-    actor_id: Mapped[str] = mapped_column(String(36))  # who performed the access (usually == user_id)
+    actor_id: Mapped[str] = mapped_column(
+        String(36)
+    )  # who performed the access (usually == user_id)
     action: Mapped[str] = mapped_column(String(16))
     target_type: Mapped[str] = mapped_column(String(32))  # 'birth_profile' | 'family_member'
     target_id: Mapped[str] = mapped_column(String(36))
@@ -100,13 +107,21 @@ class VaultAccessLog(Base):
 
 
 async def _log(
-    session: AsyncSession, *, user_id: str, actor_id: str, action: VaultAction,
-    target_type: str, target_id: str,
+    session: AsyncSession,
+    *,
+    user_id: str,
+    actor_id: str,
+    action: VaultAction,
+    target_type: str,
+    target_id: str,
 ) -> None:
     session.add(
         VaultAccessLog(
-            user_id=user_id, actor_id=actor_id, action=action.value,
-            target_type=target_type, target_id=target_id,
+            user_id=user_id,
+            actor_id=actor_id,
+            action=action.value,
+            target_type=target_type,
+            target_id=target_id,
         )
     )
 
@@ -115,6 +130,7 @@ async def _log(
 # Vault operations — the only sanctioned way to touch this data.
 # Each call both encrypts/decrypts and writes an access-log entry.
 # ──────────────────────────────────────────────────────────────────────────
+
 
 class Vault:
     def __init__(self, cipher: VaultCipher) -> None:
@@ -133,8 +149,14 @@ class Vault:
         else:
             profile.encrypted_data = encrypted
         await session.flush()
-        await _log(session, user_id=user_id, actor_id=actor_id, action=action,
-                   target_type="birth_profile", target_id=profile.id)
+        await _log(
+            session,
+            user_id=user_id,
+            actor_id=actor_id,
+            action=action,
+            target_type="birth_profile",
+            target_id=profile.id,
+        )
         return profile
 
     async def get_birth_profile(
@@ -144,13 +166,24 @@ class Vault:
         profile = result.scalar_one_or_none()
         if profile is None:
             return None
-        await _log(session, user_id=user_id, actor_id=actor_id, action=VaultAction.READ,
-                   target_type="birth_profile", target_id=profile.id)
+        await _log(
+            session,
+            user_id=user_id,
+            actor_id=actor_id,
+            action=VaultAction.READ,
+            target_type="birth_profile",
+            target_id=profile.id,
+        )
         return self._cipher.decrypt_json(profile.encrypted_data)
 
     async def add_family_member(
-        self, session: AsyncSession, *, user_id: str, actor_id: str,
-        relation: str, data: dict[str, Any],
+        self,
+        session: AsyncSession,
+        *,
+        user_id: str,
+        actor_id: str,
+        relation: str,
+        data: dict[str, Any],
     ) -> FamilyMember:
         member = FamilyMember(
             user_id=user_id,
@@ -159,8 +192,14 @@ class Vault:
         )
         session.add(member)
         await session.flush()
-        await _log(session, user_id=user_id, actor_id=actor_id, action=VaultAction.CREATE,
-                   target_type="family_member", target_id=member.id)
+        await _log(
+            session,
+            user_id=user_id,
+            actor_id=actor_id,
+            action=VaultAction.CREATE,
+            target_type="family_member",
+            target_id=member.id,
+        )
         return member
 
     async def list_family_members(
@@ -170,24 +209,44 @@ class Vault:
         members = result.scalars().all()
         decrypted = []
         for member in members:
-            await _log(session, user_id=user_id, actor_id=actor_id, action=VaultAction.READ,
-                       target_type="family_member", target_id=member.id)
+            await _log(
+                session,
+                user_id=user_id,
+                actor_id=actor_id,
+                action=VaultAction.READ,
+                target_type="family_member",
+                target_id=member.id,
+            )
             decrypted.append({"id": member.id, **self._cipher.decrypt_json(member.encrypted_data)})
         return decrypted
 
-    async def delete_all_for_user(self, session: AsyncSession, *, user_id: str, actor_id: str) -> None:
+    async def delete_all_for_user(
+        self, session: AsyncSession, *, user_id: str, actor_id: str
+    ) -> None:
         """Hard-delete every vault record for a user (account deletion)."""
         result = await session.execute(select(BirthProfile).where(BirthProfile.user_id == user_id))
         profile = result.scalar_one_or_none()
         if profile is not None:
-            await _log(session, user_id=user_id, actor_id=actor_id, action=VaultAction.DELETE,
-                       target_type="birth_profile", target_id=profile.id)
+            await _log(
+                session,
+                user_id=user_id,
+                actor_id=actor_id,
+                action=VaultAction.DELETE,
+                target_type="birth_profile",
+                target_id=profile.id,
+            )
             await session.delete(profile)
 
         result = await session.execute(select(FamilyMember).where(FamilyMember.user_id == user_id))
         for member in result.scalars().all():
-            await _log(session, user_id=user_id, actor_id=actor_id, action=VaultAction.DELETE,
-                       target_type="family_member", target_id=member.id)
+            await _log(
+                session,
+                user_id=user_id,
+                actor_id=actor_id,
+                action=VaultAction.DELETE,
+                target_type="family_member",
+                target_id=member.id,
+            )
             await session.delete(member)
         await session.flush()
 
@@ -197,6 +256,10 @@ class Vault:
         """Decrypted export for the data-export flow (the user exporting
         their own data — still access-logged like any other read)."""
         return {
-            "birth_profile": await self.get_birth_profile(session, user_id=user_id, actor_id=actor_id),
-            "family_members": await self.list_family_members(session, user_id=user_id, actor_id=actor_id),
+            "birth_profile": await self.get_birth_profile(
+                session, user_id=user_id, actor_id=actor_id
+            ),
+            "family_members": await self.list_family_members(
+                session, user_id=user_id, actor_id=actor_id
+            ),
         }

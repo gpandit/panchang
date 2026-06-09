@@ -12,7 +12,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from api.content.models import ContentStatus
 from api.content.schemas import (
     ContentCreateRequest,
     ContentItemAdminOut,
@@ -20,12 +19,11 @@ from api.content.schemas import (
     ContentUpdateRequest,
     FlagOut,
     FlagRequest,
-    ContentVersionOut,
 )
 from api.content.service import ContentError, ContentService
 
-
 # ── Dependency stub (overridden in main.py) ───────────────────────────────────
+
 
 async def get_content_service() -> ContentService:  # pragma: no cover
     raise NotImplementedError("get_content_service dependency must be overridden")
@@ -36,12 +34,15 @@ router = APIRouter(tags=["content"])
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+
 @router.get("/v1/content", response_model=list[ContentItemPublicOut])
 async def list_published_content(
     svc: Annotated[ContentService, Depends(get_content_service)],
     locale: str | None = Query(None, description="BCP-47 locale, e.g. 'hi', 'en'"),
     region_tag: str | None = Query(None, description="Region tag, e.g. 'north', 'gujarat'"),
-    content_type: str | None = Query(None, description="festival | vrat | educational | mantra | template"),
+    content_type: str | None = Query(
+        None, description="festival | vrat | educational | mantra | template"
+    ),
     festival_rule_id: str | None = Query(None),
 ) -> list[ContentItemPublicOut]:
     pairs = await svc.get_published(
@@ -66,7 +67,9 @@ async def get_published_content(
     return _to_public(item, ver)
 
 
-@router.post("/v1/content/{item_id}/flag", response_model=FlagOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/v1/content/{item_id}/flag", response_model=FlagOut, status_code=status.HTTP_201_CREATED
+)
 async def flag_content(
     item_id: str,
     req: FlagRequest,
@@ -81,7 +84,10 @@ async def flag_content(
 
 # ── Admin API ─────────────────────────────────────────────────────────────────
 
-@router.post("/v1/admin/content", response_model=ContentItemAdminOut, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/v1/admin/content", response_model=ContentItemAdminOut, status_code=status.HTTP_201_CREATED
+)
 async def create_content(
     req: ContentCreateRequest,
     svc: Annotated[ContentService, Depends(get_content_service)],
@@ -177,6 +183,7 @@ async def get_flags(
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _to_public(item, ver) -> ContentItemPublicOut:
     return ContentItemPublicOut(

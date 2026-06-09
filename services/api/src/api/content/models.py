@@ -10,10 +10,10 @@ in the festivals service — not a FK, because the two services run separately.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -26,10 +26,10 @@ def _uuid() -> str:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-class ContentType(str, Enum):
+class ContentType(StrEnum):
     FESTIVAL = "festival"
     VRAT = "vrat"
     EDUCATIONAL = "educational"
@@ -37,7 +37,7 @@ class ContentType(str, Enum):
     TEMPLATE = "template"
 
 
-class ContentStatus(str, Enum):
+class ContentStatus(StrEnum):
     DRAFT = "draft"
     IN_REVIEW = "in_review"
     PUBLISHED = "published"
@@ -60,7 +60,7 @@ class ContentItem(ContentBase):
     # Cross-service reference — null for non-festival content types.
     festival_rule_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
 
-    locale: Mapped[str] = mapped_column(String(16))        # BCP-47, e.g. "hi", "en", "mr"
+    locale: Mapped[str] = mapped_column(String(16))  # BCP-47, e.g. "hi", "en", "mr"
     region_tags: Mapped[list] = mapped_column(JSON, default=list)  # e.g. ["north", "gujarat"]
 
     status: Mapped[str] = mapped_column(String(16), default=ContentStatus.DRAFT.value)
@@ -69,12 +69,16 @@ class ContentItem(ContentBase):
     published_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
-
-    versions: Mapped[list["ContentVersion"]] = relationship(
-        back_populates="item", cascade="all, delete-orphan", order_by="ContentVersion.version_number"
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
     )
-    flags: Mapped[list["ContentFlag"]] = relationship(
+
+    versions: Mapped[list[ContentVersion]] = relationship(
+        back_populates="item",
+        cascade="all, delete-orphan",
+        order_by="ContentVersion.version_number",
+    )
+    flags: Mapped[list[ContentFlag]] = relationship(
         back_populates="item", cascade="all, delete-orphan"
     )
 
@@ -103,7 +107,7 @@ class ContentVersion(ContentBase):
 
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
-    item: Mapped["ContentItem"] = relationship(back_populates="versions")
+    item: Mapped[ContentItem] = relationship(back_populates="versions")
 
 
 class ContentFlag(ContentBase):
@@ -118,7 +122,9 @@ class ContentFlag(ContentBase):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     item_id: Mapped[str] = mapped_column(String(36), ForeignKey("content_items.id"), index=True)
 
-    reporter_id: Mapped[str | None] = mapped_column(String(36), nullable=True)  # user id, optional for anonymous
+    reporter_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True
+    )  # user id, optional for anonymous
     reason: Mapped[str] = mapped_column(Text)
     detail: Mapped[dict] = mapped_column(JSON, default=dict)
 
@@ -126,4 +132,4 @@ class ContentFlag(ContentBase):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
-    item: Mapped["ContentItem"] = relationship(back_populates="flags")
+    item: Mapped[ContentItem] = relationship(back_populates="flags")

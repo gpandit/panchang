@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from passlib.context import CryptContext
@@ -35,7 +35,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def issue_access_token(*, user_id: str, secret_key: str, now: datetime | None = None) -> str:
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     payload = {"sub": user_id, "type": "access", "iat": now, "exp": now + ACCESS_TOKEN_TTL}
     return jwt.encode(payload, secret_key, algorithm="HS256")
 
@@ -50,7 +50,7 @@ def decode_access_token(token: str, *, secret_key: str) -> str:
 
 def _aware(dt: datetime) -> datetime:
     """SQLite drops tzinfo on round-trip; coerce back to UTC-aware for comparison."""
-    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
 
 
 def _hash_refresh_token(raw: str) -> str:
@@ -66,7 +66,7 @@ class TokenPair:
 async def issue_token_pair(
     session: AsyncSession, *, user_id: str, secret_key: str, now: datetime | None = None
 ) -> TokenPair:
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     raw_refresh = secrets.token_urlsafe(48)
     session.add(
         RefreshToken(
@@ -94,9 +94,11 @@ async def rotate_refresh_token(
     If the presented token was already rotated (`replaced_by_id` set), the
     whole chain is revoked — treat this as theft detection.
     """
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     token_hash = _hash_refresh_token(raw_refresh_token)
-    result = await session.execute(select(RefreshToken).where(RefreshToken.token_hash == token_hash))
+    result = await session.execute(
+        select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+    )
     token = result.scalar_one_or_none()
     if token is None:
         raise RefreshError("unknown refresh token")

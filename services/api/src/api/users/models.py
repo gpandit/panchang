@@ -8,10 +8,10 @@ gotra, or nakshatra.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, JSON, String
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from api.users.db import Base
@@ -22,22 +22,22 @@ def _uuid() -> str:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-class AuthProvider(str, Enum):
+class AuthProvider(StrEnum):
     PASSWORD = "password"
     GOOGLE = "google"
     APPLE = "apple"
     GUEST = "guest"
 
 
-class CalendarSystem(str, Enum):
+class CalendarSystem(StrEnum):
     AMANTA = "amanta"
     PURNIMANTA = "purnimanta"
 
 
-class TimeForm(str, Enum):
+class TimeForm(StrEnum):
     HOUR_12 = "12h"
     HOUR_24 = "24h"
     HOUR_24_PLUS = "24h_plus"
@@ -72,10 +72,10 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    locations: Mapped[list["Location"]] = relationship(
+    locations: Mapped[list[Location]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+    refresh_tokens: Mapped[list[RefreshToken]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -103,7 +103,9 @@ class RefreshToken(Base):
 
     @property
     def is_active(self) -> bool:
-        expires_at = self.expires_at if self.expires_at.tzinfo else self.expires_at.replace(tzinfo=timezone.utc)
+        expires_at = (
+            self.expires_at if self.expires_at.tzinfo else self.expires_at.replace(tzinfo=UTC)
+        )
         return self.revoked_at is None and expires_at > _now()
 
 
@@ -120,7 +122,9 @@ class Location(Base):
     lat: Mapped[float] = mapped_column(Float)
     lon: Mapped[float] = mapped_column(Float)
     tz: Mapped[str] = mapped_column(String(64))  # IANA timezone name
-    dst_rule: Mapped[str] = mapped_column(String(32), default="iana")  # 'iana' | 'none' | custom rule id
+    dst_rule: Mapped[str] = mapped_column(
+        String(32), default="iana"
+    )  # 'iana' | 'none' | custom rule id
 
     is_favourite: Mapped[bool] = mapped_column(Boolean, default=False)
     is_travel_mode: Mapped[bool] = mapped_column(Boolean, default=False)

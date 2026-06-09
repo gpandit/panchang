@@ -13,17 +13,17 @@ a standalone fact.
 from __future__ import annotations
 
 from datetime import date
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, model_validator
 
 
-class Paksha(str, Enum):
+class Paksha(StrEnum):
     SHUKLA = "Shukla Paksha"
     KRISHNA = "Krishna Paksha"
 
 
-class RuleKind(str, Enum):
+class RuleKind(StrEnum):
     """What kind of condition resolves an occurrence."""
 
     TITHI = "tithi"  # lunar_month + paksha + tithi_index active at sunrise

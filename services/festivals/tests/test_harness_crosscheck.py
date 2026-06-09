@@ -13,6 +13,7 @@ single source of truth; this module never recomputes it independently).
 
 from __future__ import annotations
 
+import itertools
 import json
 from datetime import date
 from pathlib import Path
@@ -123,7 +124,7 @@ def test_recurring_observances_have_plausible_yearly_cadence(memoized_source, re
 
     # Cadence: Ekadashi recurs ~twice per synodic month (~13-16d apart, never
     # skips — both pakshas always present at some sunrise).
-    for prev, cur in zip(ekadashis, ekadashis[1:]):
+    for prev, cur in itertools.pairwise(ekadashis):
         gap = (cur.date - prev.date).days
         assert 10 <= gap <= 20, (
             f"Ekadashi: implausible gap {gap}d between {prev.date} and {cur.date}"
@@ -135,13 +136,13 @@ def test_recurring_observances_have_plausible_yearly_cadence(memoized_source, re
     # is genuinely absent from the headline-anga sequence for that month, so
     # an occasional doubled gap (~2 cycles, ~56-64d) is expected, not a bug.
     for occurrences, label in ((purnimas, "Purnima"), (amavasyas, "Amavasya")):
-        for prev, cur in zip(occurrences, occurrences[1:]):
+        for prev, cur in itertools.pairwise(occurrences):
             gap = (cur.date - prev.date).days
             assert (25 <= gap <= 33) or (56 <= gap <= 64), (
                 f"{label}: implausible gap {gap}d between {prev.date} and {cur.date}"
             )
 
-    for prev, cur in zip(sankrantis, sankrantis[1:]):
+    for prev, cur in itertools.pairwise(sankrantis):
         gap = (cur.date - prev.date).days
         assert 25 <= gap <= 35, (
             f"Sankranti: implausible gap {gap}d between {prev.date} and {cur.date}"

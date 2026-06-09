@@ -53,9 +53,21 @@ def test_resolves_single_tithi_match() -> None:
     )
     source = _const_source(
         {
-            date(YEAR, 1, 1): dict(tithi_index=1, lunar_month="Chaitra", paksha="Shukla Paksha"),
-            date(YEAR, 11, 1): dict(tithi_index=30, lunar_month="Ashwina", paksha="Krishna Paksha"),
-            date(YEAR, 11, 2): dict(tithi_index=1, lunar_month="Kartika", paksha="Shukla Paksha"),
+            date(YEAR, 1, 1): {
+                "tithi_index": 1,
+                "lunar_month": "Chaitra",
+                "paksha": "Shukla Paksha",
+            },
+            date(YEAR, 11, 1): {
+                "tithi_index": 30,
+                "lunar_month": "Ashwina",
+                "paksha": "Krishna Paksha",
+            },
+            date(YEAR, 11, 2): {
+                "tithi_index": 1,
+                "lunar_month": "Kartika",
+                "paksha": "Shukla Paksha",
+            },
         }
     )
 
@@ -81,10 +93,10 @@ def test_vriddhi_tithi_collapses_to_first_sunrise() -> None:
     # Two consecutive sunrises (16th, 17th) report the same global tithi
     # index 9 — a Vriddhi — and the festival should land on the first.
     spec_days = {
-        date(YEAR, 1, 1): dict(tithi_index=8, lunar_month="Chaitra", paksha="Shukla Paksha"),
-        date(YEAR, 4, 16): dict(tithi_index=9, lunar_month="Chaitra", paksha="Shukla Paksha"),
-        date(YEAR, 4, 17): dict(tithi_index=9, lunar_month="Chaitra", paksha="Shukla Paksha"),
-        date(YEAR, 4, 18): dict(tithi_index=10, lunar_month="Chaitra", paksha="Shukla Paksha"),
+        date(YEAR, 1, 1): {"tithi_index": 8, "lunar_month": "Chaitra", "paksha": "Shukla Paksha"},
+        date(YEAR, 4, 16): {"tithi_index": 9, "lunar_month": "Chaitra", "paksha": "Shukla Paksha"},
+        date(YEAR, 4, 17): {"tithi_index": 9, "lunar_month": "Chaitra", "paksha": "Shukla Paksha"},
+        date(YEAR, 4, 18): {"tithi_index": 10, "lunar_month": "Chaitra", "paksha": "Shukla Paksha"},
     }
     source = _const_source(spec_days)
 
@@ -106,21 +118,29 @@ def test_prefers_non_adhika_occurrence_of_named_month() -> None:
         tithi_index=15,
     )
     spec = {
-        date(YEAR, 1, 1): dict(tithi_index=1, lunar_month="Chaitra", paksha="Shukla Paksha"),
-        date(YEAR, 7, 20): dict(
-            tithi_index=15,
-            lunar_month="Shravana",
-            paksha="Shukla Paksha",
-            is_adhika_month=True,
-        ),
-        date(YEAR, 7, 21): dict(tithi_index=1, lunar_month="Shravana", paksha="Krishna Paksha"),
-        date(YEAR, 8, 19): dict(
-            tithi_index=15,
-            lunar_month="Shravana",
-            paksha="Shukla Paksha",
-            is_adhika_month=False,
-        ),
-        date(YEAR, 8, 20): dict(tithi_index=1, lunar_month="Bhadrapada", paksha="Krishna Paksha"),
+        date(YEAR, 1, 1): {"tithi_index": 1, "lunar_month": "Chaitra", "paksha": "Shukla Paksha"},
+        date(YEAR, 7, 20): {
+            "tithi_index": 15,
+            "lunar_month": "Shravana",
+            "paksha": "Shukla Paksha",
+            "is_adhika_month": True,
+        },
+        date(YEAR, 7, 21): {
+            "tithi_index": 1,
+            "lunar_month": "Shravana",
+            "paksha": "Krishna Paksha",
+        },
+        date(YEAR, 8, 19): {
+            "tithi_index": 15,
+            "lunar_month": "Shravana",
+            "paksha": "Shukla Paksha",
+            "is_adhika_month": False,
+        },
+        date(YEAR, 8, 20): {
+            "tithi_index": 1,
+            "lunar_month": "Bhadrapada",
+            "paksha": "Krishna Paksha",
+        },
     }
     source = _const_source(spec)
 
@@ -141,14 +161,18 @@ def test_falls_back_to_adhika_occurrence_when_no_regular_one_exists() -> None:
         tithi_index=15,
     )
     spec = {
-        date(YEAR, 1, 1): dict(tithi_index=1, lunar_month="Chaitra", paksha="Shukla Paksha"),
-        date(YEAR, 7, 20): dict(
-            tithi_index=15,
-            lunar_month="Shravana",
-            paksha="Shukla Paksha",
-            is_adhika_month=True,
-        ),
-        date(YEAR, 7, 21): dict(tithi_index=1, lunar_month="Bhadrapada", paksha="Krishna Paksha"),
+        date(YEAR, 1, 1): {"tithi_index": 1, "lunar_month": "Chaitra", "paksha": "Shukla Paksha"},
+        date(YEAR, 7, 20): {
+            "tithi_index": 15,
+            "lunar_month": "Shravana",
+            "paksha": "Shukla Paksha",
+            "is_adhika_month": True,
+        },
+        date(YEAR, 7, 21): {
+            "tithi_index": 1,
+            "lunar_month": "Bhadrapada",
+            "paksha": "Krishna Paksha",
+        },
     }
     source = _const_source(spec)
 
@@ -169,7 +193,7 @@ def test_no_match_returns_empty() -> None:
         tithi_index=5,
     )
     source = _const_source(
-        {date(YEAR, 1, 1): dict(tithi_index=1, lunar_month="Chaitra", paksha="Shukla Paksha")}
+        {date(YEAR, 1, 1): {"tithi_index": 1, "lunar_month": "Chaitra", "paksha": "Shukla Paksha"}}
     )
 
     assert resolve_year(rule, YEAR, source) == []
@@ -189,21 +213,24 @@ def test_resolves_nakshatra_rule() -> None:
         nakshatra_name="Shravana",
     )
     spec = {
-        date(YEAR, 1, 1): dict(
-            tithi_index=1, lunar_month="Chaitra", paksha="Shukla Paksha", nakshatra_name="Ashwini"
-        ),
-        date(YEAR, 9, 15): dict(
-            tithi_index=10,
-            lunar_month="Bhadrapada",
-            paksha="Shukla Paksha",
-            nakshatra_name="Shravana",
-        ),
-        date(YEAR, 9, 16): dict(
-            tithi_index=11,
-            lunar_month="Bhadrapada",
-            paksha="Shukla Paksha",
-            nakshatra_name="Dhanishta",
-        ),
+        date(YEAR, 1, 1): {
+            "tithi_index": 1,
+            "lunar_month": "Chaitra",
+            "paksha": "Shukla Paksha",
+            "nakshatra_name": "Ashwini",
+        },
+        date(YEAR, 9, 15): {
+            "tithi_index": 10,
+            "lunar_month": "Bhadrapada",
+            "paksha": "Shukla Paksha",
+            "nakshatra_name": "Shravana",
+        },
+        date(YEAR, 9, 16): {
+            "tithi_index": 11,
+            "lunar_month": "Bhadrapada",
+            "paksha": "Shukla Paksha",
+            "nakshatra_name": "Dhanishta",
+        },
     }
     source = _const_source(spec)
 
@@ -223,12 +250,18 @@ def test_resolves_sankranti_transition_day() -> None:
         id="test-makar", name="Test Makar Sankranti", kind=RuleKind.SANKRANTI, sun_rashi="Makara"
     )
     spec = {
-        date(YEAR, 1, 1): dict(
-            tithi_index=1, lunar_month="Pausha", paksha="Shukla Paksha", sun_rashi="Dhanu"
-        ),
-        date(YEAR, 1, 15): dict(
-            tithi_index=15, lunar_month="Pausha", paksha="Shukla Paksha", sun_rashi="Makara"
-        ),
+        date(YEAR, 1, 1): {
+            "tithi_index": 1,
+            "lunar_month": "Pausha",
+            "paksha": "Shukla Paksha",
+            "sun_rashi": "Dhanu",
+        },
+        date(YEAR, 1, 15): {
+            "tithi_index": 15,
+            "lunar_month": "Pausha",
+            "paksha": "Shukla Paksha",
+            "sun_rashi": "Makara",
+        },
     }
     source = _const_source(spec)
 
@@ -255,7 +288,9 @@ def test_regional_variant_overrides_name_and_criteria() -> None:
         region_tags=["maharashtra", "karnataka"],
         variants=[RegionalVariant(region_tags=["karnataka"], name="Ugadi")],
     )
-    spec = {date(YEAR, 4, 9): dict(tithi_index=1, lunar_month="Chaitra", paksha="Shukla Paksha")}
+    spec = {
+        date(YEAR, 4, 9): {"tithi_index": 1, "lunar_month": "Chaitra", "paksha": "Shukla Paksha"}
+    }
     source = _const_source(spec)
 
     by_region = resolve_year(rule, YEAR, source, region_tags=["karnataka"])
@@ -272,16 +307,20 @@ def test_regional_variant_overrides_name_and_criteria() -> None:
 
 def test_recurring_ekadashi_cadence_and_vriddhi_collapse() -> None:
     spec = {
-        date(YEAR, 1, 1): dict(tithi_index=1, lunar_month="Pausha", paksha="Shukla Paksha"),
-        date(YEAR, 1, 7): dict(tithi_index=11, lunar_month="Pausha", paksha="Shukla Paksha"),
-        date(YEAR, 1, 8): dict(tithi_index=12, lunar_month="Pausha", paksha="Shukla Paksha"),
-        date(YEAR, 1, 21): dict(
-            tithi_index=26, lunar_month="Pausha", paksha="Krishna Paksha"
-        ),  # Krishna Ekadashi (local 11)
-        date(YEAR, 1, 22): dict(
-            tithi_index=26, lunar_month="Pausha", paksha="Krishna Paksha"
-        ),  # Vriddhi continuation
-        date(YEAR, 1, 23): dict(tithi_index=27, lunar_month="Pausha", paksha="Krishna Paksha"),
+        date(YEAR, 1, 1): {"tithi_index": 1, "lunar_month": "Pausha", "paksha": "Shukla Paksha"},
+        date(YEAR, 1, 7): {"tithi_index": 11, "lunar_month": "Pausha", "paksha": "Shukla Paksha"},
+        date(YEAR, 1, 8): {"tithi_index": 12, "lunar_month": "Pausha", "paksha": "Shukla Paksha"},
+        date(YEAR, 1, 21): {
+            "tithi_index": 26,
+            "lunar_month": "Pausha",
+            "paksha": "Krishna Paksha",
+        },  # Krishna Ekadashi (local 11)
+        date(YEAR, 1, 22): {
+            "tithi_index": 26,
+            "lunar_month": "Pausha",
+            "paksha": "Krishna Paksha",
+        },  # Vriddhi continuation
+        date(YEAR, 1, 23): {"tithi_index": 27, "lunar_month": "Pausha", "paksha": "Krishna Paksha"},
     }
     source = _const_source(spec)
 
@@ -296,11 +335,11 @@ def test_recurring_ekadashi_cadence_and_vriddhi_collapse() -> None:
 
 def test_recurring_purnima_and_amavasya_use_headline_tithi_name() -> None:
     spec = {
-        date(YEAR, 1, 1): dict(tithi_index=1, lunar_month="Pausha", paksha="Shukla Paksha"),
-        date(YEAR, 1, 15): dict(tithi_index=15, lunar_month="Pausha", paksha="Shukla Paksha"),
-        date(YEAR, 1, 16): dict(tithi_index=16, lunar_month="Pausha", paksha="Krishna Paksha"),
-        date(YEAR, 1, 30): dict(tithi_index=30, lunar_month="Pausha", paksha="Krishna Paksha"),
-        date(YEAR, 1, 31): dict(tithi_index=1, lunar_month="Magha", paksha="Shukla Paksha"),
+        date(YEAR, 1, 1): {"tithi_index": 1, "lunar_month": "Pausha", "paksha": "Shukla Paksha"},
+        date(YEAR, 1, 15): {"tithi_index": 15, "lunar_month": "Pausha", "paksha": "Shukla Paksha"},
+        date(YEAR, 1, 16): {"tithi_index": 16, "lunar_month": "Pausha", "paksha": "Krishna Paksha"},
+        date(YEAR, 1, 30): {"tithi_index": 30, "lunar_month": "Pausha", "paksha": "Krishna Paksha"},
+        date(YEAR, 1, 31): {"tithi_index": 1, "lunar_month": "Magha", "paksha": "Shukla Paksha"},
     }
     source = _const_source(spec)
 
@@ -313,13 +352,17 @@ def test_recurring_purnima_and_amavasya_use_headline_tithi_name() -> None:
 
 def test_recurring_sankashti_only_fires_on_krishna_chaturthi() -> None:
     spec = {
-        date(YEAR, 1, 1): dict(
-            tithi_index=4, lunar_month="Pausha", paksha="Shukla Paksha"
-        ),  # Shukla Chaturthi: not Sankashti
-        date(YEAR, 1, 19): dict(
-            tithi_index=19, lunar_month="Pausha", paksha="Krishna Paksha"
-        ),  # Krishna Chaturthi (local 4)
-        date(YEAR, 1, 20): dict(tithi_index=20, lunar_month="Pausha", paksha="Krishna Paksha"),
+        date(YEAR, 1, 1): {
+            "tithi_index": 4,
+            "lunar_month": "Pausha",
+            "paksha": "Shukla Paksha",
+        },  # Shukla Chaturthi: not Sankashti
+        date(YEAR, 1, 19): {
+            "tithi_index": 19,
+            "lunar_month": "Pausha",
+            "paksha": "Krishna Paksha",
+        },  # Krishna Chaturthi (local 4)
+        date(YEAR, 1, 20): {"tithi_index": 20, "lunar_month": "Pausha", "paksha": "Krishna Paksha"},
     }
     source = _const_source(spec)
 
@@ -330,15 +373,24 @@ def test_recurring_sankashti_only_fires_on_krishna_chaturthi() -> None:
 
 def test_recurring_sankranti_generates_one_per_transition() -> None:
     spec = {
-        date(YEAR, 1, 1): dict(
-            tithi_index=1, lunar_month="Pausha", paksha="Shukla Paksha", sun_rashi="Dhanu"
-        ),
-        date(YEAR, 1, 15): dict(
-            tithi_index=15, lunar_month="Pausha", paksha="Shukla Paksha", sun_rashi="Makara"
-        ),
-        date(YEAR, 2, 13): dict(
-            tithi_index=4, lunar_month="Magha", paksha="Shukla Paksha", sun_rashi="Kumbha"
-        ),
+        date(YEAR, 1, 1): {
+            "tithi_index": 1,
+            "lunar_month": "Pausha",
+            "paksha": "Shukla Paksha",
+            "sun_rashi": "Dhanu",
+        },
+        date(YEAR, 1, 15): {
+            "tithi_index": 15,
+            "lunar_month": "Pausha",
+            "paksha": "Shukla Paksha",
+            "sun_rashi": "Makara",
+        },
+        date(YEAR, 2, 13): {
+            "tithi_index": 4,
+            "lunar_month": "Magha",
+            "paksha": "Shukla Paksha",
+            "sun_rashi": "Kumbha",
+        },
     }
     source = _const_source(spec)
 

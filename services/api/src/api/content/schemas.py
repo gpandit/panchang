@@ -13,8 +13,8 @@ from pydantic import BaseModel, Field
 
 from api.content.models import ContentStatus, ContentType
 
-
 # ── Admin: create ─────────────────────────────────────────────────────────────
+
 
 class ContentCreateRequest(BaseModel):
     slug: str = Field(..., min_length=1, max_length=200)
@@ -36,6 +36,7 @@ class ContentUpdateRequest(BaseModel):
 
 
 # ── Admin: responses ──────────────────────────────────────────────────────────
+
 
 class ContentVersionOut(BaseModel):
     id: str
@@ -66,6 +67,7 @@ class ContentItemAdminOut(BaseModel):
 
 # ── Public: responses (published only) ───────────────────────────────────────
 
+
 class ContentItemPublicOut(BaseModel):
     id: str
     slug: str
@@ -82,6 +84,7 @@ class ContentItemPublicOut(BaseModel):
 
 
 # ── Flag ─────────────────────────────────────────────────────────────────────
+
 
 class FlagRequest(BaseModel):
     reason: str = Field(..., min_length=1, max_length=2000)

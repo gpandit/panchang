@@ -7,16 +7,16 @@ These models define the public contract of the engine. Nothing outside
 from __future__ import annotations
 
 from datetime import date
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel
 
 
-class Ayanamsa(str, Enum):
+class Ayanamsa(StrEnum):
     LAHIRI = "lahiri"
 
 
-class MonthScheme(str, Enum):
+class MonthScheme(StrEnum):
     AMANTA = "amanta"
     PURNIMANTA = "purnimanta"
 

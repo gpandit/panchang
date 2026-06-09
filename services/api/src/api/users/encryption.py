@@ -39,5 +39,7 @@ class VaultCipher:
         try:
             plaintext = self._fernet.decrypt(ciphertext)
         except InvalidToken as exc:
-            raise ValueError("vault payload could not be decrypted — wrong key or tampered data") from exc
+            raise ValueError(
+                "vault payload could not be decrypted — wrong key or tampered data"
+            ) from exc
         return json.loads(plaintext.decode("utf-8"))

@@ -3,15 +3,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.settings import get_settings
 from api.content.db import make_session_factory as make_content_session_factory
-from api.content.router import get_content_service, router as content_router
+from api.content.router import get_content_service
+from api.content.router import router as content_router
 from api.content.service import ContentService
+from api.settings import get_settings
 from api.users.db import make_session_factory
 from api.users.encryption import VaultCipher
-from api.users.oauth import AppleVerifier, GoogleVerifier
-from api.users.router import get_secret_key, get_user_service, router as users_router
 from api.users.models import AuthProvider
+from api.users.oauth import AppleVerifier, GoogleVerifier
+from api.users.router import get_secret_key, get_user_service
+from api.users.router import router as users_router
 from api.users.service import UserService
 from api.users.vault import Vault
 
@@ -46,6 +48,7 @@ async def _provide_content_service() -> ContentService:
 
 def _provide_secret_key() -> str:
     return settings.secret_key
+
 
 app = FastAPI(
     title="The Pandit API",

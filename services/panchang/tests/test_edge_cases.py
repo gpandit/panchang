@@ -9,14 +9,14 @@ and to an item in Architecture §4.2 "Lunar edge cases the build must handle":
   - DST transitions occurring mid-tithi
 """
 
-from datetime import date, timedelta
+from datetime import date
 
 from panchang.compute import _detect_adhika_kshaya, compute_panchang
 from panchang.models import PanchangRequest
 
-DELHI = dict(lat=28.6139, lon=77.2090, tz="Asia/Kolkata")
-SVALBARD = dict(lat=78.2, lon=15.6, tz="Arctic/Longyearbyen")
-NEW_YORK = dict(lat=40.7128, lon=-74.0060, tz="America/New_York")
+DELHI = {"lat": 28.6139, "lon": 77.2090, "tz": "Asia/Kolkata"}
+SVALBARD = {"lat": 78.2, "lon": 15.6, "tz": "Arctic/Longyearbyen"}
+NEW_YORK = {"lat": 40.7128, "lon": -74.0060, "tz": "America/New_York"}
 
 
 def _delhi(d: date) -> PanchangRequest:
@@ -26,6 +26,7 @@ def _delhi(d: date) -> PanchangRequest:
 # ──────────────────────────────────────────────────────────────────────────
 # Adhika & Kshaya maas
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def test_known_adhika_maas_year_is_labelled() -> None:
     """2023 carried an Adhika (leap) Shravan, roughly 18 Jul – 16 Aug 2023.
@@ -86,6 +87,7 @@ def test_kshaya_maas_detection_flags_a_double_sankranti_month() -> None:
 # Kshaya & Vriddhi tithis
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def test_kshaya_tithi_is_fully_contained_within_a_single_day() -> None:
     """A Kshaya tithi never touches a sunrise: it begins and ends entirely
     within one Panchang day, so three tithis (not the usual one or two)
@@ -121,6 +123,7 @@ def test_vriddhi_tithi_spans_two_consecutive_sunrises() -> None:
 # High-latitude / undefined sunrise
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def test_polar_day_degrades_gracefully_with_synthetic_day_boundary() -> None:
     """At high latitude during the polar-day season, the Sun never sets/rises
     on the civil date, so no genuine sunrise-to-sunrise span exists. The
@@ -147,6 +150,7 @@ def test_polar_night_also_degrades_gracefully() -> None:
 # ──────────────────────────────────────────────────────────────────────────
 # DST mid-tithi
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def test_dst_spring_forward_mid_tithi_keeps_24_plus_consistent() -> None:
     """2024-03-10 is the US spring-forward date (America/New_York skips

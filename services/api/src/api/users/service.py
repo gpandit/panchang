@@ -7,12 +7,13 @@ directly (no HTTP layer needed to assert behaviour).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.users import security
 from api.users.models import (
     AccountAuditLog,
     AuthProvider,
@@ -20,7 +21,6 @@ from api.users.models import (
     User,
 )
 from api.users.oauth import IdentityVerifier, InvalidIdentityToken
-from api.users import security
 from api.users.security import RefreshError, TokenPair
 from api.users.vault import Vault
 
@@ -40,7 +40,7 @@ class AuthResult:
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class UserService:
@@ -77,14 +77,18 @@ class UserService:
         )
         self._session.add(user)
         await self._session.flush()
-        tokens = await security.issue_token_pair(self._session, user_id=user.id, secret_key=self._secret_key)
+        tokens = await security.issue_token_pair(
+            self._session, user_id=user.id, secret_key=self._secret_key
+        )
         return AuthResult(user=user, tokens=tokens)
 
     async def sign_up_guest(self) -> AuthResult:
         user = User(is_guest=True, auth_provider=AuthProvider.GUEST.value)
         self._session.add(user)
         await self._session.flush()
-        tokens = await security.issue_token_pair(self._session, user_id=user.id, secret_key=self._secret_key)
+        tokens = await security.issue_token_pair(
+            self._session, user_id=user.id, secret_key=self._secret_key
+        )
         return AuthResult(user=user, tokens=tokens)
 
     async def sign_up_or_sign_in_with_oauth(
@@ -115,7 +119,9 @@ class UserService:
             self._session.add(user)
             await self._session.flush()
 
-        tokens = await security.issue_token_pair(self._session, user_id=user.id, secret_key=self._secret_key)
+        tokens = await security.issue_token_pair(
+            self._session, user_id=user.id, secret_key=self._secret_key
+        )
         return AuthResult(user=user, tokens=tokens)
 
     async def sign_in_with_password(
@@ -129,7 +135,9 @@ class UserService:
         if user.is_deleted:
             raise AuthError("account has been deleted")
 
-        tokens = await security.issue_token_pair(self._session, user_id=user.id, secret_key=self._secret_key)
+        tokens = await security.issue_token_pair(
+            self._session, user_id=user.id, secret_key=self._secret_key
+        )
         return AuthResult(user=user, tokens=tokens)
 
     async def refresh(self, *, raw_refresh_token: str) -> TokenPair:
@@ -205,7 +213,9 @@ class UserService:
 
     async def set_birth_profile(self, user_id: str, data: dict[str, Any]) -> None:
         await self.get_user(user_id)
-        await self._vault.put_birth_profile(self._session, user_id=user_id, actor_id=user_id, data=data)
+        await self._vault.put_birth_profile(
+            self._session, user_id=user_id, actor_id=user_id, data=data
+        )
 
     async def get_birth_profile(self, user_id: str) -> dict[str, Any] | None:
         await self.get_user(user_id)
@@ -220,7 +230,9 @@ class UserService:
 
     async def list_family_members(self, user_id: str) -> list[dict[str, Any]]:
         await self.get_user(user_id)
-        return await self._vault.list_family_members(self._session, user_id=user_id, actor_id=user_id)
+        return await self._vault.list_family_members(
+            self._session, user_id=user_id, actor_id=user_id
+        )
 
     # ── Account lifecycle ─────────────────────────────────────────────────
 
@@ -229,7 +241,9 @@ class UserService:
         including decrypted vault contents (their own data, on their request)."""
         user = await self.get_user(user_id)
         locations = await self.list_locations(user_id)
-        vault_data = await self._vault.export_for_user(self._session, user_id=user_id, actor_id=user_id)
+        vault_data = await self._vault.export_for_user(
+            self._session, user_id=user_id, actor_id=user_id
+        )
 
         archive = {
             "profile": {
@@ -247,9 +261,14 @@ class UserService:
             },
             "locations": [
                 {
-                    "id": loc.id, "label": loc.label, "lat": loc.lat, "lon": loc.lon,
-                    "tz": loc.tz, "dst_rule": loc.dst_rule,
-                    "is_favourite": loc.is_favourite, "is_travel_mode": loc.is_travel_mode,
+                    "id": loc.id,
+                    "label": loc.label,
+                    "lat": loc.lat,
+                    "lon": loc.lon,
+                    "tz": loc.tz,
+                    "dst_rule": loc.dst_rule,
+                    "is_favourite": loc.is_favourite,
+                    "is_travel_mode": loc.is_travel_mode,
                 }
                 for loc in locations
             ],

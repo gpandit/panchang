@@ -13,14 +13,14 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from datetime import date, timedelta
-from enum import Enum
+from enum import StrEnum
 
 from festivals.models import FestivalOccurrence
 from festivals.resolver import PanchangSource, _local_tithi_index
 from panchang.models import PanchangResult
 
 
-class RecurringKind(str, Enum):
+class RecurringKind(StrEnum):
     EKADASHI = "ekadashi"
     PRADOSHAM = "pradosham"
     SANKASHTI = "sankashti"

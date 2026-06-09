@@ -16,7 +16,13 @@ from api.users.models import AuthProvider, Location, User
 from api.users.oauth import ExternalIdentity, StaticVerifier
 from api.users.security import RefreshError, decode_access_token, rotate_refresh_token
 from api.users.service import AuthError, NotFoundError, UserService
-from api.users.vault import ANALYTICS_EXCLUDED_TABLES, BirthProfile, FamilyMember, Vault, VaultAccessLog
+from api.users.vault import (
+    ANALYTICS_EXCLUDED_TABLES,
+    BirthProfile,
+    FamilyMember,
+    Vault,
+    VaultAccessLog,
+)
 
 SECRET_KEY = "test-secret-key-at-least-32-bytes-long"
 TEST_KEY = VaultCipher.generate_key()
@@ -45,6 +51,7 @@ def _service(session: AsyncSession, **kwargs) -> UserService:
 # Sign-up: password, OAuth, guest
 # ──────────────────────────────────────────────────────────────────────────
 
+
 async def test_signup_with_password(session: AsyncSession) -> None:
     svc = _service(session)
     result = await svc.sign_up_with_password(
@@ -59,19 +66,27 @@ async def test_signup_with_password(session: AsyncSession) -> None:
 
 async def test_signup_with_password_rejects_duplicate_identity(session: AsyncSession) -> None:
     svc = _service(session)
-    await svc.sign_up_with_password(email="dup@example.com", phone=None, password="pw1", display_name=None)
+    await svc.sign_up_with_password(
+        email="dup@example.com", phone=None, password="pw1", display_name=None
+    )
     await session.flush()
 
     with pytest.raises(AuthError):
-        await svc.sign_up_with_password(email="dup@example.com", phone=None, password="pw2", display_name=None)
+        await svc.sign_up_with_password(
+            email="dup@example.com", phone=None, password="pw2", display_name=None
+        )
 
 
 async def test_signin_with_password_validates_credentials(session: AsyncSession) -> None:
     svc = _service(session)
-    await svc.sign_up_with_password(email="login@example.com", phone=None, password="correct-horse", display_name=None)
+    await svc.sign_up_with_password(
+        email="login@example.com", phone=None, password="correct-horse", display_name=None
+    )
     await session.commit()
 
-    ok = await svc.sign_in_with_password(email="login@example.com", phone=None, password="correct-horse")
+    ok = await svc.sign_in_with_password(
+        email="login@example.com", phone=None, password="correct-horse"
+    )
     assert ok.user.email == "login@example.com"
 
     with pytest.raises(AuthError):
@@ -89,7 +104,9 @@ async def test_signup_guest_mode(session: AsyncSession) -> None:
 
 
 async def test_signup_with_google_oauth(session: AsyncSession) -> None:
-    verifier = StaticVerifier({"good-google-token": ExternalIdentity(subject="g-123", email="g@example.com")})
+    verifier = StaticVerifier(
+        {"good-google-token": ExternalIdentity(subject="g-123", email="g@example.com")}
+    )
     svc = _service(session, oauth_verifiers={AuthProvider.GOOGLE: verifier})
 
     result = await svc.sign_up_or_sign_in_with_oauth(
@@ -133,6 +150,7 @@ async def test_oauth_rejects_invalid_token(session: AsyncSession) -> None:
 # Refresh-token rotation
 # ──────────────────────────────────────────────────────────────────────────
 
+
 async def test_refresh_token_rotates_and_old_token_becomes_invalid(session: AsyncSession) -> None:
     svc = _service(session)
     result = await svc.sign_up_guest()
@@ -157,12 +175,15 @@ async def test_refresh_token_rotates_and_old_token_becomes_invalid(session: Asyn
 
 async def test_unknown_refresh_token_rejected(session: AsyncSession) -> None:
     with pytest.raises(RefreshError):
-        await rotate_refresh_token(session, raw_refresh_token="not-a-real-token", secret_key=SECRET_KEY)
+        await rotate_refresh_token(
+            session, raw_refresh_token="not-a-real-token", secret_key=SECRET_KEY
+        )
 
 
 # ──────────────────────────────────────────────────────────────────────────
 # Preferences CRUD
 # ──────────────────────────────────────────────────────────────────────────
+
 
 async def test_update_preferences(session: AsyncSession) -> None:
     svc = _service(session)
@@ -189,6 +210,7 @@ async def test_update_preferences(session: AsyncSession) -> None:
 # Locations CRUD
 # ──────────────────────────────────────────────────────────────────────────
 
+
 async def test_location_crud(session: AsyncSession) -> None:
     svc = _service(session)
     result = await svc.sign_up_guest()
@@ -196,8 +218,14 @@ async def test_location_crud(session: AsyncSession) -> None:
     uid = result.user.id
 
     created = await svc.add_location(
-        uid, label="Home — Delhi", lat=28.6139, lon=77.2090, tz="Asia/Kolkata",
-        dst_rule="iana", is_favourite=True, is_travel_mode=False,
+        uid,
+        label="Home — Delhi",
+        lat=28.6139,
+        lon=77.2090,
+        tz="Asia/Kolkata",
+        dst_rule="iana",
+        is_favourite=True,
+        is_travel_mode=False,
     )
     assert created.label == "Home — Delhi"
 
@@ -219,8 +247,14 @@ async def test_location_operations_are_owner_scoped(session: AsyncSession) -> No
     await session.flush()
 
     loc = await svc.add_location(
-        owner.user.id, label="Mine", lat=1.0, lon=1.0, tz="Asia/Kolkata",
-        dst_rule="iana", is_favourite=False, is_travel_mode=False,
+        owner.user.id,
+        label="Mine",
+        lat=1.0,
+        lon=1.0,
+        tz="Asia/Kolkata",
+        dst_rule="iana",
+        is_favourite=False,
+        is_travel_mode=False,
     )
 
     with pytest.raises(NotFoundError):
@@ -234,6 +268,7 @@ async def test_location_operations_are_owner_scoped(session: AsyncSession) -> No
 # Vault: encryption at rest, access logging, analytics exclusion
 # ──────────────────────────────────────────────────────────────────────────
 
+
 async def test_vault_birth_profile_is_encrypted_at_rest(session: AsyncSession) -> None:
     svc = _service(session)
     result = await svc.sign_up_guest()
@@ -245,7 +280,9 @@ async def test_vault_birth_profile_is_encrypted_at_rest(session: AsyncSession) -
     await session.flush()
 
     # Raw row must not contain any plaintext sensitive value.
-    row = (await session.execute(select(BirthProfile).where(BirthProfile.user_id == uid))).scalar_one()
+    row = (
+        await session.execute(select(BirthProfile).where(BirthProfile.user_id == uid))
+    ).scalar_one()
     raw = row.encrypted_data
     assert b"Ahmedabad" not in raw
     assert b"Rohini" not in raw
@@ -265,7 +302,9 @@ async def test_vault_family_member_is_encrypted_at_rest(session: AsyncSession) -
     await svc.add_family_member(uid, "Mother", {"birth_nakshatra": "Ashwini", "gotra": "Kashyapa"})
     await session.flush()
 
-    row = (await session.execute(select(FamilyMember).where(FamilyMember.user_id == uid))).scalar_one()
+    row = (
+        await session.execute(select(FamilyMember).where(FamilyMember.user_id == uid))
+    ).scalar_one()
     assert b"Ashwini" not in row.encrypted_data
     assert b"Kashyapa" not in row.encrypted_data
 
@@ -287,7 +326,11 @@ async def test_vault_access_is_logged(session: AsyncSession) -> None:
     await svc.list_family_members(uid)
     await session.flush()
 
-    log = (await session.execute(select(VaultAccessLog).where(VaultAccessLog.user_id == uid))).scalars().all()
+    log = (
+        (await session.execute(select(VaultAccessLog).where(VaultAccessLog.user_id == uid)))
+        .scalars()
+        .all()
+    )
     actions = [(entry.action, entry.target_type) for entry in log]
 
     assert ("create", "birth_profile") in actions
@@ -319,14 +362,25 @@ async def test_user_row_never_carries_birth_fields(session: AsyncSession) -> Non
 # Account lifecycle: deletion & export
 # ──────────────────────────────────────────────────────────────────────────
 
+
 async def test_account_deletion_removes_user_and_vault_data(session: AsyncSession) -> None:
     svc = _service(session)
-    result = await svc.sign_up_with_password(email="bye@example.com", phone=None, password="pw", display_name="Bye")
+    result = await svc.sign_up_with_password(
+        email="bye@example.com", phone=None, password="pw", display_name="Bye"
+    )
     await session.flush()
     uid = result.user.id
 
-    await svc.add_location(uid, label="Home", lat=1.0, lon=1.0, tz="Asia/Kolkata",
-                           dst_rule="iana", is_favourite=False, is_travel_mode=False)
+    await svc.add_location(
+        uid,
+        label="Home",
+        lat=1.0,
+        lon=1.0,
+        tz="Asia/Kolkata",
+        dst_rule="iana",
+        is_favourite=False,
+        is_travel_mode=False,
+    )
     await svc.set_birth_profile(uid, {"date": "1990-01-01"})
     await svc.add_family_member(uid, "Sister", {"gotra": "Vashishta"})
     await session.flush()
@@ -335,9 +389,15 @@ async def test_account_deletion_removes_user_and_vault_data(session: AsyncSessio
     await session.commit()
 
     assert (await session.get(User, uid)) is None
-    assert (await session.execute(select(Location).where(Location.user_id == uid))).scalars().all() == []
-    assert (await session.execute(select(BirthProfile).where(BirthProfile.user_id == uid))).scalar_one_or_none() is None
-    assert (await session.execute(select(FamilyMember).where(FamilyMember.user_id == uid))).scalars().all() == []
+    assert (
+        await session.execute(select(Location).where(Location.user_id == uid))
+    ).scalars().all() == []
+    assert (
+        await session.execute(select(BirthProfile).where(BirthProfile.user_id == uid))
+    ).scalar_one_or_none() is None
+    assert (
+        await session.execute(select(FamilyMember).where(FamilyMember.user_id == uid))
+    ).scalars().all() == []
 
     with pytest.raises(NotFoundError):
         await svc.get_user(uid)
@@ -354,18 +414,32 @@ async def test_account_deletion_is_audited(session: AsyncSession) -> None:
     await svc.delete_account(uid)
     await session.commit()
 
-    entries = (await session.execute(select(AccountAuditLog).where(AccountAuditLog.user_id == uid))).scalars().all()
+    entries = (
+        (await session.execute(select(AccountAuditLog).where(AccountAuditLog.user_id == uid)))
+        .scalars()
+        .all()
+    )
     assert any(e.action == "account_deleted" for e in entries)
 
 
 async def test_data_export_produces_complete_archive(session: AsyncSession) -> None:
     svc = _service(session)
-    result = await svc.sign_up_with_password(email="export@example.com", phone=None, password="pw", display_name="Ex")
+    result = await svc.sign_up_with_password(
+        email="export@example.com", phone=None, password="pw", display_name="Ex"
+    )
     await session.flush()
     uid = result.user.id
 
-    await svc.add_location(uid, label="Office", lat=2.0, lon=2.0, tz="Asia/Dubai",
-                           dst_rule="iana", is_favourite=True, is_travel_mode=False)
+    await svc.add_location(
+        uid,
+        label="Office",
+        lat=2.0,
+        lon=2.0,
+        tz="Asia/Dubai",
+        dst_rule="iana",
+        is_favourite=True,
+        is_travel_mode=False,
+    )
     await svc.set_birth_profile(uid, {"date": "1985-09-09", "place": "Dubai"})
     await svc.add_family_member(uid, "Brother", {"gotra": "Atri"})
     await session.flush()
@@ -380,7 +454,12 @@ async def test_data_export_produces_complete_archive(session: AsyncSession) -> N
     assert archive["vault"]["family_members"][0]["gotra"] == "Atri"
 
     from api.users.models import AccountAuditLog
-    entries = (await session.execute(select(AccountAuditLog).where(AccountAuditLog.user_id == uid))).scalars().all()
+
+    entries = (
+        (await session.execute(select(AccountAuditLog).where(AccountAuditLog.user_id == uid)))
+        .scalars()
+        .all()
+    )
     assert any(e.action == "data_exported" for e in entries)
 
 

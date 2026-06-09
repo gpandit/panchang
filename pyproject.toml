@@ -24,7 +24,12 @@ select = [
     "RUF", # ruff-specific rules
 ]
 ignore = [
-    "E501", # line-too-long (handled by formatter)
+    "E501",   # line-too-long (handled by formatter)
+    "B008",   # FastAPI Depends() in argument defaults is intentional
+    "N812",   # lowercase module imported as non-lowercase alias (e.g. constants as C)
+    "N818",   # exception name without Error suffix (pre-existing in oauth module)
+    "RUF002", # ambiguous Unicode in docstrings (intentional in panchang math notation)
+    "RUF003", # ambiguous Unicode in comments (intentional in panchang math notation)
 ]
 
 [tool.ruff.lint.isort]
@@ -51,10 +56,16 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
-pythonpath = ["services/panchang/src"]
+pythonpath = ["services/panchang/src", "services/api/src", "services/festivals/src"]
+addopts = "--import-mode=importlib"
+norecursedirs = [".venv", "node_modules", ".git", "__pycache__"]
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
     "pytest-asyncio>=1.4.0",
+    "aiosqlite>=0.20",
+    "httpx>=0.28",
+    "ruff>=0.9",
+    "mypy>=1.14",
 ]

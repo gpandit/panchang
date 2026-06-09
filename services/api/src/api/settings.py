@@ -25,13 +25,13 @@ class Settings(BaseSettings):
     # ── Object Storage (S3-compatible / MinIO in dev) ─────────────────────────
     s3_endpoint_url: str = "http://localhost:9000"
     s3_access_key: str = "minioadmin"
-    s3_secret_key: str = "minioadmin"  # noqa: S105 — dev default, not a real secret
+    s3_secret_key: str = "minioadmin"
     s3_bucket: str = "pandit-dev"
 
     # ── Auth ──────────────────────────────────────────────────────────────────
     # IMPORTANT: set a strong random value in staging/prod via the managed secret store.
     # See CONTRIBUTING.md §4 for the secrets management strategy.
-    secret_key: str = "change-me-in-production-use-managed-secret-store"  # noqa: S105
+    secret_key: str = "change-me-in-production-use-managed-secret-store"
 
     # ── Downstream services ───────────────────────────────────────────────────
     panchang_service_url: str = "http://localhost:8001"
@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     # Fernet key protecting birth/family data at rest. MUST come from the
     # managed secret store in staging/prod — never commit a real value.
     # Generate one with `VaultCipher.generate_key()`.
-    vault_encryption_key: str = "x6n6F8h6genBJ8qfWZHlA0sX2DhniGtY1k1MfRwGVC0="  # noqa: S105 — dev-only placeholder
+    vault_encryption_key: str = "x6n6F8h6genBJ8qfWZHlA0sX2DhniGtY1k1MfRwGVC0="
 
     # ── Users module: OAuth client ids (set via secret store) ────────────────
     google_oauth_client_id: str = ""

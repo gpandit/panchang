@@ -14,7 +14,7 @@ def jd_to_local_datetime(jd_ut: float, tz: str) -> datetime:
     y, m, d, h = swe.revjul(jd_ut)
     hour = int(h)
     minute = int((h - hour) * 60)
-    second = int(round((((h - hour) * 60) - minute) * 60))
+    second = round((((h - hour) * 60) - minute) * 60)
     if second == 60:
         second = 0
         minute += 1

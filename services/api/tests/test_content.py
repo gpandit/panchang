@@ -8,13 +8,13 @@ from __future__ import annotations
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from api.content.db import init_models, make_engine, make_session_factory
+from api.content.db import init_models, make_engine
 from api.content.models import ContentStatus
 from api.content.schemas import ContentCreateRequest, ContentUpdateRequest, FlagRequest
 from api.content.service import ContentError, ContentService
 
-
 # ── Fixtures ───────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 async def session_factory() -> async_sessionmaker[AsyncSession]:
@@ -34,27 +34,28 @@ def _svc(session: AsyncSession) -> ContentService:
 
 
 def _festival_req(**overrides) -> ContentCreateRequest:
-    defaults = dict(
-        slug="diwali-hi",
-        content_type="festival",
-        locale="hi",
-        region_tags=["north", "gujarat"],
-        festival_rule_id="rule-diwali-001",
-        body={
+    defaults = {
+        "slug": "diwali-hi",
+        "content_type": "festival",
+        "locale": "hi",
+        "region_tags": ["north", "gujarat"],
+        "festival_rule_id": "rule-diwali-001",
+        "body": {
             "title": "दीपावली",
             "subtitle": "रोशनी का पर्व",
             "body": "दीपावली हिंदू धर्म का प्रमुख त्यौहार है।",
             "puja_vidhi": "लक्ष्मी पूजन विधि...",
             "katha": "प्राचीन कथा...",
         },
-        source_attribution="Traditional sources",
-        author_id="editor-001",
-    )
+        "source_attribution": "Traditional sources",
+        "author_id": "editor-001",
+    }
     defaults.update(overrides)
     return ContentCreateRequest(**defaults)
 
 
 # ── Create → review → publish flow ────────────────────────────────────────────
+
 
 async def test_create_draft(session: AsyncSession) -> None:
     svc = _svc(session)
@@ -115,10 +116,13 @@ async def test_version_history_retained_after_republish(session: AsyncSession) -
 
     # Update body and re-publish.
     await svc.flag(item.id, FlagRequest(reason="Body needs correction"))
-    await svc.update_draft(item.id, ContentUpdateRequest(
-        body={"title": "दीपावली — सुधारित", "body": "सुधारित सामग्री"},
-        source_attribution="Corrected by editor",
-    ))
+    await svc.update_draft(
+        item.id,
+        ContentUpdateRequest(
+            body={"title": "दीपावली — सुधारित", "body": "सुधारित सामग्री"},
+            source_attribution="Corrected by editor",
+        ),
+    )
     _, ver2 = await svc.publish(item.id)
     await session.commit()
 
@@ -130,6 +134,7 @@ async def test_version_history_retained_after_republish(session: AsyncSession) -
 
 
 # ── Locale / region filtering ─────────────────────────────────────────────────
+
 
 async def test_locale_filtering(session: AsyncSession) -> None:
     svc = _svc(session)
@@ -185,6 +190,7 @@ async def test_festival_rule_id_filtering(session: AsyncSession) -> None:
 
 # ── Flag / correction hook ────────────────────────────────────────────────────
 
+
 async def test_flag_transitions_to_in_review(session: AsyncSession) -> None:
     svc = _svc(session)
     item = await svc.create_draft(_festival_req())
@@ -192,7 +198,9 @@ async def test_flag_transitions_to_in_review(session: AsyncSession) -> None:
     await svc.publish(item.id)
     await session.commit()
 
-    flag = await svc.flag(item.id, FlagRequest(reason="Incorrect puja vidhi", reporter_id="user-999"))
+    flag = await svc.flag(
+        item.id, FlagRequest(reason="Incorrect puja vidhi", reporter_id="user-999")
+    )
     await session.commit()
 
     assert flag.reason == "Incorrect puja vidhi"
@@ -233,6 +241,7 @@ async def test_flag_resolved_on_republish(session: AsyncSession) -> None:
 
 
 # ── Invalid transitions ────────────────────────────────────────────────────────
+
 
 async def test_cannot_publish_draft_directly(session: AsyncSession) -> None:
     svc = _svc(session)
