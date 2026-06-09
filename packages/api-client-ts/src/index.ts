@@ -43,6 +43,15 @@ export type {
   // PDF
   PdfJobIn,
   PdfJobOut,
+  // Today / Daily view (Step 3.2)
+  TimeFormat,
+  MuhuratWindow,
+  Festival,
+  Advisory,
+  DailyHighlight,
+  DharmaCard,
+  PanchangElement,
+  DailyPanchangView,
 } from "./types.js";
 
 export { PanditApiClient } from "./client.js";
