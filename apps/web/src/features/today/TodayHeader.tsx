@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -22,7 +23,7 @@ export function TodayHeader({
   onNextDay,
   canGoForward = true,
   canGoBack = true,
-}: TodayHeaderProps): React.JSX.Element {
+}: TodayHeaderProps): JSX.Element {
   return (
     <header className="flex flex-col gap-xs px-md py-sm" aria-label="Date and location">
       {/* Location row */}

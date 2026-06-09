@@ -6,8 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-
 # ── Festivals ─────────────────────────────────────────────────────────────────
+
 
 class FestivalOut(BaseModel):
     id: str
@@ -21,12 +21,14 @@ class FestivalOut(BaseModel):
 
 class FestivalDetailOut(FestivalOut):
     """Full festival record including CMS prose — returned by the detail endpoint."""
+
     body: str | None = None
     puja: str | None = None
     katha: str | None = None
 
 
 # ── Notes / Bookmarks ─────────────────────────────────────────────────────────
+
 
 class NoteIn(BaseModel):
     date: str  # "YYYY-MM-DD" the Panchang day this note is anchored to
@@ -41,6 +43,7 @@ class NoteOut(NoteIn):
 
 
 # ── Reminders ─────────────────────────────────────────────────────────────────
+
 
 class ReminderIn(BaseModel):
     title: str
@@ -58,6 +61,7 @@ class ReminderOut(ReminderIn):
 
 # ── Subscriptions ─────────────────────────────────────────────────────────────
 
+
 class SubscriptionOut(BaseModel):
     user_id: str
     tier: str  # "basic" | "silver" | "gold"
@@ -66,6 +70,7 @@ class SubscriptionOut(BaseModel):
 
 
 # ── PDF Jobs ──────────────────────────────────────────────────────────────────
+
 
 class PdfJobIn(BaseModel):
     year: int

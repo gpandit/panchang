@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -11,13 +12,9 @@ interface ReminderListProps {
   onDelete: (id: string) => Promise<void>;
 }
 
-export function ReminderList({ reminders, date, onDelete }: ReminderListProps): React.JSX.Element {
+export function ReminderList({ reminders, date, onDelete }: ReminderListProps): JSX.Element {
   if (reminders.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground py-xs">
-        No reminders for this day yet.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground py-xs">No reminders for this day yet.</p>;
   }
 
   return (

@@ -117,7 +117,7 @@ class DailyPanchangOut(BaseModel):
 
 class MonthCalendarRequest(BaseModel):
     year: int
-    month: int  # 1–12
+    month: int  # 1-12
     lat: float
     lon: float
     tz: str

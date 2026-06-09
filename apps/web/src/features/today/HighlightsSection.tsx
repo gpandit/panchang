@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -7,7 +8,7 @@ interface HighlightsSectionProps {
   highlights: DailyHighlight[];
 }
 
-export function HighlightsSection({ highlights }: HighlightsSectionProps): React.JSX.Element | null {
+export function HighlightsSection({ highlights }: HighlightsSectionProps): JSX.Element | null {
   if (highlights.length === 0) return null;
 
   return (
@@ -24,9 +25,7 @@ export function HighlightsSection({ highlights }: HighlightsSectionProps): React
             <span className="text-sm text-muted-foreground">{h.label}</span>
             <div className="flex flex-col items-end gap-xs">
               <span className="text-sm font-medium">{h.value}</span>
-              {h.detail ? (
-                <span className="text-xs text-muted-foreground">{h.detail}</span>
-              ) : null}
+              {h.detail ? <span className="text-xs text-muted-foreground">{h.detail}</span> : null}
             </div>
           </li>
         ))}

@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { Metadata } from "next";
 import { CalendarScreen } from "@/features/calendar/CalendarScreen";
 import { fetchMonthCalendar } from "@/features/calendar/api";
@@ -26,7 +27,9 @@ export async function generateMetadata({ searchParams }: CalendarPageProps): Pro
   };
 }
 
-export default async function CalendarPage({ searchParams }: CalendarPageProps): Promise<React.JSX.Element> {
+export default async function CalendarPage({
+  searchParams,
+}: CalendarPageProps): Promise<JSX.Element> {
   const params = await searchParams;
 
   const today = new Date();
@@ -39,8 +42,9 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps):
 
   // SSR-prefetch the current month so the page arrives with grid data.
   // On error the client will re-fetch via useMonthCalendar.
-  await fetchMonthCalendar({ year, month, lat: latitude, lon: longitude, tz: timezone })
-    .catch(() => ({ data: null, fromCache: false }));
+  await fetchMonthCalendar({ year, month, lat: latitude, lon: longitude, tz: timezone }).catch(
+    () => ({ data: null, fromCache: false }),
+  );
 
   return (
     <CalendarScreen

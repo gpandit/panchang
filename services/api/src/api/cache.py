@@ -70,6 +70,8 @@ def get_panchang_cache() -> LRUCache:
     return _panchang_cache
 
 
-def panchang_cache_key(date: str, lat: float, lon: float, tz: str, ayanamsa: str, month_scheme: str) -> str:
+def panchang_cache_key(
+    date: str, lat: float, lon: float, tz: str, ayanamsa: str, month_scheme: str
+) -> str:
     # Round lat/lon to 4 decimal places (~11 m grid) for cache key stability
     return f"panchang:{date}:{lat:.4f}:{lon:.4f}:{tz}:{ayanamsa}:{month_scheme}"

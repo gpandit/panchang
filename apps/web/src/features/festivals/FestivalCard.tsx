@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -8,7 +9,7 @@ interface FestivalCardProps {
   festival: FestivalOut;
 }
 
-export function FestivalCard({ festival }: FestivalCardProps): React.JSX.Element {
+export function FestivalCard({ festival }: FestivalCardProps): JSX.Element {
   return (
     <Link
       href={`/festivals/${encodeURIComponent(festival.id)}`}

@@ -3,7 +3,7 @@
  * with workflow action buttons and a link to the editor.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { content as api } from "@/api/client";
 import type { FestivalRecord } from "@/api/client";
@@ -19,7 +19,8 @@ export function ContentPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const canEdit = adminRole === "editor" || adminRole === "publisher" || adminRole === "super_admin";
+  const canEdit =
+    adminRole === "editor" || adminRole === "publisher" || adminRole === "super_admin";
   const canPublish = adminRole === "publisher" || adminRole === "super_admin";
 
   const load = useCallback(async () => {
@@ -34,7 +35,9 @@ export function ContentPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function doAction(action: () => Promise<FestivalRecord>) {
     setActionError(null);
@@ -47,7 +50,12 @@ export function ContentPage() {
   }
 
   if (loading) return <p aria-live="polite">Loading…</p>;
-  if (error) return <p role="alert" style={{ color: tokens.color.danger }}>{error}</p>;
+  if (error)
+    return (
+      <p role="alert" style={{ color: tokens.color.danger }}>
+        {error}
+      </p>
+    );
 
   return (
     <div>
@@ -86,9 +94,7 @@ export function ContentPage() {
         </p>
       )}
 
-      {records.length === 0 && (
-        <p style={{ color: tokens.color.textMuted }}>No records yet.</p>
-      )}
+      {records.length === 0 && <p style={{ color: tokens.color.textMuted }}>No records yet.</p>}
 
       <table
         style={{
@@ -119,10 +125,7 @@ export function ContentPage() {
         </thead>
         <tbody>
           {records.map((r) => (
-            <tr
-              key={r.id}
-              style={{ borderBottom: `1px solid ${tokens.color.border}` }}
-            >
+            <tr key={r.id} style={{ borderBottom: `1px solid ${tokens.color.border}` }}>
               <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>
                 <button
                   onClick={() => navigate(`/content/${r.id}`)}
@@ -139,7 +142,13 @@ export function ContentPage() {
                   {r.current.name}
                 </button>
               </td>
-              <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, color: tokens.color.textMuted, fontFamily: "monospace" }}>
+              <td
+                style={{
+                  padding: `${tokens.space.sm} ${tokens.space.md}`,
+                  color: tokens.color.textMuted,
+                  fontFamily: "monospace",
+                }}
+              >
                 {r.current.slug}
               </td>
               <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>
@@ -148,10 +157,23 @@ export function ContentPage() {
               <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>
                 <StatusBadge status={r.status} />
               </td>
-              <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, color: tokens.color.textMuted, fontSize: tokens.font.sizeSm }}>
+              <td
+                style={{
+                  padding: `${tokens.space.sm} ${tokens.space.md}`,
+                  color: tokens.color.textMuted,
+                  fontSize: tokens.font.sizeSm,
+                }}
+              >
                 {new Date(r.updated_at).toLocaleDateString()}
               </td>
-              <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, display: "flex", gap: tokens.space.xs, flexWrap: "wrap" }}>
+              <td
+                style={{
+                  padding: `${tokens.space.sm} ${tokens.space.md}`,
+                  display: "flex",
+                  gap: tokens.space.xs,
+                  flexWrap: "wrap",
+                }}
+              >
                 {canEdit && r.status === "draft" && (
                   <ActionBtn
                     label="Submit for review"
@@ -200,8 +222,8 @@ function ActionBtn({
     variant === "success"
       ? tokens.color.success
       : variant === "danger"
-      ? tokens.color.danger
-      : tokens.color.primary;
+        ? tokens.color.danger
+        : tokens.color.primary;
 
   return (
     <button

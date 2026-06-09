@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { ReactNode } from "react";
 
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
@@ -24,9 +25,8 @@ export function Nav({
   activeHref,
   orientation = "horizontal",
   className = "",
-}: NavProps): React.JSX.Element {
-  const listClasses =
-    orientation === "vertical" ? "flex flex-col gap-xs" : "flex flex-row gap-md";
+}: NavProps): JSX.Element {
+  const listClasses = orientation === "vertical" ? "flex flex-col gap-xs" : "flex flex-row gap-md";
 
   return (
     <nav

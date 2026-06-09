@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -12,8 +13,18 @@ import { MonthView } from "./MonthView";
 import { DayView } from "./DayView";
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export interface CalendarScreenProps {
@@ -35,7 +46,7 @@ export function CalendarScreen({
   initialYear,
   initialMonth,
   token,
-}: CalendarScreenProps): React.JSX.Element {
+}: CalendarScreenProps): JSX.Element {
   const today = new Date();
   const [year, setYear] = useState(initialYear ?? today.getFullYear());
   const [month, setMonth] = useState(initialMonth ?? today.getMonth() + 1);
@@ -55,14 +66,18 @@ export function CalendarScreen({
 
   // ── Navigation ───────────────────────────────────────────────────────────
   function prevMonth(): void {
-    if (month === 1) { setYear((y) => y - 1); setMonth(12); }
-    else setMonth((m) => m - 1);
+    if (month === 1) {
+      setYear((y) => y - 1);
+      setMonth(12);
+    } else setMonth((m) => m - 1);
     setSelectedDate(null);
   }
 
   function nextMonth(): void {
-    if (month === 12) { setYear((y) => y + 1); setMonth(1); }
-    else setMonth((m) => m + 1);
+    if (month === 12) {
+      setYear((y) => y + 1);
+      setMonth(1);
+    } else setMonth((m) => m + 1);
     setSelectedDate(null);
   }
 
@@ -109,7 +124,7 @@ export function CalendarScreen({
       <MonthView
         cells={cells}
         selectedDate={selectedDate}
-        onSelectDate={(date) => setSelectedDate((prev) => prev === date ? null : date)}
+        onSelectDate={(date) => setSelectedDate((prev) => (prev === date ? null : date))}
         monthLabel={monthLabel}
         loadState={loadState}
         error={error}
@@ -123,11 +138,21 @@ export function CalendarScreen({
           notes={notes}
           reminders={reminders}
           onClose={() => setSelectedDate(null)}
-          onCreateNote={async (noteIn) => { await createNote(noteIn); }}
-          onUpdateNote={async (id, noteIn) => { await updateNote(id, noteIn); }}
-          onDeleteNote={async (id) => { await deleteNote(id); }}
-          onCreateReminder={async (r) => { await createReminder(r); }}
-          onDeleteReminder={async (id) => { await deleteReminder(id); }}
+          onCreateNote={async (noteIn) => {
+            await createNote(noteIn);
+          }}
+          onUpdateNote={async (id, noteIn) => {
+            await updateNote(id, noteIn);
+          }}
+          onDeleteNote={async (id) => {
+            await deleteNote(id);
+          }}
+          onCreateReminder={async (r) => {
+            await createReminder(r);
+          }}
+          onDeleteReminder={async (id) => {
+            await deleteReminder(id);
+          }}
         />
       )}
     </main>

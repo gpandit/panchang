@@ -43,6 +43,16 @@ warn_return_any = true
 warn_unused_configs = true
 exclude = ["tests/"]
 
+[[tool.mypy.overrides]]
+module = ["swisseph", "boto3", "botocore.*", "fpdf"]
+ignore_missing_imports = true
+
+# panchang engine files call swisseph C extension directly; the extension
+# has no stubs and returns untyped values — suppress errors in these modules.
+[[tool.mypy.overrides]]
+module = ["panchang.engine", "panchang.compute", "panchang.timeforms"]
+ignore_errors = true
+
 # ─── Pytest ───────────────────────────────────────────────────────────────────
 
 [tool.pytest.ini_options]

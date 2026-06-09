@@ -34,13 +34,13 @@ def decode_token(token: str) -> TokenClaims:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from None
     except (DecodeError, InvalidTokenError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token: {exc}",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from exc
 
     tier_raw = payload.get("tier", "basic")
     try:

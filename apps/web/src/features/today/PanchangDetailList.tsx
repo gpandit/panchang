@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -22,10 +23,7 @@ interface PanchangDetailListProps {
   timeFormat: TimeFormat;
 }
 
-export function PanchangDetailList({
-  elements,
-  timeFormat,
-}: PanchangDetailListProps): React.JSX.Element {
+export function PanchangDetailList({ elements, timeFormat }: PanchangDetailListProps): JSX.Element {
   const [activeElement, setActiveElement] = useState<PanchangElement | null>(null);
 
   const groups = GROUP_ORDER.map((group) => ({
@@ -65,7 +63,7 @@ interface PanchangRowProps {
   onTap: () => void;
 }
 
-function PanchangRow({ element, timeFormat, onTap }: PanchangRowProps): React.JSX.Element {
+function PanchangRow({ element, timeFormat, onTap }: PanchangRowProps): JSX.Element {
   // secondaryValue may be a raw ISO time (prefixed "ends:") or plain text
   const secondary = element.secondaryValue
     ? resolveSecondary(element.secondaryValue, timeFormat)

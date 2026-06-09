@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -8,10 +9,7 @@ interface FestivalShareBarProps {
   festivalName: string;
 }
 
-export function FestivalShareBar({
-  festivalId,
-  festivalName,
-}: FestivalShareBarProps): React.JSX.Element {
+export function FestivalShareBar({ festivalId, festivalName }: FestivalShareBarProps): JSX.Element {
   async function handleShare(): Promise<void> {
     const url = `${window.location.origin}/festivals/${encodeURIComponent(festivalId)}`;
     const text = `${festivalName} — The Pandit`;

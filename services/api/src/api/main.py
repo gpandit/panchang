@@ -16,7 +16,15 @@ from api.models.common import ApiError, ApiErrorResponse
 from api.routers.admin import content as admin_content
 from api.routers.admin import flags as admin_flags
 from api.routers.admin import reporting as admin_reporting
-from api.routers.v1 import festivals, notes, panchang, pdf, profile, reminders, subscriptions
+from api.routers.v1 import (
+    festivals,
+    notes,
+    panchang,
+    pdf,
+    profile,
+    reminders,
+    subscriptions,
+)
 from api.settings import get_settings
 
 settings = get_settings()
@@ -75,6 +83,7 @@ app.include_router(admin_reporting.router, prefix=ADMIN)
 
 # ── Global exception handlers ─────────────────────────────────────────────────
 
+
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
@@ -96,6 +105,7 @@ async def method_not_allowed_handler(request: Request, exc: Exception) -> JSONRe
 
 
 # ── Health / meta ─────────────────────────────────────────────────────────────
+
 
 @app.get("/health", tags=["meta"], include_in_schema=False)
 async def health_check() -> dict[str, str]:

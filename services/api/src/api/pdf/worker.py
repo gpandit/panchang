@@ -24,7 +24,8 @@ from api.pdf.tokens import PDF_TOKENS, PdfTokens
 # fpdf2 import — optional so the module can be imported in environments that
 # have not installed the pdf extra yet (type-checking passes without it).
 try:
-    from fpdf import FPDF  # type: ignore[import-untyped]
+    from fpdf import FPDF
+
     _FPDF_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _FPDF_AVAILABLE = False
@@ -60,9 +61,7 @@ def render_calendar_pdf(job: CalendarJob, tokens: PdfTokens = PDF_TOKENS) -> byt
     *tokens*.
     """
     if not _FPDF_AVAILABLE:
-        raise RuntimeError(
-            "fpdf2 is not installed.  Add 'fpdf2' to pyproject.toml dependencies."
-        )
+        raise RuntimeError("fpdf2 is not installed.  Add 'fpdf2' to pyproject.toml dependencies.")
 
     pdf = FPDF(orientation="L", unit="mm", format=(tokens.page_height_mm, tokens.page_width_mm))
     pdf.set_auto_page_break(auto=False)
@@ -142,12 +141,18 @@ def render_calendar_pdf(job: CalendarJob, tokens: PdfTokens = PDF_TOKENS) -> byt
                     pdf.set_font("Helvetica", "", tokens.festival_size)
                     pdf.set_xy(cx + 1, cy + tokens.day_number_size * 0.45 + 2)
                     festival_text = festivals[0][:14]  # truncate to fit cell
-                    pdf.cell(cell_w - 2, tokens.festival_size * 0.45, festival_text, align="L")
+                    pdf.cell(
+                        cell_w - 2,
+                        tokens.festival_size * 0.45,
+                        festival_text,
+                        align="L",
+                    )
 
     return bytes(pdf.output())
 
 
 # ── Convenience wrapper called by the queue processor ────────────────────────
+
 
 def run_job(job: CalendarJob) -> bytes:
     """Entry point for the background worker.  Returns raw PDF bytes."""

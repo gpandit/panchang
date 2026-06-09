@@ -4,6 +4,7 @@ Covers: golden-value shape/key-values, determinism, and the three time forms
 (12h / 24h / 24-plus, including a past-midnight case).
 """
 
+import itertools
 from datetime import date
 
 import pytest
@@ -11,7 +12,7 @@ import pytest
 from panchang.compute import compute_panchang
 from panchang.models import PanchangRequest
 
-DELHI = dict(lat=28.6139, lon=77.2090, tz="Asia/Kolkata")
+DELHI = {"lat": 28.6139, "lon": 77.2090, "tz": "Asia/Kolkata"}
 
 
 def _request(d: date) -> PanchangRequest:
@@ -21,6 +22,7 @@ def _request(d: date) -> PanchangRequest:
 # ──────────────────────────────────────────────────────────────────────────
 # Golden-value shape & key values
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def test_result_shape_is_complete() -> None:
     result = compute_panchang(_request(date(2024, 1, 15)))
@@ -67,7 +69,7 @@ def test_anga_spans_cover_the_full_day_contiguously() -> None:
         assert spans[0].start is None or spans[0].start is not None  # first may be clipped
         assert spans[-1].end is None or spans[-1].end is not None
         # Internal boundaries must chain start[i+1] == end[i]
-        for prev, nxt in zip(spans, spans[1:]):
+        for prev, nxt in itertools.pairwise(spans):
             assert prev.end is not None
             assert nxt.start is not None
             assert prev.end.iso == nxt.start.iso
@@ -76,6 +78,7 @@ def test_anga_spans_cover_the_full_day_contiguously() -> None:
 # ──────────────────────────────────────────────────────────────────────────
 # Determinism
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def test_determinism_same_input_same_output() -> None:
     request = _request(date(2024, 1, 15))
@@ -97,11 +100,12 @@ def test_determinism_across_locations_and_dates() -> None:
 # Time forms — 12h / 24h / 24-plus, including past-midnight
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def test_time_forms_are_consistent_for_daytime_event() -> None:
     result = compute_panchang(_request(date(2024, 1, 15)))
     sunrise = result.day_events.sunrise
 
-    h, m, s = (int(x) for x in sunrise.hour_24.split(":"))
+    h, _m, _s = (int(x) for x in sunrise.hour_24.split(":"))
     assert 0 <= h <= 23
 
     # 12h form round-trips to the same hour/minute.

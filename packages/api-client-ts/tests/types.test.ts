@@ -20,7 +20,7 @@ describe("@pandit/api-client-ts type exports", () => {
     const day: Partial<DailyPanchangOut> = {
       date: "2025-04-14",
       lat: 28.6139,
-      lon: 77.2090,
+      lon: 77.209,
       tz: "Asia/Kolkata",
       ayanamsa: "lahiri",
       month_scheme: "amanta",

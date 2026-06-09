@@ -32,7 +32,13 @@ interface MonthCacheEntry {
   storedAt: number;
 }
 
-function monthCacheKey(year: number, month: number, lat: number, lon: number, scheme: string): string {
+function monthCacheKey(
+  year: number,
+  month: number,
+  lat: number,
+  lon: number,
+  scheme: string,
+): string {
   const gLat = Math.round(lat * 100) / 100;
   const gLon = Math.round(lon * 100) / 100;
   return `${MONTH_CACHE_PREFIX}${year}-${String(month).padStart(2, "0")}:${gLat},${gLon}:${scheme}`;
@@ -57,8 +63,13 @@ function readMonthCache(key: string): CalendarMonthData | null {
 function writeMonthCache(key: string, data: CalendarMonthData): void {
   try {
     if (typeof localStorage === "undefined") return;
-    localStorage.setItem(key, JSON.stringify({ data, storedAt: Date.now() } satisfies MonthCacheEntry));
-  } catch { /* quota exceeded */ }
+    localStorage.setItem(
+      key,
+      JSON.stringify({ data, storedAt: Date.now() } satisfies MonthCacheEntry),
+    );
+  } catch {
+    /* quota exceeded */
+  }
 }
 
 // ─── Month calendar fetch ─────────────────────────────────────────────────────
@@ -156,7 +167,9 @@ export function writeNotesStore(notes: LocalNote[]): void {
   try {
     if (typeof localStorage === "undefined") return;
     localStorage.setItem(NOTES_STORE_KEY, JSON.stringify(notes));
-  } catch { /* quota exceeded */ }
+  } catch {
+    /* quota exceeded */
+  }
 }
 
 // ─── Reminders local store ────────────────────────────────────────────────────
@@ -177,7 +190,9 @@ export function writeRemindersStore(reminders: LocalReminder[]): void {
   try {
     if (typeof localStorage === "undefined") return;
     localStorage.setItem(REMINDERS_STORE_KEY, JSON.stringify(reminders));
-  } catch { /* quota exceeded */ }
+  } catch {
+    /* quota exceeded */
+  }
 }
 
 // ─── Sync queue ───────────────────────────────────────────────────────────────
@@ -199,7 +214,9 @@ function writeSyncQueue(queue: SyncOp[]): void {
     if (typeof localStorage === "undefined") return;
     if (queue.length === 0) localStorage.removeItem(SYNC_QUEUE_KEY);
     else localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
-  } catch { /* quota */ }
+  } catch {
+    /* quota */
+  }
 }
 
 function enqueueSyncOp(op: SyncOp): void {
@@ -248,7 +265,9 @@ export async function syncNotesFromAPI(token?: string): Promise<void> {
       ...pending,
     ]);
     writeNotesStore(merged);
-  } catch { /* offline — keep local store as-is */ }
+  } catch {
+    /* offline — keep local store as-is */
+  }
 }
 
 /**
@@ -259,8 +278,13 @@ export async function createNote(noteIn: NoteInput, token?: string): Promise<Loc
   const tempId = makeLocalId();
   const now = new Date().toISOString();
   const local: LocalNote = {
-    id: tempId, date: noteIn.date, body: noteIn.body, tags: noteIn.tags,
-    created_at: now, updated_at: now, _pending: true,
+    id: tempId,
+    date: noteIn.date,
+    body: noteIn.body,
+    tags: noteIn.tags,
+    created_at: now,
+    updated_at: now,
+    _pending: true,
   };
 
   writeNotesStore([...readNotesStore(), local]);
@@ -283,7 +307,11 @@ export async function createNote(noteIn: NoteInput, token?: string): Promise<Loc
 }
 
 /** Update a note. Optimistic + offline queue. */
-export async function updateNote(id: string, noteIn: NoteInput, token?: string): Promise<LocalNote> {
+export async function updateNote(
+  id: string,
+  noteIn: NoteInput,
+  token?: string,
+): Promise<LocalNote> {
   const now = new Date().toISOString();
   const store = readNotesStore();
   const existing = store.find((n) => n.id === id);
@@ -351,14 +379,23 @@ export async function syncRemindersFromAPI(token?: string): Promise<void> {
       ...pending,
     ]);
     writeRemindersStore(merged);
-  } catch { /* offline */ }
+  } catch {
+    /* offline */
+  }
 }
 
 /** Create a reminder. Optimistic + offline queue. */
-export async function createReminder(reminderIn: ReminderInput, token?: string): Promise<LocalReminder> {
+export async function createReminder(
+  reminderIn: ReminderInput,
+  token?: string,
+): Promise<LocalReminder> {
   const tempId = makeLocalId();
   const local: LocalReminder = {
-    id: tempId, ...reminderIn, next_fire_at: null, is_active: true, _pending: true,
+    id: tempId,
+    ...reminderIn,
+    next_fire_at: null,
+    is_active: true,
+    _pending: true,
   };
   writeRemindersStore([...readRemindersStore(), local]);
 
@@ -435,7 +472,10 @@ export async function flushSyncQueue(token?: string): Promise<void> {
         dequeueSyncOp(op.opId);
       } else if (op.type === "delete_note") {
         const { id } = op.payload as { id: string };
-        const res = await fetch(`${API_BASE}/v1/notes/${id}`, { method: "DELETE", headers: authHeaders(token) });
+        const res = await fetch(`${API_BASE}/v1/notes/${id}`, {
+          method: "DELETE",
+          headers: authHeaders(token),
+        });
         if (!res.ok) continue;
         dequeueSyncOp(op.opId);
       } else if (op.type === "create_reminder") {
@@ -452,11 +492,16 @@ export async function flushSyncQueue(token?: string): Promise<void> {
         dequeueSyncOp(op.opId);
       } else if (op.type === "delete_reminder") {
         const { id } = op.payload as { id: string };
-        const res = await fetch(`${API_BASE}/v1/reminders/${id}`, { method: "DELETE", headers: authHeaders(token) });
+        const res = await fetch(`${API_BASE}/v1/reminders/${id}`, {
+          method: "DELETE",
+          headers: authHeaders(token),
+        });
         if (!res.ok) continue;
         dequeueSyncOp(op.opId);
       }
-    } catch { /* leave in queue for next attempt */ }
+    } catch {
+      /* leave in queue for next attempt */
+    }
   }
 }
 

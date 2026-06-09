@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -9,7 +10,7 @@ interface MuhuratSectionProps {
   timeFormat: TimeFormat;
 }
 
-export function MuhuratSection({ muhurats, timeFormat }: MuhuratSectionProps): React.JSX.Element | null {
+export function MuhuratSection({ muhurats, timeFormat }: MuhuratSectionProps): JSX.Element | null {
   if (muhurats.length === 0) return null;
 
   return (

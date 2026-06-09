@@ -98,9 +98,7 @@ import Foundation
 /// Namespaced design tokens, mirroring packages/design-tokens/src/schema.ts.
 /// Native screens reference these by name — never hardcode visual values.
 public enum DesignTokens {
-${Object.keys(Object.fromEntries(byGroup))
-  .map(enumFor)
-  .join("\n")}
+${Object.keys(Object.fromEntries(byGroup)).map(enumFor).join("\n")}
 }
 `;
 }
@@ -112,7 +110,9 @@ function generateKotlin(entries: TokenEntry[]): string {
     byGroup.set(group, [...(byGroup.get(group) ?? []), e]);
   }
   const objectFor = (group: string) =>
-    `    object ${group.replaceAll(/^[a-z]/g, (c) => c.toUpperCase())} {\n${(byGroup.get(group) ?? [])
+    `    object ${group.replaceAll(/^[a-z]/g, (c) => c.toUpperCase())} {\n${(
+      byGroup.get(group) ?? []
+    )
       .map(
         (e) =>
           `        // TODO(design): placeholder. Token: "${e.name}"\n        const val ${camel(e.name.split(".").slice(1).join("-"))}: String = "${e.value}"`,
@@ -127,9 +127,7 @@ package com.pandit.designtokens
  * Compose theme wires MaterialTheme to these — never hardcode visual values.
  */
 object DesignTokens {
-${Object.keys(Object.fromEntries(byGroup))
-  .map(objectFor)
-  .join("\n")}
+${Object.keys(Object.fromEntries(byGroup)).map(objectFor).join("\n")}
 }
 `;
 }

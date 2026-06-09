@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -30,7 +31,7 @@ export function PdfCalendarPanel({
   lon,
   tz,
   token,
-}: PdfCalendarPanelProps): React.JSX.Element {
+}: PdfCalendarPanelProps): JSX.Element {
   const year = defaultYear ?? new Date().getFullYear();
   const [state, setState] = useState<PdfPanelState>(INITIAL_STATE);
 
@@ -44,9 +45,19 @@ export function PdfCalendarPanel({
 
       const done = await waitForPdfJob(job.job_id, token);
       if (done.status === "done" && done.download_url) {
-        setState({ status: "done", jobId: job.job_id, downloadUrl: done.download_url, error: null });
+        setState({
+          status: "done",
+          jobId: job.job_id,
+          downloadUrl: done.download_url,
+          error: null,
+        });
       } else {
-        setState({ status: "failed", jobId: job.job_id, downloadUrl: null, error: "Generation failed." });
+        setState({
+          status: "failed",
+          jobId: job.job_id,
+          downloadUrl: null,
+          error: "Generation failed.",
+        });
       }
     } catch (err) {
       setState({

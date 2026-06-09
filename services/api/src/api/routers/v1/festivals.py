@@ -21,8 +21,9 @@ from api.models.content import FestivalDetailOut, FestivalOut
 router = APIRouter(prefix="/festivals", tags=["festivals"])
 
 
-def _to_festival_out(f: object) -> FestivalOut:  # type: ignore[override]
+def _to_festival_out(f: object) -> FestivalOut:
     from api.cms.store import FestivalContent
+
     assert isinstance(f, FestivalContent)
     return FestivalOut(
         id=f.id,
@@ -37,6 +38,7 @@ def _to_festival_out(f: object) -> FestivalOut:  # type: ignore[override]
 
 def _to_detail_out(f: object) -> FestivalDetailOut:
     from api.cms.store import FestivalContent
+
     assert isinstance(f, FestivalContent)
     return FestivalDetailOut(
         id=f.id,
@@ -64,7 +66,7 @@ async def list_festivals_endpoint(
     locale: Annotated[str | None, Query(max_length=10)] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
-    _claims: Annotated[TokenClaims, Depends(require_auth)] = ...,
+    _claims: Annotated[TokenClaims, Depends(require_auth)] = ...,  # type: ignore[assignment]
 ) -> PaginatedResponse[FestivalOut]:
     _ = year  # date-based filtering wired in step 3.5 when rule engine is ready
     _ = month
@@ -90,7 +92,7 @@ async def list_festivals_endpoint(
 )
 async def get_festival_endpoint(
     festival_id: Annotated[str, Path(max_length=128)],
-    _claims: Annotated[TokenClaims, Depends(require_auth)] = ...,
+    _claims: Annotated[TokenClaims, Depends(require_auth)] = ...,  # type: ignore[assignment]
 ) -> ApiResponse[FestivalDetailOut]:
     festival = get_festival(festival_id, published_only=True)
     if festival is None:

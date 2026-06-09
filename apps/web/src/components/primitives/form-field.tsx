@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { ReactElement, ReactNode } from "react";
 import { cloneElement } from "react";
 
@@ -28,7 +29,7 @@ export function FormField({
   required = false,
   invalid = false,
   className = "",
-}: FormFieldProps): React.JSX.Element {
+}: FormFieldProps): JSX.Element {
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;

@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
@@ -35,7 +36,7 @@ const SIZE_CLASS: Record<CtaSize, string> = {
 const BASE_CLASS =
   "inline-flex items-center gap-sm rounded-md transition-colors duration-base disabled:opacity-50 disabled:pointer-events-none";
 
-export function Cta(props: CtaProps): React.JSX.Element {
+export function Cta(props: CtaProps): JSX.Element {
   const {
     as = "button",
     label,

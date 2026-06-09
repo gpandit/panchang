@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel
 
 
-class AdminRole(str, Enum):
+class AdminRole(StrEnum):
     """Ordered admin roles — viewer < editor < publisher < super_admin."""
 
     VIEWER = "viewer"
@@ -17,29 +17,34 @@ class AdminRole(str, Enum):
     PUBLISHER = "publisher"
     SUPER_ADMIN = "super_admin"
 
-    _ORDER = None  # set below
-
-    def meets(self, required: "AdminRole") -> bool:
-        order = [AdminRole.VIEWER, AdminRole.EDITOR, AdminRole.PUBLISHER, AdminRole.SUPER_ADMIN]
+    def meets(self, required: AdminRole) -> bool:
+        order = [
+            AdminRole.VIEWER,
+            AdminRole.EDITOR,
+            AdminRole.PUBLISHER,
+            AdminRole.SUPER_ADMIN,
+        ]
         return order.index(self) >= order.index(required)
 
 
 # ── Audit ──────────────────────────────────────────────────────────────────────
+
 
 class AuditEntry(BaseModel):
     id: str
     timestamp: datetime
     actor_id: str
     actor_email: str | None
-    action: str          # e.g. "content.publish", "content.delete", "flag.resolve"
-    resource_type: str   # e.g. "festival", "flag"
+    action: str  # e.g. "content.publish", "content.delete", "flag.resolve"
+    resource_type: str  # e.g. "festival", "flag"
     resource_id: str
     detail: dict[str, Any] = {}
 
 
 # ── Content workflow ───────────────────────────────────────────────────────────
 
-class ContentStatus(str, Enum):
+
+class ContentStatus(StrEnum):
     DRAFT = "draft"
     REVIEW = "review"
     PUBLISHED = "published"
@@ -79,7 +84,8 @@ class FestivalRecord(BaseModel):
 
 # ── Flag / review queue ────────────────────────────────────────────────────────
 
-class FlagStatus(str, Enum):
+
+class FlagStatus(StrEnum):
     OPEN = "open"
     IN_REVIEW = "in_review"
     RESOLVED = "resolved"
@@ -87,7 +93,7 @@ class FlagStatus(str, Enum):
 
 
 class FlagIn(BaseModel):
-    resource_type: str   # "festival" | "panchang_date" | "content"
+    resource_type: str  # "festival" | "panchang_date" | "content"
     resource_id: str
     reason: str
     details: str | None = None
@@ -108,20 +114,21 @@ class FlagRecord(BaseModel):
 
 
 class FlagResolve(BaseModel):
-    action: str          # "resolve" | "dismiss"
+    action: str  # "resolve" | "dismiss"
     resolution_note: str | None = None
 
 
 # ── Reporting ──────────────────────────────────────────────────────────────────
 
+
 class ReportRow(BaseModel):
-    date: str            # "YYYY-MM-DD"
+    date: str  # "YYYY-MM-DD"
     signups: int
     active_users: int
-    conversions: int     # free→paid upgrades
+    conversions: int  # free→paid upgrades
 
 
 class ReportOut(BaseModel):
-    period: str          # "last_7d" | "last_30d" | "last_90d"
+    period: str  # "last_7d" | "last_30d" | "last_90d"
     rows: list[ReportRow]
     totals: ReportRow

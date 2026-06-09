@@ -4,14 +4,7 @@
  * but is cleared when the tab closes (no persistent credential in localStorage).
  */
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { setToken } from "@/api/client";
 import type { AdminRole } from "@/api/client";
 

@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -16,23 +17,24 @@ interface NoteListProps {
   date: string;
 }
 
-export function NoteList({ notes, isBookmarkList = false, onUpdate, onDelete, date }: NoteListProps): React.JSX.Element {
+export function NoteList({
+  notes,
+  isBookmarkList = false,
+  onUpdate,
+  onDelete,
+  date,
+}: NoteListProps): JSX.Element {
   const [editingId, setEditingId] = useState<string | null>(null);
   const entityLabel = isBookmarkList ? "bookmarks" : "notes";
 
   if (notes.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-xs">
-        No {entityLabel} for this day yet.
-      </p>
+      <p className="text-sm text-muted-foreground py-xs">No {entityLabel} for this day yet.</p>
     );
   }
 
   return (
-    <ul
-      aria-label={`${entityLabel} for ${date}`}
-      className="flex flex-col gap-sm"
-    >
+    <ul aria-label={`${entityLabel} for ${date}`} className="flex flex-col gap-sm">
       {notes.map((note) => (
         <li
           key={note.id}
@@ -58,7 +60,10 @@ export function NoteList({ notes, isBookmarkList = false, onUpdate, onDelete, da
                   {note.tags
                     .filter((t) => t !== "bookmark")
                     .map((tag) => (
-                      <li key={tag} className="text-xs px-xs py-xs border border-border rounded-full text-muted-foreground">
+                      <li
+                        key={tag}
+                        className="text-xs px-xs py-xs border border-border rounded-full text-muted-foreground"
+                      >
                         {tag}
                       </li>
                     ))}

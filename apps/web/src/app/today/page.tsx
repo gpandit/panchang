@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { Metadata } from "next";
 import { TodayScreen } from "@/features/today/TodayScreen";
 import { fetchDailyPanchang } from "@/features/today/api";
@@ -18,7 +19,7 @@ export async function generateMetadata({ searchParams }: TodayPageProps): Promis
   };
 }
 
-export default async function TodayPage({ searchParams }: TodayPageProps): Promise<React.JSX.Element> {
+export default async function TodayPage({ searchParams }: TodayPageProps): Promise<JSX.Element> {
   const params = await searchParams;
 
   const date = params.date ?? todayISO();

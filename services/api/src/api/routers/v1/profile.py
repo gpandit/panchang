@@ -46,7 +46,11 @@ async def list_locations(
     return ApiResponse(data=[])
 
 
-@router.post("/locations", response_model=ApiResponse[LocationOut], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/locations",
+    response_model=ApiResponse[LocationOut],
+    status_code=status.HTTP_201_CREATED,
+)
 async def add_location(
     body: LocationIn,
     claims: Annotated[TokenClaims, Depends(require_auth)],

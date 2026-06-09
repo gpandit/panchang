@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel
 
 
-class SubscriptionTier(str, Enum):
+class SubscriptionTier(StrEnum):
     """Ordered tiers: basic < silver < gold."""
 
     BASIC = "basic"
     SILVER = "silver"
     GOLD = "gold"
 
-    def meets(self, required: "SubscriptionTier") -> bool:
+    def meets(self, required: SubscriptionTier) -> bool:
         order = [SubscriptionTier.BASIC, SubscriptionTier.SILVER, SubscriptionTier.GOLD]
         return order.index(self) >= order.index(required)
 

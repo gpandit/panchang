@@ -5,43 +5,84 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { buildDayGrid, deriveMoonPhase, deriveDayCellMarkers } from "../../src/features/calendar/markers";
+import {
+  buildDayGrid,
+  deriveMoonPhase,
+  deriveDayCellMarkers,
+} from "../../src/features/calendar/markers";
 import type { CalendarMonthData, LocalNote } from "../../src/features/calendar/types";
 import type { DailyPanchangOut, FestivalOut } from "@pandit/api-client-ts";
 
 // ─── Minimal fixture builders ─────────────────────────────────────────────────
 
-function makeDay(date: string, tithiIndex: number, tithiName: string, paksha: string): DailyPanchangOut {
+function makeDay(
+  date: string,
+  tithiIndex: number,
+  tithiName: string,
+  paksha: string,
+): DailyPanchangOut {
   return {
     date,
-    lat: 19.076, lon: 72.877, tz: "Asia/Kolkata",
-    ayanamsa: "lahiri", month_scheme: "amanta",
-    sun_longitude: 0, moon_longitude: 0, ayanamsa_value: 0,
+    lat: 19.076,
+    lon: 72.877,
+    tz: "Asia/Kolkata",
+    ayanamsa: "lahiri",
+    month_scheme: "amanta",
+    sun_longitude: 0,
+    moon_longitude: 0,
+    ayanamsa_value: 0,
     tithi: [{ index: tithiIndex, name: tithiName, start: null, end: null }],
     nakshatra: [{ index: 1, name: "Ashwini", start: null, end: null }],
     yoga: [],
     karana: [],
     vara: { index: 1, name: "Somavar", start: null, end: null },
     day_events: {
-      sunrise: { iso: `${date}T06:00:00+05:30`, hour_24: "06:00:00", hour_12: "6:00:00 AM", hour_24_plus: "06:00:00" },
-      sunset: { iso: `${date}T18:30:00+05:30`, hour_24: "18:30:00", hour_12: "6:30:00 PM", hour_24_plus: "18:30:00" },
-      moonrise: null, moonset: null,
+      sunrise: {
+        iso: `${date}T06:00:00+05:30`,
+        hour_24: "06:00:00",
+        hour_12: "6:00:00 AM",
+        hour_24_plus: "06:00:00",
+      },
+      sunset: {
+        iso: `${date}T18:30:00+05:30`,
+        hour_24: "18:30:00",
+        hour_12: "6:30:00 PM",
+        hour_24_plus: "18:30:00",
+      },
+      moonrise: null,
+      moonset: null,
     },
     muhurat: [],
     choghadiya: [],
     hora: [],
     calendrical: {
-      shaka_samvat: 1946, vikram_samvat: 2082, gujarati_samvat: 2081,
-      samvatsara: "Krodhi", ritu: "Grishma", ayana: "Uttarayana",
-      lunar_month: "Jyeshtha", is_adhika_month: false, is_kshaya_month: false,
-      paksha, moon_rashi: "Vrishabha", sun_rashi: "Mithuna",
+      shaka_samvat: 1946,
+      vikram_samvat: 2082,
+      gujarati_samvat: 2081,
+      samvatsara: "Krodhi",
+      ritu: "Grishma",
+      ayana: "Uttarayana",
+      lunar_month: "Jyeshtha",
+      is_adhika_month: false,
+      is_kshaya_month: false,
+      paksha,
+      moon_rashi: "Vrishabha",
+      sun_rashi: "Mithuna",
     },
     cached: false,
   };
 }
 
 function makeFestival(date: string, name: string, tags: string[] = []): FestivalOut {
-  return { id: `fest-${date}-${name}`, name, date, description: null, tags, region: null, locale: null };
+  return {
+    id: `fest-${date}-${name}`,
+    name,
+    date,
+    description: null,
+    tags,
+    region: null,
+    locale: null,
+  };
 }
 
 // ─── deriveMoonPhase ──────────────────────────────────────────────────────────
@@ -89,9 +130,7 @@ describe("deriveDayCellMarkers", () => {
   });
 
   it("only matches festivals on the exact date", () => {
-    const festivals = [
-      makeFestival("2026-06-08", "Other Day Festival"),
-    ];
+    const festivals = [makeFestival("2026-06-08", "Other Day Festival")];
     const markers = deriveDayCellMarkers(baseDay, festivals, []);
     expect(markers.festivals).toHaveLength(0);
   });
@@ -107,7 +146,14 @@ describe("deriveDayCellMarkers", () => {
 
   it("sets hasBookmark=true when a bookmark note exists for the date", () => {
     const notes: LocalNote[] = [
-      { id: "n2", date: "2026-06-07", body: "saved", tags: ["bookmark"], created_at: "", updated_at: "" },
+      {
+        id: "n2",
+        date: "2026-06-07",
+        body: "saved",
+        tags: ["bookmark"],
+        created_at: "",
+        updated_at: "",
+      },
     ];
     const markers = deriveDayCellMarkers(baseDay, [], notes);
     expect(markers.hasNote).toBe(false);
@@ -134,9 +180,7 @@ describe("buildDayGrid — grid structure", () => {
       makeDay("2026-06-07", 5, "Shukla Panchami", "Shukla"),
       makeDay("2026-06-11", 15, "Purnima", "Shukla"),
     ],
-    festivals: [
-      makeFestival("2026-06-07", "Ganga Dussehra"),
-    ],
+    festivals: [makeFestival("2026-06-07", "Ganga Dussehra")],
   };
 
   it("always produces a multiple-of-7 count of cells", () => {

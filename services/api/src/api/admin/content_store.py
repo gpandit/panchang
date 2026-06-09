@@ -8,7 +8,7 @@ reflects the new content immediately.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from api.admin import audit as audit_log
 from api.cms.store import FestivalContent, upsert_festival
@@ -19,19 +19,19 @@ from api.models.admin import (
     FestivalRecord,
 )
 
-
 # In-process store keyed by festival_id
 _records: dict[str, FestivalRecord] = {}
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
-def _snapshot(data: FestivalIn) -> dict:
+
+def _snapshot(data: FestivalIn) -> dict[str, object]:
     return data.model_dump()
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _new_id() -> str:
@@ -39,6 +39,7 @@ def _new_id() -> str:
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
+
 
 def list_records(status: ContentStatus | None = None) -> list[FestivalRecord]:
     results = list(_records.values())
@@ -142,7 +143,11 @@ def transition_status(
         action=f"content.{new_status.value}",
         resource_type="festival",
         resource_id=festival_id,
-        detail={"from_status": old_status, "to_status": new_status, "name": record.current.name},
+        detail={
+            "from_status": old_status,
+            "to_status": new_status,
+            "name": record.current.name,
+        },
     )
 
     if new_status == ContentStatus.PUBLISHED:

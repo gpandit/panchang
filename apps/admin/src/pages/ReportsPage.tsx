@@ -3,7 +3,7 @@
  * Non-sensitive aggregate metrics only; no birth/family data.
  */
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { reporting as api } from "@/api/client";
 import type { ReportOut, ReportRow } from "@/api/client";
 import { tokens } from "@/tokens";
@@ -19,7 +19,8 @@ export function ReportsPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    api.overview(period)
+    api
+      .overview(period)
       .then(setReport)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -131,7 +132,13 @@ function MetricCard({ label, value }: { label: string; value: number }) {
         padding: tokens.space.lg,
       }}
     >
-      <div style={{ fontSize: tokens.font.sizeSm, color: tokens.color.textMuted, marginBottom: tokens.space.xs }}>
+      <div
+        style={{
+          fontSize: tokens.font.sizeSm,
+          color: tokens.color.textMuted,
+          marginBottom: tokens.space.xs,
+        }}
+      >
         {label}
       </div>
       <div style={{ fontSize: tokens.font.sizeXl, fontWeight: tokens.font.weightBold }}>
@@ -144,7 +151,13 @@ function MetricCard({ label, value }: { label: string; value: number }) {
 function ReportRowEl({ row }: { row: ReportRow }) {
   return (
     <tr style={{ borderBottom: `1px solid ${tokens.color.border}` }}>
-      <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, fontFamily: "monospace", fontSize: tokens.font.sizeSm }}>
+      <td
+        style={{
+          padding: `${tokens.space.sm} ${tokens.space.md}`,
+          fontFamily: "monospace",
+          fontSize: tokens.font.sizeSm,
+        }}
+      >
         {row.date}
       </td>
       <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>{row.signups}</td>

@@ -13,8 +13,8 @@ import pytest
 
 from api.cms.store import FestivalContent, _store, upsert_festival
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(autouse=True)
 def _seed_test_festivals():
@@ -65,6 +65,7 @@ def published_festival() -> FestivalContent:
 
 
 # ── List endpoint ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_list_returns_only_published(client, basic_token, draft_festival):
@@ -134,6 +135,7 @@ async def test_list_pagination(client, basic_token):
 
 
 # ── Detail endpoint ───────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_detail_returns_cms_content(client, basic_token, published_festival):

@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -15,7 +16,7 @@ export function ShareBookmarkBar({
   locationLabel,
   bookmarked,
   onBookmark,
-}: ShareBookmarkBarProps): React.JSX.Element {
+}: ShareBookmarkBarProps): JSX.Element {
   async function handleShare(): Promise<void> {
     const url = `${window.location.origin}/today?date=${date}`;
     const text = `Panchang for ${locationLabel} — ${date}`;

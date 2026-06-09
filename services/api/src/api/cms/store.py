@@ -30,10 +30,10 @@ class FestivalContent:
     # Katha / story text
     katha: str | None
     tags: list[str] = field(default_factory=list)
-    region: str | None = None     # e.g. "all", "north", "south", "west", "east"
-    locale: str | None = None     # BCP-47 e.g. "hi", "en", "gu", "mr"
+    region: str | None = None  # e.g. "all", "north", "south", "west", "east"
+    locale: str | None = None  # BCP-47 e.g. "hi", "en", "gu", "mr"
     # Only "published" items are returned by the public API
-    status: str = "published"     # "published" | "draft"
+    status: str = "published"  # "published" | "draft"
 
 
 # ── Seed data — enough for tests and local dev ────────────────────────────────
@@ -152,6 +152,7 @@ _store: dict[str, FestivalContent] = {f.id: f for f in _SEED}
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
 
 def list_festivals(
     *,

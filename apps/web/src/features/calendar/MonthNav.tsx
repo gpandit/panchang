@@ -1,13 +1,24 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
 import type { MonthScheme } from "@pandit/api-client-ts";
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const MIN_YEAR_OFFSET = -2;
@@ -35,12 +46,14 @@ export function MonthNav({
   onLocationChange,
   locationLabel,
   fromCache = false,
-}: MonthNavProps): React.JSX.Element {
+}: MonthNavProps): JSX.Element {
   const today = new Date();
   const todayYear = today.getFullYear();
 
-  const canGoPrev = year > todayYear + MIN_YEAR_OFFSET || (year === todayYear + MIN_YEAR_OFFSET && month > 1);
-  const canGoNext = year < todayYear + MAX_YEAR_OFFSET || (year === todayYear + MAX_YEAR_OFFSET && month < 12);
+  const canGoPrev =
+    year > todayYear + MIN_YEAR_OFFSET || (year === todayYear + MIN_YEAR_OFFSET && month > 1);
+  const canGoNext =
+    year < todayYear + MAX_YEAR_OFFSET || (year === todayYear + MAX_YEAR_OFFSET && month < 12);
 
   const label = `${MONTH_NAMES[month - 1]} ${year}`;
 
@@ -58,8 +71,7 @@ export function MonthNav({
           onClick={onPrevMonth}
           className="p-xs text-foreground disabled:text-muted-foreground"
         >
-          {/* TODO(design): replace with icon token */}
-          ‹
+          {/* TODO(design): replace with icon token */}‹
         </button>
 
         <h1 className="text-lg font-semibold text-foreground">
@@ -73,8 +85,7 @@ export function MonthNav({
           onClick={onNextMonth}
           className="p-xs text-foreground disabled:text-muted-foreground"
         >
-          {/* TODO(design): replace with icon token */}
-          ›
+          {/* TODO(design): replace with icon token */}›
         </button>
       </div>
 
@@ -91,11 +102,7 @@ export function MonthNav({
         </button>
 
         {/* Amanta / Purnimanta toggle */}
-        <div
-          role="group"
-          aria-label="Month scheme"
-          className="flex gap-xs"
-        >
+        <div role="group" aria-label="Month scheme" className="flex gap-xs">
           {(["amanta", "purnimanta"] as MonthScheme[]).map((scheme) => (
             <button
               key={scheme}

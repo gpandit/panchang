@@ -6,13 +6,16 @@ import pytest
 from httpx import AsyncClient
 
 
-@pytest.mark.parametrize("path", [
-    "/v1/panchang/daily?date=2025-01-14&lat=28.6139&lon=77.2090&tz=Asia/Kolkata",
-    "/v1/festivals",
-    "/v1/notes",
-    "/v1/profile",
-    "/v1/subscription",
-])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/v1/panchang/daily?date=2025-01-14&lat=28.6139&lon=77.2090&tz=Asia/Kolkata",
+        "/v1/festivals",
+        "/v1/notes",
+        "/v1/profile",
+        "/v1/subscription",
+    ],
+)
 async def test_unauthenticated_returns_401(client: AsyncClient, path: str) -> None:
     response = await client.get(path)
     assert response.status_code == 401, f"Expected 401 for {path}, got {response.status_code}"

@@ -35,8 +35,17 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src"]
 
+[tool.ruff]
+line-length = 100
+
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
+select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "RUF"]
+ignore = [
+    "E501", # line-too-long — handled by formatter
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api"]
 
 [tool.mypy]
 python_version = "3.12"

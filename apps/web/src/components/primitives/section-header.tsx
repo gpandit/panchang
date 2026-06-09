@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { ReactNode } from "react";
 import { createElement } from "react";
 
@@ -18,7 +19,7 @@ export function SectionHeader({
   actions,
   level = 2,
   className = "",
-}: SectionHeaderProps): React.JSX.Element {
+}: SectionHeaderProps): JSX.Element {
   return (
     <div className={`flex items-baseline justify-between gap-md ${className}`.trim()}>
       <div>

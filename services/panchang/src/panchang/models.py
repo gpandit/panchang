@@ -7,16 +7,16 @@ These models define the public contract of the engine. Nothing outside
 from __future__ import annotations
 
 from datetime import date
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel
 
 
-class Ayanamsa(str, Enum):
+class Ayanamsa(StrEnum):
     LAHIRI = "lahiri"
 
 
-class MonthScheme(str, Enum):
+class MonthScheme(StrEnum):
     AMANTA = "amanta"
     PURNIMANTA = "purnimanta"
 
@@ -35,7 +35,7 @@ class PanchangRequest(BaseModel):
 class TimeValue(BaseModel):
     """A single instant expressed in every supported display form.
 
-    - hour_24: 0–23, wraps at midnight (standard 24h clock)
+    - hour_24: 0-23, wraps at midnight (standard 24h clock)
     - hour_12: 12h clock with meridiem
     - hour_24_plus: hours past the start of the Panchang day (sunrise), so
       a moment after local midnight but before the next sunrise reads as

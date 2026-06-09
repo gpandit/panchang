@@ -31,7 +31,9 @@ export function FlagsPage() {
     }
   }, [filter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function submitResolve() {
     if (!resolveState) return;
@@ -99,50 +101,82 @@ export function FlagsPage() {
         >
           <thead>
             <tr style={{ borderBottom: `1px solid ${tokens.color.border}` }}>
-              {["Resource", "Resource ID", "Reason", "Reporter", "Date", "Status", "Actions"].map((h) => (
-                <th
-                  key={h}
-                  style={{
-                    textAlign: "left",
-                    padding: `${tokens.space.sm} ${tokens.space.md}`,
-                    fontSize: tokens.font.sizeSm,
-                    color: tokens.color.textMuted,
-                    fontWeight: tokens.font.weightMedium,
-                  }}
-                >
-                  {h}
-                </th>
-              ))}
+              {["Resource", "Resource ID", "Reason", "Reporter", "Date", "Status", "Actions"].map(
+                (h) => (
+                  <th
+                    key={h}
+                    style={{
+                      textAlign: "left",
+                      padding: `${tokens.space.sm} ${tokens.space.md}`,
+                      fontSize: tokens.font.sizeSm,
+                      color: tokens.color.textMuted,
+                      fontWeight: tokens.font.weightMedium,
+                    }}
+                  >
+                    {h}
+                  </th>
+                ),
+              )}
             </tr>
           </thead>
           <tbody>
             {records.map((f) => (
               <tr key={f.id} style={{ borderBottom: `1px solid ${tokens.color.border}` }}>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>{f.resource_type}</td>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, fontFamily: "monospace", fontSize: tokens.font.sizeSm }}>
+                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>
+                  {f.resource_type}
+                </td>
+                <td
+                  style={{
+                    padding: `${tokens.space.sm} ${tokens.space.md}`,
+                    fontFamily: "monospace",
+                    fontSize: tokens.font.sizeSm,
+                  }}
+                >
                   {f.resource_id}
                 </td>
                 <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>{f.reason}</td>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, fontFamily: "monospace", fontSize: tokens.font.sizeSm }}>
+                <td
+                  style={{
+                    padding: `${tokens.space.sm} ${tokens.space.md}`,
+                    fontFamily: "monospace",
+                    fontSize: tokens.font.sizeSm,
+                  }}
+                >
                   {f.reported_by}
                 </td>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, color: tokens.color.textMuted, fontSize: tokens.font.sizeSm }}>
+                <td
+                  style={{
+                    padding: `${tokens.space.sm} ${tokens.space.md}`,
+                    color: tokens.color.textMuted,
+                    fontSize: tokens.font.sizeSm,
+                  }}
+                >
                   {new Date(f.reported_at).toLocaleDateString()}
                 </td>
                 <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>
                   <StatusBadge status={f.status} />
                 </td>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, display: "flex", gap: tokens.space.xs }}>
+                <td
+                  style={{
+                    padding: `${tokens.space.sm} ${tokens.space.md}`,
+                    display: "flex",
+                    gap: tokens.space.xs,
+                  }}
+                >
                   {f.status === "open" && (
                     <>
                       <button
-                        onClick={() => setResolveState({ flagId: f.id, action: "resolve", note: "" })}
+                        onClick={() =>
+                          setResolveState({ flagId: f.id, action: "resolve", note: "" })
+                        }
                         style={btnStyle(tokens.color.success)}
                       >
                         Resolve
                       </button>
                       <button
-                        onClick={() => setResolveState({ flagId: f.id, action: "dismiss", note: "" })}
+                        onClick={() =>
+                          setResolveState({ flagId: f.id, action: "dismiss", note: "" })
+                        }
                         style={btnStyle(tokens.color.textMuted)}
                       >
                         Dismiss
@@ -188,7 +222,14 @@ export function FlagsPage() {
               boxShadow: tokens.shadow.md,
             }}
           >
-            <h2 style={{ margin: 0, fontSize: tokens.font.sizeLg, fontWeight: tokens.font.weightBold, textTransform: "capitalize" }}>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: tokens.font.sizeLg,
+                fontWeight: tokens.font.weightBold,
+                textTransform: "capitalize",
+              }}
+            >
               {resolveState.action} flag
             </h2>
             <label style={{ fontSize: tokens.font.sizeSm, color: tokens.color.textMuted }}>

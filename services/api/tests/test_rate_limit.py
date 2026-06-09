@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 
 from api.settings import get_settings
@@ -25,7 +24,6 @@ async def test_rate_limit_trips(client: AsyncClient, basic_token: str) -> None:
     assert 429 in status_codes, "Expected at least one 429 after exceeding rate limit"
 
     # The 429 response must include rate-limit headers
-    last_429 = next(r for r in reversed(status_codes) if r == 429)
     # Re-fetch to inspect headers
     for _ in range(5):
         r = await client.get(url, headers=headers)

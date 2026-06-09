@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 import { useState } from "react";
 import {
   Card,
@@ -19,7 +20,7 @@ import {
  * intentionally undesigned. TODO(design): once skins land, this route is the
  * place to verify the design system end-to-end against real markup/contracts.
  */
-export default function ComponentsPreviewPage(): React.JSX.Element {
+export default function ComponentsPreviewPage(): JSX.Element {
   const [modalOpen, setModalOpen] = useState(false);
 
   return (

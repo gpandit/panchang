@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -12,11 +13,11 @@ interface DayCellProps {
 }
 
 const MOON_MARKERS: Record<string, string> = {
-  new: "○",    // TODO(design): replace with icon token
-  full: "●",   // TODO(design): replace with icon token
+  new: "○", // TODO(design): replace with icon token
+  full: "●", // TODO(design): replace with icon token
 };
 
-export function DayCell({ cell, isSelected, onSelect }: DayCellProps): React.JSX.Element {
+export function DayCell({ cell, isSelected, onSelect }: DayCellProps): JSX.Element {
   const { date, dayOfMonth, isCurrentMonth, isToday, markers } = cell;
 
   const descParts: string[] = [date];
@@ -42,12 +43,7 @@ export function DayCell({ cell, isSelected, onSelect }: DayCellProps): React.JSX
         onClick={() => onSelect(date)}
         className="flex flex-col items-start gap-xs w-full text-left"
       >
-        <span
-          className={[
-            "text-sm leading-none",
-            isToday ? "font-bold underline" : "",
-          ].join(" ")}
-        >
+        <span className={["text-sm leading-none", isToday ? "font-bold underline" : ""].join(" ")}>
           {dayOfMonth}
         </span>
 
@@ -74,37 +70,23 @@ export function DayCell({ cell, isSelected, onSelect }: DayCellProps): React.JSX
             </span>
           )}
           {markers.festivals.map((name) => (
-            <span
-              key={name}
-              data-marker="festival"
-              className="text-xs leading-none"
-              title={name}
-            >
-              {/* TODO(design): festival icon token */}
-              ✦
+            <span key={name} data-marker="festival" className="text-xs leading-none" title={name}>
+              {/* TODO(design): festival icon token */}✦
             </span>
           ))}
           {markers.vrats.map((name) => (
-            <span
-              key={name}
-              data-marker="vrat"
-              className="text-xs leading-none"
-              title={name}
-            >
-              {/* TODO(design): vrat icon token */}
-              ✧
+            <span key={name} data-marker="vrat" className="text-xs leading-none" title={name}>
+              {/* TODO(design): vrat icon token */}✧
             </span>
           ))}
           {markers.hasNote && (
             <span data-marker="note" className="text-xs leading-none" title="Note">
-              {/* TODO(design): note icon token */}
-              ¶
+              {/* TODO(design): note icon token */}¶
             </span>
           )}
           {markers.hasBookmark && (
             <span data-marker="bookmark" className="text-xs leading-none" title="Bookmarked">
-              {/* TODO(design): bookmark icon token */}
-              ⊠
+              {/* TODO(design): bookmark icon token */}⊠
             </span>
           )}
         </div>

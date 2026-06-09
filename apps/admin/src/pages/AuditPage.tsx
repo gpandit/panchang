@@ -2,7 +2,7 @@
  * Audit trail — who did what, when, on which resource.
  */
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { content as api } from "@/api/client";
 import type { AuditEntry } from "@/api/client";
 import { tokens } from "@/tokens";
@@ -96,17 +96,44 @@ export function AuditPage() {
           <tbody>
             {entries.map((e) => (
               <tr key={e.id} style={{ borderBottom: `1px solid ${tokens.color.border}` }}>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, fontFamily: "monospace", fontSize: tokens.font.sizeSm, whiteSpace: "nowrap" }}>
+                <td
+                  style={{
+                    padding: `${tokens.space.sm} ${tokens.space.md}`,
+                    fontFamily: "monospace",
+                    fontSize: tokens.font.sizeSm,
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {new Date(e.timestamp).toLocaleString()}
                 </td>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, fontFamily: "monospace", fontSize: tokens.font.sizeSm }}>
+                <td
+                  style={{
+                    padding: `${tokens.space.sm} ${tokens.space.md}`,
+                    fontFamily: "monospace",
+                    fontSize: tokens.font.sizeSm,
+                  }}
+                >
                   {e.actor_email ?? e.actor_id}
                 </td>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, fontFamily: "monospace", fontSize: tokens.font.sizeSm }}>
+                <td
+                  style={{
+                    padding: `${tokens.space.sm} ${tokens.space.md}`,
+                    fontFamily: "monospace",
+                    fontSize: tokens.font.sizeSm,
+                  }}
+                >
                   {e.action}
                 </td>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>{e.resource_type}</td>
-                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, fontFamily: "monospace", fontSize: tokens.font.sizeSm }}>
+                <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>
+                  {e.resource_type}
+                </td>
+                <td
+                  style={{
+                    padding: `${tokens.space.sm} ${tokens.space.md}`,
+                    fontFamily: "monospace",
+                    fontSize: tokens.font.sizeSm,
+                  }}
+                >
                   {e.resource_id}
                 </td>
               </tr>

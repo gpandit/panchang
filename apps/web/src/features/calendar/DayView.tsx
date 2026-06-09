@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -36,7 +37,7 @@ export function DayView({
   onDeleteNote,
   onCreateReminder,
   onDeleteReminder,
-}: DayViewProps): React.JSX.Element {
+}: DayViewProps): JSX.Element {
   const { date, panchang, markers } = cell;
   const [activeTab, setActiveTab] = useState<DayTab>("notes");
   const [addingNote, setAddingNote] = useState(false);
@@ -60,9 +61,7 @@ export function DayView({
           <h2 className="text-base font-semibold text-foreground">
             <time dateTime={date}>{date}</time>
           </h2>
-          {markers.tithi && (
-            <p className="text-sm text-muted-foreground">{markers.tithi}</p>
-          )}
+          {markers.tithi && <p className="text-sm text-muted-foreground">{markers.tithi}</p>}
         </div>
         <button
           type="button"
@@ -70,8 +69,7 @@ export function DayView({
           onClick={onClose}
           className="text-sm text-muted-foreground p-xs"
         >
-          {/* TODO(design): close icon token */}
-          ✕
+          {/* TODO(design): close icon token */}✕
         </button>
       </header>
 
@@ -95,15 +93,11 @@ export function DayView({
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">Sunrise</dt>
-            <dd className="text-foreground">
-              {panchang.day_events.sunrise.hour_12}
-            </dd>
+            <dd className="text-foreground">{panchang.day_events.sunrise.hour_12}</dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">Sunset</dt>
-            <dd className="text-foreground">
-              {panchang.day_events.sunset.hour_12}
-            </dd>
+            <dd className="text-foreground">{panchang.day_events.sunset.hour_12}</dd>
           </div>
         </dl>
       )}
@@ -115,12 +109,18 @@ export function DayView({
           className="flex flex-wrap gap-xs px-md py-sm border-b border-border"
         >
           {markers.festivals.map((name) => (
-            <li key={name} className="text-xs px-sm py-xs border border-border rounded-full text-foreground">
+            <li
+              key={name}
+              className="text-xs px-sm py-xs border border-border rounded-full text-foreground"
+            >
               {name}
             </li>
           ))}
           {markers.vrats.map((name) => (
-            <li key={name} className="text-xs px-sm py-xs border border-border rounded-full text-muted-foreground">
+            <li
+              key={name}
+              className="text-xs px-sm py-xs border border-border rounded-full text-muted-foreground"
+            >
               {name} (vrat)
             </li>
           ))}
@@ -128,13 +128,13 @@ export function DayView({
       )}
 
       {/* Tab navigation */}
-      <div
-        role="tablist"
-        aria-label="Day sections"
-        className="flex border-b border-border px-md"
-      >
+      <div role="tablist" aria-label="Day sections" className="flex border-b border-border px-md">
         {(["notes", "bookmarks", "reminders"] as DayTab[]).map((tab) => {
-          const counts = { notes: dayNotes.length, bookmarks: dayBookmarks.length, reminders: dayReminders.length };
+          const counts = {
+            notes: dayNotes.length,
+            bookmarks: dayBookmarks.length,
+            reminders: dayReminders.length,
+          };
           return (
             <button
               key={tab}
@@ -238,11 +238,7 @@ export function DayView({
             aria-labelledby={`tab-reminders-${date}`}
             className="flex flex-col gap-sm"
           >
-            <ReminderList
-              reminders={dayReminders}
-              date={date}
-              onDelete={onDeleteReminder}
-            />
+            <ReminderList reminders={dayReminders} date={date} onDelete={onDeleteReminder} />
 
             {addingReminder ? (
               <ReminderForm
