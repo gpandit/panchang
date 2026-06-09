@@ -34,12 +34,20 @@ async function request<T>(
 
   if (resp.status === 204) return undefined as unknown as T;
 
-  const data = await resp.json();
   if (!resp.ok) {
-    const msg =
-      data?.detail?.message ?? data?.detail ?? `HTTP ${resp.status}`;
-    throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    // Attempt to parse a JSON error body; fall back to plain text or status.
+    let msg: string;
+    try {
+      const errData = await resp.json();
+      const detail = errData?.detail?.message ?? errData?.detail;
+      msg = typeof detail === "string" ? detail : detail != null ? JSON.stringify(detail) : `HTTP ${resp.status}`;
+    } catch {
+      msg = (await resp.text().catch(() => "")) || `HTTP ${resp.status}`;
+    }
+    throw new Error(msg);
   }
+
+  const data = await resp.json();
   return data as T;
 }
 
