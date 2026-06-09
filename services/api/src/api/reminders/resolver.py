@@ -13,12 +13,11 @@ so the scheduler and delivery layer can guarantee at-most-once fires.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from panchang.models import MonthScheme, PanchangRequest, PanchangResult
-
 from api.reminders.schemas import OccurrenceRead, RecurrenceKind, RecurrenceSpec
+from panchang.models import MonthScheme, PanchangRequest, PanchangResult
 
 # Bound panchang source: given a date returns the PanchangResult for a fixed
 # (lat, lon, tz, month_scheme). Matches the pattern in festivals.resolver.
@@ -55,12 +54,12 @@ def _fire_time_utc(
         iso = result.day_events.sunrise.iso
         try:
             dt = datetime.fromisoformat(iso)
-            return dt.astimezone(timezone.utc)
+            return dt.astimezone(UTC)
         except ValueError:
             pass  # fall through to explicit hour/minute
 
     local_dt = datetime(d.year, d.month, d.day, spec.fire_hour, spec.fire_minute, tzinfo=user_tz)
-    return local_dt.astimezone(timezone.utc)
+    return local_dt.astimezone(UTC)
 
 
 def _resolve_tithi(

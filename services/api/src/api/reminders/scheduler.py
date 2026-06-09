@@ -19,20 +19,19 @@ background task only.
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from panchang.cache import PanchangCache
-from panchang.models import MonthScheme
-
 from api.reminders.delivery import DeliveryService
 from api.reminders.models import DeliveredOccurrence, Reminder
 from api.reminders.resolver import make_panchang_source, resolve
 from api.reminders.schemas import OccurrenceRead, RecurrenceSpec
+from panchang.cache import PanchangCache
+from panchang.models import MonthScheme
 
 log = logging.getLogger(__name__)
 
@@ -123,7 +122,7 @@ class ReminderScheduler:
         already_delivered: set[str] = set(delivered_result.scalars().all())
 
         fired = 0
-        now_utc = datetime.now(tz=timezone.utc)
+        now_utc = datetime.now(tz=UTC)
 
         for occ in occurrences:
             if occ.idempotency_key in already_delivered:

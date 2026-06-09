@@ -19,8 +19,7 @@ Key scenarios:
 from __future__ import annotations
 
 import uuid
-from collections import deque
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -28,6 +27,12 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import panchang.constants as C
+from api.reminders.db import init_models, make_engine, make_session_factory
+from api.reminders.delivery import DeliveryService, InMemoryChannel
+from api.reminders.models import Reminder
+from api.reminders.resolver import PanchangSource, resolve
+from api.reminders.scheduler import ReminderScheduler
+from api.reminders.schemas import RecurrenceKind, RecurrenceSpec
 from panchang.models import (
     AngaSpan,
     Calendrical,
@@ -37,14 +42,6 @@ from panchang.models import (
     PanchangResult,
     TimeValue,
 )
-
-from api.reminders.db import init_models, make_engine, make_session_factory
-from api.reminders.delivery import DeliveryService, InMemoryChannel
-from api.reminders.models import DeliveredOccurrence, Reminder
-from api.reminders.resolver import PanchangSource, resolve
-from api.reminders.scheduler import ReminderScheduler
-from api.reminders.schemas import OccurrenceRead, RecurrenceKind, RecurrenceSpec
-from api.reminders.service import ReminderService
 
 # ── shared stubs ───────────────────────────────────────────────────────────────
 
@@ -118,7 +115,7 @@ def _make_source(seed: dict[date, PanchangResult]) -> PanchangSource:
 async def session() -> AsyncSession:
     engine = make_engine("sqlite+aiosqlite://")
     await init_models(engine)
-    factory = make_session_factory("sqlite+aiosqlite://")
+    _factory = make_session_factory("sqlite+aiosqlite://")
     # Recreate with the initialised engine so tables exist.
     from sqlalchemy.ext.asyncio import async_sessionmaker
     factory2 = async_sessionmaker(engine, expire_on_commit=False)
@@ -193,7 +190,7 @@ class TestEkadashiResolver:
         assert occurrences
         # Sunrise stub is 06:15 IST = 00:45 UTC
         for occ in occurrences:
-            assert occ.fire_at.tzinfo == timezone.utc
+            assert occ.fire_at.tzinfo == UTC
             assert occ.fire_at.hour == 0
             assert occ.fire_at.minute == 45
 
@@ -590,20 +587,23 @@ class TestSchedulerIdempotency:
 
 class TestRecurrenceSpecValidation:
     def test_tithi_requires_tithi_index(self):
-        import pytest
-        with pytest.raises(Exception):
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError):
             RecurrenceSpec(kind=RecurrenceKind.TITHI)
 
     def test_nakshatra_requires_nakshatra_name(self):
-        with pytest.raises(Exception):
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError):
             RecurrenceSpec(kind=RecurrenceKind.NAKSHATRA)
 
     def test_gregorian_requires_month_and_day(self):
-        with pytest.raises(Exception):
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError):
             RecurrenceSpec(kind=RecurrenceKind.GREGORIAN, gregorian_month=8)
 
     def test_weekday_requires_weekday(self):
-        with pytest.raises(Exception):
+        from pydantic import ValidationError
+        with pytest.raises(ValidationError):
             RecurrenceSpec(kind=RecurrenceKind.WEEKDAY)
 
     def test_valid_ekadashi_spec(self):

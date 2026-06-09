@@ -17,7 +17,9 @@ interface FooterProps {
 
 export function Footer({ links, legal, social, className = "" }: FooterProps): React.JSX.Element {
   return (
-    <footer className={`flex flex-col gap-md p-md text-sm text-muted-foreground ${className}`.trim()}>
+    <footer
+      className={`flex flex-col gap-md p-md text-sm text-muted-foreground ${className}`.trim()}
+    >
       <ul className="flex flex-row gap-md">
         {links.map((link) => (
           <li key={link.href}>

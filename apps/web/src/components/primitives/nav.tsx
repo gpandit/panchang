@@ -25,8 +25,7 @@ export function Nav({
   orientation = "horizontal",
   className = "",
 }: NavProps): React.JSX.Element {
-  const listClasses =
-    orientation === "vertical" ? "flex flex-col gap-xs" : "flex flex-row gap-md";
+  const listClasses = orientation === "vertical" ? "flex flex-col gap-xs" : "flex flex-row gap-md";
 
   return (
     <nav

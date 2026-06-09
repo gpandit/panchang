@@ -15,7 +15,7 @@ from __future__ import annotations
 import abc
 import logging
 from collections import deque
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from api.reminders.schemas import OccurrenceRead
 
@@ -59,7 +59,7 @@ class InMemoryChannel(DeliveryChannel):
                 "fire_at": occurrence.fire_at,
                 "title": title,
                 "body": body,
-                "captured_at": datetime.now(tz=timezone.utc),
+                "captured_at": datetime.now(tz=UTC),
             }
         )
 

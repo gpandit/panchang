@@ -5,9 +5,8 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.reminders.db import get_session
 from api.reminders.schemas import ReminderCreate, ReminderRead
 from api.reminders.service import ReminderService
 
