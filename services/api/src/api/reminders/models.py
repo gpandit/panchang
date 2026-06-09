@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,7 +22,7 @@ class Reminder(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(String(36), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    recurrence: Mapped[dict] = mapped_column(JSON, nullable=False)
+    recurrence: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False)
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lon: Mapped[float] = mapped_column(Float, nullable=False)

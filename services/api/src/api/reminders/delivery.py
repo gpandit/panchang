@@ -16,6 +16,7 @@ import abc
 import logging
 from collections import deque
 from datetime import UTC, datetime
+from typing import Any
 
 from api.reminders.schemas import OccurrenceRead
 
@@ -49,7 +50,7 @@ class InMemoryChannel(DeliveryChannel):
     """
 
     def __init__(self) -> None:
-        self.delivered: deque[dict] = deque()
+        self.delivered: deque[dict[str, Any]] = deque()
 
     async def send(self, occurrence: OccurrenceRead, title: str, body: str) -> None:
         self.delivered.append(

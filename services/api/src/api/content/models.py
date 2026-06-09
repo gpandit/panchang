@@ -12,6 +12,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -61,7 +62,7 @@ class ContentItem(ContentBase):
     festival_rule_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
 
     locale: Mapped[str] = mapped_column(String(16))  # BCP-47, e.g. "hi", "en", "mr"
-    region_tags: Mapped[list] = mapped_column(JSON, default=list)  # e.g. ["north", "gujarat"]
+    region_tags: Mapped[list[str]] = mapped_column(JSON, default=list)  # e.g. ["north", "gujarat"]
 
     status: Mapped[str] = mapped_column(String(16), default=ContentStatus.DRAFT.value)
 
@@ -99,7 +100,7 @@ class ContentVersion(ContentBase):
     # Festival: {title, subtitle, body, puja_vidhi, katha, significance, ...}
     # Mantra:   {text, transliteration, meaning, audio_url, ...}
     # etc.
-    body: Mapped[dict] = mapped_column(JSON)
+    body: Mapped[dict[str, Any]] = mapped_column(JSON)
 
     # Who authored / where it came from.
     author_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
@@ -126,7 +127,7 @@ class ContentFlag(ContentBase):
         String(36), nullable=True
     )  # user id, optional for anonymous
     reason: Mapped[str] = mapped_column(Text)
-    detail: Mapped[dict] = mapped_column(JSON, default=dict)
+    detail: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
     # resolved_at is set when an admin re-publishes the item after correction.
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

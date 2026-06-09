@@ -12,6 +12,7 @@ a published reference Panchang is the explicit job of the accuracy harness
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -27,6 +28,7 @@ from panchang.models import (
     MuhuratPeriod,
     PanchangRequest,
     PanchangResult,
+    TimeValue,
 )
 from panchang.timeforms import jd_to_local_datetime, to_time_value
 
@@ -47,7 +49,9 @@ def _moon(jd: float) -> float:
     return engine.sidereal_longitude(jd, swe.MOON)
 
 
-def _bisect_crossing(angle_fn, jd_lo: float, jd_hi: float, target_deg: float) -> float | None:
+def _bisect_crossing(
+    angle_fn: Callable[[float], float], jd_lo: float, jd_hi: float, target_deg: float
+) -> float | None:
     """Find jd in [jd_lo, jd_hi] where angle_fn crosses *target_deg* (mod 360),
     assuming angle_fn is monotonically increasing (mod 360, no double-wrap)
     over the interval."""
@@ -74,14 +78,14 @@ def _bisect_crossing(angle_fn, jd_lo: float, jd_hi: float, target_deg: float) ->
 
 
 def _anga_spans(
-    angle_fn,
+    angle_fn: Callable[[float], float],
     step_deg: float,
-    name_fn,
+    name_fn: Callable[[int], str],
     day_start: float,
     day_end: float,
     search_back: float,
     search_fwd: float,
-    tv,
+    tv: Callable[[float], TimeValue],
 ) -> list[AngaSpan]:
     """Enumerate every occurrence of this anga overlapping [day_start, day_end)."""
     angle_at_start = angle_fn(day_start) % _DEG
@@ -186,7 +190,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
     day_end = next_sunrise
     day_start_local = jd_to_local_datetime(day_start, request.tz)
 
-    def tv(jd: float):
+    def tv(jd: float) -> TimeValue:
         return to_time_value(jd, request.tz, day_start_local)
 
     # ── Reference longitudes (at sunrise — the moment the Panchang day opens) ──
@@ -306,7 +310,9 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
 # ──────────────────────────────────────────────────────────────────────────
 
 
-def _compute_muhurat(sunrise: float, sunset: float, next_sunrise: float, tv) -> list[MuhuratPeriod]:
+def _compute_muhurat(
+    sunrise: float, sunset: float, next_sunrise: float, tv: Callable[[float], TimeValue]
+) -> list[MuhuratPeriod]:
     day_dur = sunset - sunrise
     night_dur = next_sunrise - sunset
     segment = day_dur / 8.0
@@ -349,7 +355,11 @@ def _compute_muhurat(sunrise: float, sunset: float, next_sunrise: float, tv) -> 
 
 
 def _compute_choghadiya(
-    sunrise: float, sunset: float, next_sunrise: float, weekday_index: int, tv
+    sunrise: float,
+    sunset: float,
+    next_sunrise: float,
+    weekday_index: int,
+    tv: Callable[[float], TimeValue],
 ) -> list[Choghadiya]:
     result: list[Choghadiya] = []
 
@@ -369,7 +379,11 @@ def _compute_choghadiya(
 
 
 def _compute_hora(
-    sunrise: float, sunset: float, next_sunrise: float, weekday_index: int, tv
+    sunrise: float,
+    sunset: float,
+    next_sunrise: float,
+    weekday_index: int,
+    tv: Callable[[float], TimeValue],
 ) -> list[MuhuratPeriod]:
     result: list[MuhuratPeriod] = []
     start_idx = C.HORA_START_INDEX[weekday_index]
@@ -402,7 +416,9 @@ def _weekday_from_jd(jd_ut: float) -> int:
 # ──────────────────────────────────────────────────────────────────────────
 
 
-def _detect_adhika_kshaya(tithi_angle, day_start: float, tithi_index: int) -> tuple[bool, bool]:
+def _detect_adhika_kshaya(
+    tithi_angle: Callable[[float], float], day_start: float, tithi_index: int
+) -> tuple[bool, bool]:
     """Detect Adhika (leap) and Kshaya (skipped) lunar months.
 
     A lunisolar (Amanta) month runs new-moon to new-moon. It is:

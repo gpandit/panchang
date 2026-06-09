@@ -8,10 +8,11 @@ Dependency injection: `get_content_service` is overridden in `main.py`.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from api.content.models import ContentItem, ContentType, ContentVersion
 from api.content.schemas import (
     ContentCreateRequest,
     ContentItemAdminOut,
@@ -185,15 +186,15 @@ async def get_flags(
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
-def _to_public(item, ver) -> ContentItemPublicOut:
+def _to_public(item: ContentItem, ver: ContentVersion) -> ContentItemPublicOut:
     return ContentItemPublicOut(
         id=item.id,
         slug=item.slug,
-        content_type=item.content_type,
+        content_type=cast(ContentType, item.content_type),
         locale=item.locale,
         region_tags=item.region_tags or [],
         festival_rule_id=item.festival_rule_id,
-        published_version=item.published_version,
+        published_version=cast(int, item.published_version),
         body=ver.body,
         source_attribution=ver.source_attribution,
         published_at=ver.published_at,

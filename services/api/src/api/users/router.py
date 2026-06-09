@@ -7,6 +7,8 @@ defines the surface and depends on it via FastAPI `Depends`.
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -60,7 +62,9 @@ def _auth_error(exc: AuthError) -> HTTPException:
 
 
 @router.post("/signup/password", response_model=TokenPairOut, status_code=201)
-async def signup_password(body: SignUpWithPassword, svc: UserService = Depends(get_user_service)):
+async def signup_password(
+    body: SignUpWithPassword, svc: UserService = Depends(get_user_service)
+) -> TokenPairOut:
     try:
         result = await svc.sign_up_with_password(
             email=body.email,
@@ -76,7 +80,7 @@ async def signup_password(body: SignUpWithPassword, svc: UserService = Depends(g
 
 
 @router.post("/signup/guest", response_model=TokenPairOut, status_code=201)
-async def signup_guest(svc: UserService = Depends(get_user_service)):
+async def signup_guest(svc: UserService = Depends(get_user_service)) -> TokenPairOut:
     result = await svc.sign_up_guest()
     return TokenPairOut(
         access_token=result.tokens.access_token, refresh_token=result.tokens.refresh_token
@@ -84,7 +88,9 @@ async def signup_guest(svc: UserService = Depends(get_user_service)):
 
 
 @router.post("/signup/oauth", response_model=TokenPairOut, status_code=201)
-async def signup_oauth(body: SignUpWithOAuth, svc: UserService = Depends(get_user_service)):
+async def signup_oauth(
+    body: SignUpWithOAuth, svc: UserService = Depends(get_user_service)
+) -> TokenPairOut:
     try:
         result = await svc.sign_up_or_sign_in_with_oauth(
             provider=body.provider,
@@ -99,7 +105,9 @@ async def signup_oauth(body: SignUpWithOAuth, svc: UserService = Depends(get_use
 
 
 @router.post("/login/password", response_model=TokenPairOut)
-async def login_password(body: LoginWithPassword, svc: UserService = Depends(get_user_service)):
+async def login_password(
+    body: LoginWithPassword, svc: UserService = Depends(get_user_service)
+) -> TokenPairOut:
     try:
         result = await svc.sign_in_with_password(
             email=body.email, phone=body.phone, password=body.password
@@ -112,7 +120,9 @@ async def login_password(body: LoginWithPassword, svc: UserService = Depends(get
 
 
 @router.post("/token/refresh", response_model=TokenPairOut)
-async def refresh_token(body: RefreshRequest, svc: UserService = Depends(get_user_service)):
+async def refresh_token(
+    body: RefreshRequest, svc: UserService = Depends(get_user_service)
+) -> TokenPairOut:
     try:
         tokens = await svc.refresh(raw_refresh_token=body.refresh_token)
     except AuthError as exc:
@@ -126,7 +136,7 @@ async def refresh_token(body: RefreshRequest, svc: UserService = Depends(get_use
 @router.get("/me", response_model=UserOut)
 async def get_me(
     user_id: str = Depends(get_current_user_id), svc: UserService = Depends(get_user_service)
-):
+) -> Any:
     try:
         return await svc.get_user(user_id)
     except NotFoundError as exc:
@@ -138,7 +148,7 @@ async def update_preferences(
     body: PreferencesUpdate,
     user_id: str = Depends(get_current_user_id),
     svc: UserService = Depends(get_user_service),
-):
+) -> Any:
     return await svc.update_preferences(user_id, **body.model_dump(exclude_unset=True))
 
 
@@ -150,14 +160,14 @@ async def add_location(
     body: LocationCreate,
     user_id: str = Depends(get_current_user_id),
     svc: UserService = Depends(get_user_service),
-):
+) -> Any:
     return await svc.add_location(user_id, **body.model_dump())
 
 
 @router.get("/me/locations", response_model=list[LocationOut])
 async def list_locations(
     user_id: str = Depends(get_current_user_id), svc: UserService = Depends(get_user_service)
-):
+) -> Any:
     return await svc.list_locations(user_id)
 
 
@@ -167,7 +177,7 @@ async def update_location(
     body: LocationUpdate,
     user_id: str = Depends(get_current_user_id),
     svc: UserService = Depends(get_user_service),
-):
+) -> Any:
     try:
         return await svc.update_location(
             user_id, location_id, **body.model_dump(exclude_unset=True)
@@ -181,7 +191,7 @@ async def delete_location(
     location_id: str,
     user_id: str = Depends(get_current_user_id),
     svc: UserService = Depends(get_user_service),
-):
+) -> None:
     try:
         await svc.delete_location(user_id, location_id)
     except NotFoundError as exc:
@@ -196,14 +206,14 @@ async def set_birth_profile(
     body: BirthProfileIn,
     user_id: str = Depends(get_current_user_id),
     svc: UserService = Depends(get_user_service),
-):
+) -> None:
     await svc.set_birth_profile(user_id, body.data)
 
 
 @router.get("/me/vault/birth-profile")
 async def get_birth_profile(
     user_id: str = Depends(get_current_user_id), svc: UserService = Depends(get_user_service)
-):
+) -> Any:
     return await svc.get_birth_profile(user_id)
 
 
@@ -212,7 +222,7 @@ async def add_family_member(
     body: FamilyMemberIn,
     user_id: str = Depends(get_current_user_id),
     svc: UserService = Depends(get_user_service),
-):
+) -> dict[str, str]:
     member_id = await svc.add_family_member(user_id, body.relation, body.data)
     return {"id": member_id}
 
@@ -220,7 +230,7 @@ async def add_family_member(
 @router.get("/me/vault/family-members")
 async def list_family_members(
     user_id: str = Depends(get_current_user_id), svc: UserService = Depends(get_user_service)
-):
+) -> Any:
     return await svc.list_family_members(user_id)
 
 
@@ -230,12 +240,12 @@ async def list_family_members(
 @router.get("/me/export")
 async def export_data(
     user_id: str = Depends(get_current_user_id), svc: UserService = Depends(get_user_service)
-):
+) -> Any:
     return await svc.export_data(user_id)
 
 
 @router.delete("/me", status_code=204)
 async def delete_account(
     user_id: str = Depends(get_current_user_id), svc: UserService = Depends(get_user_service)
-):
+) -> None:
     await svc.delete_account(user_id)

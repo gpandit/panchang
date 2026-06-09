@@ -12,6 +12,7 @@ import hashlib
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import cast
 
 import jwt
 from passlib.context import CryptContext
@@ -27,11 +28,11 @@ REFRESH_TOKEN_TTL = timedelta(days=30)
 
 
 def hash_password(password: str) -> str:
-    return _pwd_context.hash(password)
+    return cast(str, _pwd_context.hash(password))
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    return _pwd_context.verify(password, password_hash)
+    return cast(bool, _pwd_context.verify(password, password_hash))
 
 
 def issue_access_token(*, user_id: str, secret_key: str, now: datetime | None = None) -> str:
@@ -45,7 +46,7 @@ def decode_access_token(token: str, *, secret_key: str) -> str:
     payload = jwt.decode(token, secret_key, algorithms=["HS256"])
     if payload.get("type") != "access":
         raise ValueError("not an access token")
-    return payload["sub"]
+    return cast(str, payload["sub"])
 
 
 def _aware(dt: datetime) -> datetime:

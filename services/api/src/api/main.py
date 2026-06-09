@@ -1,5 +1,7 @@
 """FastAPI application entry point for the API Gateway."""
 
+from collections.abc import AsyncGenerator
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from festivals.rules import DIWALI, HOLI, RAKSHA_BANDHAN
@@ -15,7 +17,7 @@ from api.settings import get_settings
 from api.users.db import make_session_factory
 from api.users.encryption import VaultCipher
 from api.users.models import AuthProvider
-from api.users.oauth import AppleVerifier, GoogleVerifier
+from api.users.oauth import AppleVerifier, GoogleVerifier, IdentityVerifier
 from api.users.router import get_secret_key, get_user_service
 from api.users.router import router as users_router
 from api.users.service import UserService
@@ -27,7 +29,7 @@ settings = get_settings()
 
 _session_factory = make_session_factory(settings.database_url)
 _vault = Vault(VaultCipher(settings.vault_encryption_key))
-_oauth_verifiers = {
+_oauth_verifiers: dict[AuthProvider, IdentityVerifier] = {
     AuthProvider.GOOGLE: GoogleVerifier(settings.google_oauth_client_id),
     AuthProvider.APPLE: AppleVerifier(settings.apple_oauth_client_id),
 }
@@ -45,7 +47,7 @@ _festival_rules = [DIWALI, HOLI, RAKSHA_BANDHAN]
 _calendar_service = CalendarService(_panchang_cache, _festival_rules)
 
 
-async def _provide_user_service() -> UserService:
+async def _provide_user_service() -> AsyncGenerator[UserService, None]:
     async with _session_factory() as session:
         yield UserService(
             session,
@@ -56,7 +58,7 @@ async def _provide_user_service() -> UserService:
         await session.commit()
 
 
-async def _provide_content_service() -> ContentService:
+async def _provide_content_service() -> AsyncGenerator[ContentService, None]:
     async with _content_session_factory() as session:
         yield ContentService(session)
         await session.commit()

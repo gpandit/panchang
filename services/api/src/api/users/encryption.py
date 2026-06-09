@@ -14,7 +14,7 @@ implementation detail of the vault boundary, not a general-purpose utility.
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from cryptography.fernet import Fernet, InvalidToken
 
@@ -42,4 +42,4 @@ class VaultCipher:
             raise ValueError(
                 "vault payload could not be decrypted — wrong key or tampered data"
             ) from exc
-        return json.loads(plaintext.decode("utf-8"))
+        return cast(dict[str, Any], json.loads(plaintext.decode("utf-8")))

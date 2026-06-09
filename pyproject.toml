@@ -48,6 +48,16 @@ warn_return_any = true
 warn_unused_configs = true
 exclude = ["tests/"]
 
+[[tool.mypy.overrides]]
+module = ["swisseph", "swisseph.*", "passlib.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["panchang", "panchang.*"]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+warn_return_any = false
+
 # ─── Pytest ───────────────────────────────────────────────────────────────────
 
 [tool.pytest.ini_options]
