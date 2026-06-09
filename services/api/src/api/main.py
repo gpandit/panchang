@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from festivals.rules import DIWALI, HOLI, RAKSHA_BANDHAN
 
 from api.calendar.router import get_calendar_service
 from api.calendar.router import router as calendar_router
@@ -19,7 +20,6 @@ from api.users.router import get_secret_key, get_user_service
 from api.users.router import router as users_router
 from api.users.service import UserService
 from api.users.vault import Vault
-from festivals.rules import DIWALI, HOLI, RAKSHA_BANDHAN
 from panchang.cache import InMemoryCacheStore, InMemoryPanchangDayStore, PanchangCache
 from panchang.compute import compute_panchang
 
