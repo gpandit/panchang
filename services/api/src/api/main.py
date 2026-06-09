@@ -14,15 +14,15 @@ from api.content.router import get_content_service
 from api.content.router import router as content_router
 from api.content.service import ContentService
 from api.settings import get_settings
-from api.subscriptions.models import BillingSource
+from api.subscriptions.models import BillingSource, Tier
 from api.subscriptions.router import get_subscription_service
 from api.subscriptions.router import router as subscriptions_router
 from api.subscriptions.service import SubscriptionService
 from api.subscriptions.verifiers import (
     AppleIAPVerifier,
+    GooglePlayVerifier,
     ReceiptVerifier,
     StaticAccessTokenProvider,
-    GooglePlayVerifier,
     StripeVerifier,
 )
 from api.users.db import make_session_factory
@@ -43,9 +43,7 @@ _session_factory = make_session_factory(settings.database_url)
 # ── Subscription verifiers ────────────────────────────────────────────────────
 
 
-def _build_stripe_price_tier_map() -> dict[str, "Tier"]:  # type: ignore[name-defined]
-    from api.subscriptions.models import Tier
-
+def _build_stripe_price_tier_map() -> dict[str, Tier]:
     result: dict[str, Tier] = {}
     raw = settings.stripe_price_tier_map
     if not raw:
