@@ -27,6 +27,7 @@ export type {
   MonthCalendarOut,
   // Festivals
   FestivalOut,
+  FestivalDetailOut,
   // Notes
   NoteIn,
   NoteOut,

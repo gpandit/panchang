@@ -41,7 +41,7 @@ function makeDay(date: string, tithiIndex: number, tithiName: string, paksha: st
 }
 
 function makeFestival(date: string, name: string, tags: string[] = []): FestivalOut {
-  return { id: `fest-${date}-${name}`, name, date, description: null, tags };
+  return { id: `fest-${date}-${name}`, name, date, description: null, tags, region: null, locale: null };
 }
 
 // ─── deriveMoonPhase ──────────────────────────────────────────────────────────
