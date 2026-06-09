@@ -4,7 +4,6 @@
  */
 
 const BASE = "/admin/v1";
-const PUBLIC_BASE = "/v1";
 
 let _token: string | null = null;
 

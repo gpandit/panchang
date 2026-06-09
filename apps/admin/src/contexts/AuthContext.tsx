@@ -62,10 +62,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [state.token]);
 
   const login = useCallback((token: string) => {
-    const next = stateFromToken(token);
-    if (!next.adminRole) {
+    const payload = decodePayload(token);
+    if (!payload) {
+      throw new Error("Malformed token — cannot decode payload.");
+    }
+    if (!payload["admin_role"]) {
       throw new Error("Token does not contain an admin_role claim.");
     }
+    // Validate before writing to storage so state and sessionStorage stay in sync.
+    const next: AuthState = {
+      token,
+      sub: (payload["sub"] as string) ?? null,
+      email: (payload["email"] as string) ?? null,
+      adminRole: payload["admin_role"] as AdminRole,
+    };
     sessionStorage.setItem(SESSION_KEY, token);
     setState(next);
   }, []);

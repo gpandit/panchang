@@ -68,7 +68,6 @@ async def submit_for_review(festival_id: str, claims: _EditorDep) -> FestivalRec
         ContentStatus.REVIEW,
         actor_id=claims.sub,
         actor_email=claims.email,
-        required_role=AdminRole.EDITOR,
     )
 
 
@@ -87,7 +86,6 @@ async def publish_festival(festival_id: str, claims: _PublisherDep) -> FestivalR
         ContentStatus.PUBLISHED,
         actor_id=claims.sub,
         actor_email=claims.email,
-        required_role=AdminRole.PUBLISHER,
     )
 
 
@@ -106,7 +104,6 @@ async def reject_festival(festival_id: str, claims: _PublisherDep) -> FestivalRe
         ContentStatus.REJECTED,
         actor_id=claims.sub,
         actor_email=claims.email,
-        required_role=AdminRole.PUBLISHER,
     )
 
 

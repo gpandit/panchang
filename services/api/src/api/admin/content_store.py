@@ -13,7 +13,6 @@ from datetime import datetime, timezone
 from api.admin import audit as audit_log
 from api.cms.store import FestivalContent, upsert_festival
 from api.models.admin import (
-    AdminRole,
     ContentStatus,
     ContentVersion,
     FestivalIn,
@@ -120,7 +119,6 @@ def transition_status(
     *,
     actor_id: str,
     actor_email: str | None,
-    required_role: AdminRole,
 ) -> FestivalRecord:
     """Move content through the workflow.  Caller must already have verified the role."""
     record = _records[festival_id]
