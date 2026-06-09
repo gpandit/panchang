@@ -25,16 +25,32 @@ class Settings(BaseSettings):
     # ── Object Storage (S3-compatible / MinIO in dev) ─────────────────────────
     s3_endpoint_url: str = "http://localhost:9000"
     s3_access_key: str = "minioadmin"
-    s3_secret_key: str = "minioadmin"  # noqa: S105 — dev default, not a real secret
+    s3_secret_key: str = "minioadmin"  # noqa: S105
     s3_bucket: str = "pandit-dev"
 
     # ── Auth ──────────────────────────────────────────────────────────────────
     # IMPORTANT: set a strong random value in staging/prod via the managed secret store.
-    # See CONTRIBUTING.md §4 for the secrets management strategy.
     secret_key: str = "change-me-in-production-use-managed-secret-store"  # noqa: S105
+    jwt_algorithm: str = "HS256"
+    # Access token lifetime in seconds (15 min default)
+    access_token_expire_seconds: int = 900
+
+    # ── Rate limiting ─────────────────────────────────────────────────────────
+    # Requests per minute per authenticated user (or per IP for anonymous)
+    rate_limit_per_minute: int = 60
+    # Stricter limit for expensive endpoints (PDF jobs, calendar month)
+    rate_limit_burst_per_minute: int = 10
+
+    # ── Edge / in-process cache ────────────────────────────────────────────────
+    # TTL in seconds for the daily Panchang in-process cache (mirrors CDN TTL)
+    panchang_cache_ttl_seconds: int = 3600  # 1 hour
+    # Max items in the in-process LRU cache
+    panchang_cache_max_size: int = 1024
 
     # ── Downstream services ───────────────────────────────────────────────────
     panchang_service_url: str = "http://localhost:8001"
+    # Timeout for downstream Panchang service calls (seconds)
+    panchang_service_timeout: float = 1.5
 
 
 _settings: Settings | None = None

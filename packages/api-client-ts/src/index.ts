@@ -1,23 +1,48 @@
 /**
  * @pandit/api-client-ts
  *
- * Shared TypeScript API types and client for The Pandit platform.
- * Used by apps/web, apps/admin, and eventually the mobile bridge layer.
- *
- * TODO(step-2): add a generated fetch client once services/api has a stable OpenAPI spec.
+ * Shared TypeScript API types and fetch client for The Pandit platform.
+ * Used by apps/web, apps/admin, and the mobile bridge layer.
  */
 
 export type {
-  Location,
+  // Envelopes
+  ApiResponse,
+  ApiError,
+  ApiErrorResponse,
+  PaginatedMeta,
+  PaginatedResponse,
+  // Auth
+  SubscriptionTier,
+  // Panchang
   Ayanamsa,
   MonthScheme,
-  Paksha,
-  TithiInfo,
-  NakshatraInfo,
-  YogaInfo,
-  KaranaInfo,
-  PanchangDay,
-  ApiError,
-  PaginatedResponse,
-  ApiResponse,
+  TimeValueOut,
+  AngaSpanOut,
+  DayEventsOut,
+  CalendricalOut,
+  PeriodOut,
+  ChoghadiyaOut,
+  DailyPanchangOut,
+  MonthCalendarOut,
+  // Festivals
+  FestivalOut,
+  // Notes
+  NoteIn,
+  NoteOut,
+  // Reminders
+  ReminderIn,
+  ReminderOut,
+  // Profile
+  LocationIn,
+  LocationOut,
+  ProfileOut,
+  ProfileUpdateIn,
+  // Subscription
+  SubscriptionOut,
+  // PDF
+  PdfJobIn,
+  PdfJobOut,
 } from "./types.js";
+
+export { PanditApiClient } from "./client.js";

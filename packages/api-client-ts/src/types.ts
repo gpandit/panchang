@@ -1,93 +1,226 @@
 /**
  * Shared API types for The Pandit platform.
- * Generated from the OpenAPI spec in Step 2+ — these stubs define the shape
- * agreed upon in the Architecture Document §7.
  *
- * TODO(step-2): replace with generated types from services/api OpenAPI spec.
+ * Generated from services/api OpenAPI spec (docs/openapi.json).
+ * Do NOT edit by hand — run `npm run generate` to regenerate.
+ *
+ * Spec version: 1.0.0
  */
 
-// ─── Location ──────────────────────────────────────────────────────────────
+// ─── Common envelope ─────────────────────────────────────────────────────────
 
-export interface Location {
-  latitude: number;
-  longitude: number;
-  timezone: string; // IANA timezone, e.g. "Asia/Kolkata"
+export interface ApiResponse<T> {
+  data: T;
+  meta?: Record<string, unknown> | null;
 }
-
-// ─── Panchang ─────────────────────────────────────────────────────────────
-
-export type Ayanamsa = "lahiri" | "raman" | "krishnamurti";
-export type MonthScheme = "amanta" | "purnimanta";
-export type Paksha = "shukla" | "krishna";
-
-export interface TithiInfo {
-  index: number; // 1–30
-  name: string;
-  paksha: Paksha;
-  startTime: string; // ISO 8601 datetime
-  endTime: string;
-}
-
-export interface NakshatraInfo {
-  index: number; // 1–27
-  name: string;
-  pada: number; // 1–4
-  startTime: string;
-  endTime: string;
-}
-
-export interface YogaInfo {
-  index: number; // 1–27
-  name: string;
-  startTime: string;
-  endTime: string;
-}
-
-export interface KaranaInfo {
-  index: number; // 1–11
-  name: string;
-  startTime: string;
-  endTime: string;
-}
-
-/**
- * One day of Panchang data.
- * Keyed by date + location-grid + ayanamsa + monthScheme in the backend cache.
- * Clients must never recompute this — always read from the API.
- */
-export interface PanchangDay {
-  date: string; // "YYYY-MM-DD" (Gregorian date for the Panchang day)
-  location: Location;
-  ayanamsa: Ayanamsa;
-  monthScheme: MonthScheme;
-  tithi: TithiInfo | null;
-  nakshatra: NakshatraInfo | null;
-  yoga: YogaInfo | null;
-  karana: KaranaInfo | null;
-  sunrise: string | null; // ISO 8601 datetime
-  sunset: string | null;
-  moonrise: string | null;
-  moonset: string | null;
-  // Adhika (leap) or Kshaya (lost) month flag
-  leapMonthFlag: "adhika" | "kshaya" | null;
-}
-
-// ─── API envelope types ──────────────────────────────────────────────────
 
 export interface ApiError {
   code: string;
   message: string;
-  details?: unknown;
+  details?: unknown | null;
+}
+
+export interface ApiErrorResponse {
+  error: ApiError;
+}
+
+export interface PaginatedMeta {
+  total: number;
+  page: number;
+  page_size: number;
+  has_next: boolean;
 }
 
 export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
+  data: T[];
+  meta: PaginatedMeta;
 }
 
-export interface ApiResponse<T> {
-  data: T;
-  meta?: Record<string, unknown>;
+// ─── Auth / tiers ─────────────────────────────────────────────────────────────
+
+export type SubscriptionTier = "basic" | "silver" | "gold";
+
+// ─── Panchang ─────────────────────────────────────────────────────────────────
+
+export type Ayanamsa = "lahiri";
+export type MonthScheme = "amanta" | "purnimanta";
+
+export interface TimeValueOut {
+  iso: string;       // ISO-8601 timestamp with offset
+  hour_24: string;   // "HH:MM:SS"
+  hour_12: string;   // "hh:MM:SS AM/PM"
+  hour_24_plus: string; // "HH:MM:SS" where HH may exceed 23
+}
+
+export interface AngaSpanOut {
+  index: number;
+  name: string;
+  start: TimeValueOut | null;
+  end: TimeValueOut | null;
+}
+
+export interface DayEventsOut {
+  sunrise: TimeValueOut;
+  sunset: TimeValueOut;
+  moonrise: TimeValueOut | null;
+  moonset: TimeValueOut | null;
+}
+
+export interface CalendricalOut {
+  shaka_samvat: number;
+  vikram_samvat: number;
+  gujarati_samvat: number;
+  samvatsara: string;
+  ritu: string;
+  ayana: string;
+  lunar_month: string;
+  is_adhika_month: boolean;
+  is_kshaya_month: boolean;
+  paksha: string;
+  moon_rashi: string;
+  sun_rashi: string;
+}
+
+export interface PeriodOut {
+  name: string;
+  start: TimeValueOut;
+  end: TimeValueOut;
+}
+
+export interface ChoghadiyaOut {
+  name: string;
+  start: TimeValueOut;
+  end: TimeValueOut;
+  is_day: boolean;
+}
+
+/** Full Panchang for one (date, location, settings) day — the primary API payload. */
+export interface DailyPanchangOut {
+  date: string;           // "YYYY-MM-DD"
+  lat: number;
+  lon: number;
+  tz: string;             // IANA timezone
+  ayanamsa: string;
+  month_scheme: string;
+
+  sun_longitude: number;
+  moon_longitude: number;
+  ayanamsa_value: number;
+
+  tithi: AngaSpanOut[];
+  nakshatra: AngaSpanOut[];
+  yoga: AngaSpanOut[];
+  karana: AngaSpanOut[];
+  vara: AngaSpanOut;
+
+  day_events: DayEventsOut;
+  muhurat: PeriodOut[];
+  choghadiya: ChoghadiyaOut[];
+  hora: PeriodOut[];
+  calendrical: CalendricalOut;
+
+  /** True when the response was served from the edge/in-process cache. */
+  cached: boolean;
+}
+
+export interface MonthCalendarOut {
+  year: number;
+  month: number;
+  days: DailyPanchangOut[];
+}
+
+// ─── Festivals ───────────────────────────────────────────────────────────────
+
+export interface FestivalOut {
+  id: string;
+  name: string;
+  date: string; // "YYYY-MM-DD"
+  description: string | null;
+  tags: string[];
+}
+
+// ─── Notes / Bookmarks ───────────────────────────────────────────────────────
+
+export interface NoteIn {
+  date: string; // "YYYY-MM-DD"
+  body: string;
+  tags: string[];
+}
+
+export interface NoteOut extends NoteIn {
+  id: string;
+  created_at: string; // ISO-8601
+  updated_at: string;
+}
+
+// ─── Reminders ───────────────────────────────────────────────────────────────
+
+export interface ReminderIn {
+  title: string;
+  trigger_type: "gregorian" | "tithi" | "nakshatra";
+  trigger_value: string;
+  advance_minutes: number;
+}
+
+export interface ReminderOut extends ReminderIn {
+  id: string;
+  next_fire_at: string | null; // ISO-8601
+  is_active: boolean;
+}
+
+// ─── Profile / Locations ─────────────────────────────────────────────────────
+
+export interface LocationIn {
+  name: string;
+  lat: number;
+  lon: number;
+  tz: string;
+  is_default: boolean;
+}
+
+export interface LocationOut extends LocationIn {
+  id: string;
+}
+
+export interface ProfileOut {
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  default_ayanamsa: string;
+  default_month_scheme: string;
+  locations: LocationOut[];
+}
+
+export interface ProfileUpdateIn {
+  display_name?: string | null;
+  default_ayanamsa?: string | null;
+  default_month_scheme?: string | null;
+}
+
+// ─── Subscription ────────────────────────────────────────────────────────────
+
+export interface SubscriptionOut {
+  user_id: string;
+  tier: SubscriptionTier;
+  valid_until: string | null; // ISO-8601
+  features: string[];
+}
+
+// ─── PDF Jobs ────────────────────────────────────────────────────────────────
+
+export interface PdfJobIn {
+  year: number;
+  month: number;
+  lat: number;
+  lon: number;
+  tz: string;
+  ayanamsa?: string;
+  month_scheme?: string;
+}
+
+export interface PdfJobOut {
+  job_id: string;
+  status: "queued" | "processing" | "done" | "failed";
+  download_url: string | null;
+  created_at: string; // ISO-8601
 }

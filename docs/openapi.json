@@ -1,0 +1,2138 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "The Pandit API",
+    "description": "Versioned REST/JSON gateway for The Pandit platform. Clients (web, iOS, Android, admin) call this service exclusively \u2014 domain services are never exposed directly.\n\n**Auth:** Bearer JWT in the Authorization header.\n\n**Tiers:** basic < silver < gold. Gated endpoints return 403 when the caller's tier is insufficient.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/panchang/daily": {
+      "get": {
+        "tags": [
+          "panchang"
+        ],
+        "summary": "Daily Panchang",
+        "description": "Returns the full Panchang for the requested date and location. Served from the edge/in-process cache \u2014 typical p99 < 50 ms on cache hit.",
+        "operationId": "daily_panchang_v1_panchang_daily_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Gregorian date (YYYY-MM-DD)",
+              "title": "Date"
+            },
+            "description": "Gregorian date (YYYY-MM-DD)"
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 90,
+              "minimum": -90,
+              "description": "Latitude",
+              "title": "Lat"
+            },
+            "description": "Latitude"
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 180,
+              "minimum": -180,
+              "description": "Longitude",
+              "title": "Lon"
+            },
+            "description": "Longitude"
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "IANA timezone, e.g. Asia/Kolkata",
+              "title": "Tz"
+            },
+            "description": "IANA timezone, e.g. Asia/Kolkata"
+          },
+          {
+            "name": "ayanamsa",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Ayanamsa (lahiri)",
+              "default": "lahiri",
+              "title": "Ayanamsa"
+            },
+            "description": "Ayanamsa (lahiri)"
+          },
+          {
+            "name": "month_scheme",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "amanta or purnimanta",
+              "default": "amanta",
+              "title": "Month Scheme"
+            },
+            "description": "amanta or purnimanta"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_DailyPanchangOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/panchang/month": {
+      "get": {
+        "tags": [
+          "panchang"
+        ],
+        "summary": "Monthly Panchang calendar (Silver+)",
+        "description": "Returns Panchang for every day in the requested month. Requires Silver tier.",
+        "operationId": "month_calendar_v1_panchang_month_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2200,
+              "minimum": 1900,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "title": "Month"
+            }
+          },
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Lat"
+            }
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 180,
+              "minimum": -180,
+              "title": "Lon"
+            }
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tz"
+            }
+          },
+          {
+            "name": "ayanamsa",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "lahiri",
+              "title": "Ayanamsa"
+            }
+          },
+          {
+            "name": "month_scheme",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "amanta",
+              "title": "Month Scheme"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_MonthCalendarOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/festivals": {
+      "get": {
+        "tags": [
+          "festivals"
+        ],
+        "summary": "List festivals",
+        "operationId": "list_festivals_v1_festivals_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2200,
+              "minimum": 1900,
+              "default": 2026,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 12,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_FestivalOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/notes": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "List Notes",
+        "operationId": "list_notes_v1_notes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_list_NoteOut__"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Create Note",
+        "operationId": "create_note_v1_notes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_NoteOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/notes/{note_id}": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Get Note",
+        "operationId": "get_note_v1_notes__note_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_NoteOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Update Note",
+        "operationId": "update_note_v1_notes__note_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_NoteOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Delete Note",
+        "operationId": "delete_note_v1_notes__note_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reminders": {
+      "get": {
+        "tags": [
+          "reminders"
+        ],
+        "summary": "List Reminders",
+        "operationId": "list_reminders_v1_reminders_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_list_ReminderOut__"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "reminders"
+        ],
+        "summary": "Create Reminder",
+        "operationId": "create_reminder_v1_reminders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_ReminderOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/reminders/{reminder_id}": {
+      "delete": {
+        "tags": [
+          "reminders"
+        ],
+        "summary": "Delete Reminder",
+        "operationId": "delete_reminder_v1_reminders__reminder_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Reminder Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/profile": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Get Profile",
+        "operationId": "get_profile_v1_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_ProfileOut_"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Update Profile",
+        "operationId": "update_profile_v1_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_ProfileOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/profile/locations": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "List Locations",
+        "operationId": "list_locations_v1_profile_locations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_list_LocationOut__"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Add Location",
+        "operationId": "add_location_v1_profile_locations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_LocationOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/subscription": {
+      "get": {
+        "tags": [
+          "subscription"
+        ],
+        "summary": "Get Subscription",
+        "operationId": "get_subscription_v1_subscription_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_SubscriptionOut_"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/pdf/jobs": {
+      "post": {
+        "tags": [
+          "pdf"
+        ],
+        "summary": "Create Pdf Job",
+        "operationId": "create_pdf_job_v1_pdf_jobs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PdfJobIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_PdfJobOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/pdf/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "pdf"
+        ],
+        "summary": "Get Pdf Job",
+        "operationId": "get_pdf_job_v1_pdf_jobs__job_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_PdfJobOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AngaSpanOut": {
+        "properties": {
+          "index": {
+            "type": "integer",
+            "title": "Index"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeValueOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeValueOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "index",
+          "name",
+          "start",
+          "end"
+        ],
+        "title": "AngaSpanOut"
+      },
+      "ApiResponse_DailyPanchangOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DailyPanchangOut"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[DailyPanchangOut]"
+      },
+      "ApiResponse_LocationOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LocationOut"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[LocationOut]"
+      },
+      "ApiResponse_MonthCalendarOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MonthCalendarOut"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[MonthCalendarOut]"
+      },
+      "ApiResponse_NoteOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/NoteOut"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[NoteOut]"
+      },
+      "ApiResponse_PdfJobOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PdfJobOut"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[PdfJobOut]"
+      },
+      "ApiResponse_ProfileOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ProfileOut"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[ProfileOut]"
+      },
+      "ApiResponse_ReminderOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReminderOut"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[ReminderOut]"
+      },
+      "ApiResponse_SubscriptionOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SubscriptionOut"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[SubscriptionOut]"
+      },
+      "ApiResponse_list_LocationOut__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/LocationOut"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[list[LocationOut]]"
+      },
+      "ApiResponse_list_NoteOut__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NoteOut"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[list[NoteOut]]"
+      },
+      "ApiResponse_list_ReminderOut__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderOut"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[list[ReminderOut]]"
+      },
+      "CalendricalOut": {
+        "properties": {
+          "shaka_samvat": {
+            "type": "integer",
+            "title": "Shaka Samvat"
+          },
+          "vikram_samvat": {
+            "type": "integer",
+            "title": "Vikram Samvat"
+          },
+          "gujarati_samvat": {
+            "type": "integer",
+            "title": "Gujarati Samvat"
+          },
+          "samvatsara": {
+            "type": "string",
+            "title": "Samvatsara"
+          },
+          "ritu": {
+            "type": "string",
+            "title": "Ritu"
+          },
+          "ayana": {
+            "type": "string",
+            "title": "Ayana"
+          },
+          "lunar_month": {
+            "type": "string",
+            "title": "Lunar Month"
+          },
+          "is_adhika_month": {
+            "type": "boolean",
+            "title": "Is Adhika Month"
+          },
+          "is_kshaya_month": {
+            "type": "boolean",
+            "title": "Is Kshaya Month"
+          },
+          "paksha": {
+            "type": "string",
+            "title": "Paksha"
+          },
+          "moon_rashi": {
+            "type": "string",
+            "title": "Moon Rashi"
+          },
+          "sun_rashi": {
+            "type": "string",
+            "title": "Sun Rashi"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shaka_samvat",
+          "vikram_samvat",
+          "gujarati_samvat",
+          "samvatsara",
+          "ritu",
+          "ayana",
+          "lunar_month",
+          "is_adhika_month",
+          "is_kshaya_month",
+          "paksha",
+          "moon_rashi",
+          "sun_rashi"
+        ],
+        "title": "CalendricalOut"
+      },
+      "ChoghadiyaOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "start": {
+            "$ref": "#/components/schemas/TimeValueOut"
+          },
+          "end": {
+            "$ref": "#/components/schemas/TimeValueOut"
+          },
+          "is_day": {
+            "type": "boolean",
+            "title": "Is Day"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "start",
+          "end",
+          "is_day"
+        ],
+        "title": "ChoghadiyaOut"
+      },
+      "DailyPanchangOut": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz"
+          },
+          "ayanamsa": {
+            "type": "string",
+            "title": "Ayanamsa"
+          },
+          "month_scheme": {
+            "type": "string",
+            "title": "Month Scheme"
+          },
+          "sun_longitude": {
+            "type": "number",
+            "title": "Sun Longitude"
+          },
+          "moon_longitude": {
+            "type": "number",
+            "title": "Moon Longitude"
+          },
+          "ayanamsa_value": {
+            "type": "number",
+            "title": "Ayanamsa Value"
+          },
+          "tithi": {
+            "items": {
+              "$ref": "#/components/schemas/AngaSpanOut"
+            },
+            "type": "array",
+            "title": "Tithi"
+          },
+          "nakshatra": {
+            "items": {
+              "$ref": "#/components/schemas/AngaSpanOut"
+            },
+            "type": "array",
+            "title": "Nakshatra"
+          },
+          "yoga": {
+            "items": {
+              "$ref": "#/components/schemas/AngaSpanOut"
+            },
+            "type": "array",
+            "title": "Yoga"
+          },
+          "karana": {
+            "items": {
+              "$ref": "#/components/schemas/AngaSpanOut"
+            },
+            "type": "array",
+            "title": "Karana"
+          },
+          "vara": {
+            "$ref": "#/components/schemas/AngaSpanOut"
+          },
+          "day_events": {
+            "$ref": "#/components/schemas/DayEventsOut"
+          },
+          "muhurat": {
+            "items": {
+              "$ref": "#/components/schemas/PeriodOut"
+            },
+            "type": "array",
+            "title": "Muhurat"
+          },
+          "choghadiya": {
+            "items": {
+              "$ref": "#/components/schemas/ChoghadiyaOut"
+            },
+            "type": "array",
+            "title": "Choghadiya"
+          },
+          "hora": {
+            "items": {
+              "$ref": "#/components/schemas/PeriodOut"
+            },
+            "type": "array",
+            "title": "Hora"
+          },
+          "calendrical": {
+            "$ref": "#/components/schemas/CalendricalOut"
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "lat",
+          "lon",
+          "tz",
+          "ayanamsa",
+          "month_scheme",
+          "sun_longitude",
+          "moon_longitude",
+          "ayanamsa_value",
+          "tithi",
+          "nakshatra",
+          "yoga",
+          "karana",
+          "vara",
+          "day_events",
+          "muhurat",
+          "choghadiya",
+          "hora",
+          "calendrical"
+        ],
+        "title": "DailyPanchangOut",
+        "description": "Full Panchang for one (date, location, settings) \u2014 the primary API payload."
+      },
+      "DayEventsOut": {
+        "properties": {
+          "sunrise": {
+            "$ref": "#/components/schemas/TimeValueOut"
+          },
+          "sunset": {
+            "$ref": "#/components/schemas/TimeValueOut"
+          },
+          "moonrise": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeValueOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "moonset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TimeValueOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "sunrise",
+          "sunset",
+          "moonrise",
+          "moonset"
+        ],
+        "title": "DayEventsOut"
+      },
+      "FestivalOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "date",
+          "description",
+          "tags"
+        ],
+        "title": "FestivalOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LocationIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "lat",
+          "lon",
+          "tz"
+        ],
+        "title": "LocationIn"
+      },
+      "LocationOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "lat",
+          "lon",
+          "tz",
+          "id"
+        ],
+        "title": "LocationOut"
+      },
+      "MonthCalendarOut": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "month": {
+            "type": "integer",
+            "title": "Month"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/DailyPanchangOut"
+            },
+            "type": "array",
+            "title": "Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "month",
+          "days"
+        ],
+        "title": "MonthCalendarOut"
+      },
+      "NoteIn": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "body"
+        ],
+        "title": "NoteIn"
+      },
+      "NoteOut": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "body",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "NoteOut"
+      },
+      "PaginatedMeta": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "has_next": {
+            "type": "boolean",
+            "title": "Has Next"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "page",
+          "page_size",
+          "has_next"
+        ],
+        "title": "PaginatedMeta"
+      },
+      "PaginatedResponse_FestivalOut_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/FestivalOut"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginatedMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PaginatedResponse[FestivalOut]"
+      },
+      "PdfJobIn": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "month": {
+            "type": "integer",
+            "title": "Month"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz"
+          },
+          "ayanamsa": {
+            "type": "string",
+            "title": "Ayanamsa",
+            "default": "lahiri"
+          },
+          "month_scheme": {
+            "type": "string",
+            "title": "Month Scheme",
+            "default": "amanta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "month",
+          "lat",
+          "lon",
+          "tz"
+        ],
+        "title": "PdfJobIn"
+      },
+      "PdfJobOut": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "download_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Url"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "created_at"
+        ],
+        "title": "PdfJobOut"
+      },
+      "PeriodOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "start": {
+            "$ref": "#/components/schemas/TimeValueOut"
+          },
+          "end": {
+            "$ref": "#/components/schemas/TimeValueOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "start",
+          "end"
+        ],
+        "title": "PeriodOut"
+      },
+      "ProfileOut": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "default_ayanamsa": {
+            "type": "string",
+            "title": "Default Ayanamsa"
+          },
+          "default_month_scheme": {
+            "type": "string",
+            "title": "Default Month Scheme"
+          },
+          "locations": {
+            "items": {
+              "$ref": "#/components/schemas/LocationOut"
+            },
+            "type": "array",
+            "title": "Locations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "display_name",
+          "default_ayanamsa",
+          "default_month_scheme",
+          "locations"
+        ],
+        "title": "ProfileOut"
+      },
+      "ProfileUpdateIn": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "default_ayanamsa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Ayanamsa"
+          },
+          "default_month_scheme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Month Scheme"
+          }
+        },
+        "type": "object",
+        "title": "ProfileUpdateIn"
+      },
+      "ReminderIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "trigger_type": {
+            "type": "string",
+            "title": "Trigger Type"
+          },
+          "trigger_value": {
+            "type": "string",
+            "title": "Trigger Value"
+          },
+          "advance_minutes": {
+            "type": "integer",
+            "title": "Advance Minutes",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "trigger_type",
+          "trigger_value"
+        ],
+        "title": "ReminderIn"
+      },
+      "ReminderOut": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "trigger_type": {
+            "type": "string",
+            "title": "Trigger Type"
+          },
+          "trigger_value": {
+            "type": "string",
+            "title": "Trigger Value"
+          },
+          "advance_minutes": {
+            "type": "integer",
+            "title": "Advance Minutes",
+            "default": 0
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "next_fire_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Fire At"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "trigger_type",
+          "trigger_value",
+          "id",
+          "next_fire_at",
+          "is_active"
+        ],
+        "title": "ReminderOut"
+      },
+      "SubscriptionOut": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Features"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "tier",
+          "valid_until",
+          "features"
+        ],
+        "title": "SubscriptionOut"
+      },
+      "TimeValueOut": {
+        "properties": {
+          "iso": {
+            "type": "string",
+            "title": "Iso"
+          },
+          "hour_24": {
+            "type": "string",
+            "title": "Hour 24"
+          },
+          "hour_12": {
+            "type": "string",
+            "title": "Hour 12"
+          },
+          "hour_24_plus": {
+            "type": "string",
+            "title": "Hour 24 Plus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "iso",
+          "hour_24",
+          "hour_12",
+          "hour_24_plus"
+        ],
+        "title": "TimeValueOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
