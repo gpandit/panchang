@@ -35,7 +35,10 @@ export function FestivalEditorPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isNew) return;
+    if (isNew) {
+      setLoading(false);
+      return;
+    }
     api.get(id!).then((r) => {
       setRecord(r);
       setForm(r.current);

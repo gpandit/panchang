@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!payload) {
       throw new Error("Malformed token — cannot decode payload.");
     }
-    if (!payload["admin_role"]) {
+    if (payload["admin_role"] == null) {
       throw new Error("Token does not contain an admin_role claim.");
     }
     // Validate before writing to storage so state and sessionStorage stay in sync.
