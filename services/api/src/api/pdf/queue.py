@@ -12,6 +12,8 @@ from __future__ import annotations
 import asyncio
 import datetime
 import logging
+import os
+import tempfile
 from typing import Protocol
 
 from api.pdf.worker import CalendarJob, run_job
@@ -21,8 +23,9 @@ logger = logging.getLogger(__name__)
 
 # ── Domain types ──────────────────────────────────────────────────────────────
 
+
 class JobRecord:
-    __slots__ = ("job_id", "status", "download_url", "created_at", "error")
+    __slots__ = ("created_at", "download_url", "error", "job_id", "status")
 
     def __init__(self, job_id: str) -> None:
         self.job_id = job_id
@@ -34,6 +37,7 @@ class JobRecord:
 
 # ── JobStore protocol ─────────────────────────────────────────────────────────
 
+
 class JobStore(Protocol):
     def create(self, job_id: str) -> JobRecord: ...
     def get(self, job_id: str) -> JobRecord | None: ...
@@ -41,6 +45,7 @@ class JobStore(Protocol):
 
 
 # ── In-process implementation (dev / test) ────────────────────────────────────
+
 
 class InProcessJobStore:
     def __init__(self) -> None:
@@ -63,6 +68,7 @@ class InProcessJobStore:
 
 # ── StorageBackend protocol ───────────────────────────────────────────────────
 
+
 class StorageBackend(Protocol):
     async def put(self, key: str, data: bytes) -> str:
         """Store *data* under *key* and return a signed/direct download URL."""
@@ -70,9 +76,6 @@ class StorageBackend(Protocol):
 
 
 # ── Local filesystem storage (dev / test) ─────────────────────────────────────
-
-import tempfile
-import os
 
 
 class LocalFileStorage:
@@ -94,6 +97,7 @@ class LocalFileStorage:
 
 
 # ── S3 storage (production) ───────────────────────────────────────────────────
+
 
 class S3Storage:
     """Writes PDFs to S3-compatible object storage and returns a presigned URL.
@@ -117,8 +121,8 @@ class S3Storage:
         self._presign_expires = presign_expires
 
     async def put(self, key: str, data: bytes) -> str:
-        import boto3  # type: ignore[import-untyped]
-        from botocore.config import Config  # type: ignore[import-untyped]
+        import boto3
+        from botocore.config import Config
 
         loop = asyncio.get_running_loop()
 
@@ -130,11 +134,15 @@ class S3Storage:
                 aws_secret_access_key=self._secret_key,
                 config=Config(signature_version="s3v4"),
             )
-            client.put_object(Bucket=self._bucket, Key=key, Body=data, ContentType="application/pdf")
-            return client.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": self._bucket, "Key": key},
-                ExpiresIn=self._presign_expires,
+            client.put_object(
+                Bucket=self._bucket, Key=key, Body=data, ContentType="application/pdf"
+            )
+            return str(
+                client.generate_presigned_url(
+                    "get_object",
+                    Params={"Bucket": self._bucket, "Key": key},
+                    ExpiresIn=self._presign_expires,
+                )
             )
 
         return await loop.run_in_executor(None, _upload)
@@ -155,6 +163,7 @@ def get_storage() -> LocalFileStorage:
 
 
 # ── Queue processor ───────────────────────────────────────────────────────────
+
 
 async def process_job(
     job: CalendarJob,

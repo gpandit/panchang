@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -15,10 +16,7 @@ interface FestivalListScreenProps {
   token?: string;
 }
 
-export function FestivalListScreen({
-  ssrData,
-  token,
-}: FestivalListScreenProps): React.JSX.Element {
+export function FestivalListScreen({ ssrData, token }: FestivalListScreenProps): JSX.Element {
   const [filters, setFilters] = useState<FestivalFilters>({});
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<FestivalListResult | null>(ssrData);
@@ -36,7 +34,7 @@ export function FestivalListScreen({
 
   useEffect(() => {
     if (!ssrData) void load(filters, page);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // initial load only
 
   function handleFiltersChange(next: FestivalFilters) {
     setFilters(next);
@@ -67,7 +65,11 @@ export function FestivalListScreen({
 
       <div className="flex-1 px-md py-sm">
         {loading ? (
-          <p role="status" aria-live="polite" className="text-sm text-muted-foreground py-lg text-center">
+          <p
+            role="status"
+            aria-live="polite"
+            className="text-sm text-muted-foreground py-lg text-center"
+          >
             Loading…
           </p>
         ) : result?.error && result.items.length === 0 ? (
@@ -103,9 +105,7 @@ export function FestivalListScreen({
           >
             Previous
           </button>
-          <span className="text-xs text-muted-foreground">
-            Page {result.meta.page}
-          </span>
+          <span className="text-xs text-muted-foreground">Page {result.meta.page}</span>
           <button
             type="button"
             disabled={!result.meta.has_next}

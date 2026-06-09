@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -14,7 +15,7 @@ interface FestivalSectionProps {
   festivals: Festival[];
 }
 
-export function FestivalSection({ festivals }: FestivalSectionProps): React.JSX.Element | null {
+export function FestivalSection({ festivals }: FestivalSectionProps): JSX.Element | null {
   if (festivals.length === 0) return null;
 
   return (

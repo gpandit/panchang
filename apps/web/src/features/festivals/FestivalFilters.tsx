@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -27,7 +28,7 @@ interface FestivalFiltersProps {
   onChange: (filters: FestivalFilters) => void;
 }
 
-export function FestivalFiltersBar({ filters, onChange }: FestivalFiltersProps): React.JSX.Element {
+export function FestivalFiltersBar({ filters, onChange }: FestivalFiltersProps): JSX.Element {
   return (
     <div
       role="search"
@@ -41,14 +42,17 @@ export function FestivalFiltersBar({ filters, onChange }: FestivalFiltersProps):
           onChange={(e) => {
             const v = e.target.value;
             const next: FestivalFilters = { ...filters };
-            if (v) next.region = v; else delete next.region;
+            if (v) next.region = v;
+            else delete next.region;
             onChange(next);
           }}
           className="text-sm border border-border rounded-sm px-xs py-0.5 bg-background"
           aria-label="Filter by region"
         >
           {REGIONS.map((r) => (
-            <option key={r.value} value={r.value}>{r.label}</option>
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
           ))}
         </select>
       </label>
@@ -60,14 +64,17 @@ export function FestivalFiltersBar({ filters, onChange }: FestivalFiltersProps):
           onChange={(e) => {
             const v = e.target.value;
             const next: FestivalFilters = { ...filters };
-            if (v) next.locale = v; else delete next.locale;
+            if (v) next.locale = v;
+            else delete next.locale;
             onChange(next);
           }}
           className="text-sm border border-border rounded-sm px-xs py-0.5 bg-background"
           aria-label="Filter by language"
         >
           {LOCALES.map((l) => (
-            <option key={l.value} value={l.value}>{l.label}</option>
+            <option key={l.value} value={l.value}>
+              {l.label}
+            </option>
           ))}
         </select>
       </label>

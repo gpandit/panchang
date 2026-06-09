@@ -38,7 +38,7 @@ async def fetch_daily_panchang(
 
     settings = get_settings()
     url = f"{settings.panchang_service_url}/panchang/compute"
-    params = {
+    params: dict[str, str | float] = {
         "date": date,
         "lat": lat,
         "lon": lon,

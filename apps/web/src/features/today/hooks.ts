@@ -100,7 +100,6 @@ export function useTodayPanchang(opts: FetchDailyOptions): UseTodayResult {
       // can show a stale-data notice alongside the content.
       setLoadState(result.data ? "success" : "error");
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [opts.date, opts.latitude, opts.longitude, opts.timezone],
   );
 

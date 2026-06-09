@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { ReactNode } from "react";
 
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
@@ -27,7 +28,7 @@ export function Card({
   onActivate,
   className = "",
   ...rest
-}: CardProps): React.JSX.Element {
+}: CardProps): JSX.Element {
   const classes = `${BASE_CLASS} ${className}`.trim();
   const inner = (
     <>

@@ -45,7 +45,7 @@ describe("calendar components — design token contract", () => {
 
 describe("CalendarScreen — accessibility structure", () => {
   it("has a <main> landmark with aria-label", () => {
-    expect(src("CalendarScreen")).toContain('<main aria-label=');
+    expect(src("CalendarScreen")).toContain("<main aria-label=");
   });
 
   it("shows a sync pending notice with role=status", () => {
@@ -89,7 +89,7 @@ describe("MonthNav — accessibility structure", () => {
 
 describe("MonthView — accessibility structure", () => {
   it("uses <section> with aria-label", () => {
-    expect(src("MonthView")).toContain('<section aria-label=');
+    expect(src("MonthView")).toContain("<section aria-label=");
   });
 
   it("grid has role=grid with aria-label", () => {
@@ -146,7 +146,7 @@ describe("DayCell — accessibility structure", () => {
 
 describe("DayView — accessibility structure", () => {
   it("uses <section> with aria-label", () => {
-    expect(src("DayView")).toContain('<section\n      aria-label=');
+    expect(src("DayView")).toContain("<section\n      aria-label=");
   });
 
   it("uses <header> inside the section", () => {

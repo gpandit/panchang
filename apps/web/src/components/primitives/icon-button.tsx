@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
@@ -20,7 +21,7 @@ const VARIANT_CLASS: Record<"default" | "ghost", string> = {
   ghost: "bg-transparent text-foreground",
 };
 
-export function IconButton(props: IconButtonProps): React.JSX.Element {
+export function IconButton(props: IconButtonProps): JSX.Element {
   const { icon, label, variant = "default", pressed, className = "", ...rest } = props;
   const classes =
     `inline-flex items-center justify-center gap-xs rounded-md p-sm transition-colors duration-base ${VARIANT_CLASS[variant]} ${className}`.trim();

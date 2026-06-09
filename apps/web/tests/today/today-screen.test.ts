@@ -41,7 +41,7 @@ describe("today screen — design token contract", () => {
 describe("today screen — accessibility semantics present in source", () => {
   it("TodayScreen has a <main> landmark with aria-label", () => {
     const source = readFileSync(join(FEATURES_DIR, "TodayScreen.tsx"), "utf-8");
-    expect(source).toContain('<main aria-label=');
+    expect(source).toContain("<main aria-label=");
   });
 
   it("TodayHeader uses <header> and <time> elements", () => {
@@ -53,13 +53,13 @@ describe("today screen — accessibility semantics present in source", () => {
 
   it("SummaryCard uses <section> with aria-label and <dl> for solar events", () => {
     const source = readFileSync(join(FEATURES_DIR, "SummaryCard.tsx"), "utf-8");
-    expect(source).toContain('<section aria-label=');
+    expect(source).toContain("<section aria-label=");
     expect(source).toContain("<dl");
   });
 
   it("PanchangDetailList uses <section> and <ul> structure with tappable buttons", () => {
     const source = readFileSync(join(FEATURES_DIR, "PanchangDetailList.tsx"), "utf-8");
-    expect(source).toContain('<section aria-label=');
+    expect(source).toContain("<section aria-label=");
     expect(source).toContain("<ul");
     expect(source).toContain('type="button"');
     expect(source).toContain("aria-label");

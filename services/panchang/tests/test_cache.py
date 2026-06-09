@@ -15,7 +15,7 @@ from panchang.compute import compute_panchang
 from panchang.models import PanchangRequest
 from panchang.warming import DEFAULT_POPULAR_LOCATIONS, warm_horizon
 
-DELHI = dict(lat=28.6139, lon=77.2090, tz="Asia/Kolkata")
+DELHI = {"lat": 28.6139, "lon": 77.2090, "tz": "Asia/Kolkata"}
 
 
 def _request(d: date, **overrides) -> PanchangRequest:
@@ -35,6 +35,7 @@ def _counting_compute():
 # ──────────────────────────────────────────────────────────────────────────
 # Read-through behaviour
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def test_repeated_request_served_from_cache_no_recompute() -> None:
     compute, calls = _counting_compute()
@@ -105,7 +106,7 @@ def test_version_mismatch_forces_recompute() -> None:
     cache.get(req)
     assert len(calls) == 1  # treated as a miss, recomputed and re-stored
 
-    _, stored_version = hot.get(key)[0], hot.get(key)[0]
+    _ = hot.get(key)[0], hot.get(key)[0]
     assert hot.get(key)[0] == ENGINE_VERSION
     assert durable.get(key)[0] == ENGINE_VERSION
 
@@ -113,6 +114,7 @@ def test_version_mismatch_forces_recompute() -> None:
 # ──────────────────────────────────────────────────────────────────────────
 # Cache-equals-compute property
 # ──────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.parametrize(
     "d, lat, lon, tz",
@@ -137,6 +139,7 @@ def test_cached_value_equals_fresh_compute(d, lat, lon, tz) -> None:
 # Cache key / location grid
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def test_nearby_locations_share_a_cache_key() -> None:
     a = _request(date(2024, 1, 15), lat=28.6139, lon=77.2090)
     b = _request(date(2024, 1, 15), lat=28.6151, lon=77.2101)  # ~150 m away
@@ -154,6 +157,7 @@ def test_distant_locations_have_different_cache_keys() -> None:
 # ──────────────────────────────────────────────────────────────────────────
 # Warming job
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def test_warming_job_populates_horizon_for_popular_locations() -> None:
     compute, calls = _counting_compute()

@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -22,7 +23,7 @@ interface ReminderFormProps {
   onCancel?: () => void;
 }
 
-export function ReminderForm({ date, onSubmit, onCancel }: ReminderFormProps): React.JSX.Element {
+export function ReminderForm({ date, onSubmit, onCancel }: ReminderFormProps): JSX.Element {
   const titleId = useId();
   const advanceId = useId();
 

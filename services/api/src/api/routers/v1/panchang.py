@@ -43,7 +43,7 @@ async def daily_panchang(
     tz: Annotated[str, Query(description="IANA timezone, e.g. Asia/Kolkata")],
     ayanamsa: Annotated[str, Query(description="Ayanamsa (lahiri)")] = "lahiri",
     month_scheme: Annotated[str, Query(description="amanta or purnimanta")] = "amanta",
-    _claims: Annotated[TokenClaims, Depends(require_auth)] = ...,
+    _claims: Annotated[TokenClaims, Depends(require_auth)] = ...,  # type: ignore[assignment]
 ) -> ApiResponse[DailyPanchangOut]:
     try:
         result = await fetch_daily_panchang(
@@ -58,12 +58,12 @@ async def daily_panchang(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Panchang service error: {exc.response.status_code}",
-        )
+        ) from exc
     except httpx.RequestError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Panchang service unreachable: {exc}",
-        )
+        ) from exc
 
     # Edge caching headers — CDN caches for 1 hour, respects Surrogate-Key purge
     response.headers["Cache-Control"] = "public, max-age=3600, s-maxage=3600"
@@ -91,7 +91,7 @@ async def month_calendar(
     tz: Annotated[str, Query()],
     ayanamsa: str = "lahiri",
     month_scheme: str = "amanta",
-    _claims: Annotated[TokenClaims, Depends(require_tier(SubscriptionTier.SILVER))] = ...,
+    _claims: Annotated[TokenClaims, Depends(require_tier(SubscriptionTier.SILVER))] = ...,  # type: ignore[assignment]
 ) -> ApiResponse[MonthCalendarOut]:
     # Mark as burst so rate limiter applies the tighter limit
     response.headers["X-Rate-Limit-Tier"] = "burst"

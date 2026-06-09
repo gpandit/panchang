@@ -11,10 +11,7 @@ function authHeaders(token: string): Record<string, string> {
   return { Authorization: `Bearer ${token}` };
 }
 
-export async function enqueuePdfJob(
-  jobIn: PdfJobIn,
-  token: string,
-): Promise<PdfJobOut> {
+export async function enqueuePdfJob(jobIn: PdfJobIn, token: string): Promise<PdfJobOut> {
   const res = await fetch(`${API_BASE}/v1/pdf/jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders(token) },
@@ -28,10 +25,7 @@ export async function enqueuePdfJob(
   return json.data;
 }
 
-export async function pollPdfJob(
-  jobId: string,
-  token: string,
-): Promise<PdfJobOut> {
+export async function pollPdfJob(jobId: string, token: string): Promise<PdfJobOut> {
   const res = await fetch(`${API_BASE}/v1/pdf/jobs/${encodeURIComponent(jobId)}`, {
     headers: authHeaders(token),
   });

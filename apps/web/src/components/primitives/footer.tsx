@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { ReactNode } from "react";
 
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
@@ -15,9 +16,11 @@ interface FooterProps {
   className?: string;
 }
 
-export function Footer({ links, legal, social, className = "" }: FooterProps): React.JSX.Element {
+export function Footer({ links, legal, social, className = "" }: FooterProps): JSX.Element {
   return (
-    <footer className={`flex flex-col gap-md p-md text-sm text-muted-foreground ${className}`.trim()}>
+    <footer
+      className={`flex flex-col gap-md p-md text-sm text-muted-foreground ${className}`.trim()}
+    >
       <ul className="flex flex-row gap-md">
         {links.map((link) => (
           <li key={link.href}>

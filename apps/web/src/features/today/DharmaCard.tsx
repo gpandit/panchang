@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -7,7 +8,7 @@ interface DharmaCardProps {
   card: DharmaCardData;
 }
 
-export function DharmaCard({ card }: DharmaCardProps): React.JSX.Element {
+export function DharmaCard({ card }: DharmaCardProps): JSX.Element {
   return (
     <section aria-label="Daily dharma" className="px-md py-sm">
       <div className="rounded-lg border border-border bg-background shadow-sm p-md flex flex-col gap-sm">

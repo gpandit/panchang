@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -9,7 +10,7 @@ interface SummaryCardProps {
   timeFormat: TimeFormat;
 }
 
-export function SummaryCard({ data, timeFormat }: SummaryCardProps): React.JSX.Element {
+export function SummaryCard({ data, timeFormat }: SummaryCardProps): JSX.Element {
   const sunrise = formatTime(data.sunrise, timeFormat);
   const sunset = formatTime(data.sunset, timeFormat);
 
@@ -20,7 +21,9 @@ export function SummaryCard({ data, timeFormat }: SummaryCardProps): React.JSX.E
         {data.leapMonthFlag ? (
           <span
             className="text-xs text-accent font-semibold uppercase tracking-wide self-start"
-            aria-label={data.leapMonthFlag === "adhika" ? "Adhika (leap) month" : "Kshaya (lost) month"}
+            aria-label={
+              data.leapMonthFlag === "adhika" ? "Adhika (leap) month" : "Kshaya (lost) month"
+            }
           >
             {data.leapMonthFlag === "adhika" ? "Adhika Maas" : "Kshaya Maas"}
           </span>
@@ -32,7 +35,7 @@ export function SummaryCard({ data, timeFormat }: SummaryCardProps): React.JSX.E
         <p className="text-sm text-muted-foreground">{data.panchangHindiDate}</p>
 
         {/* Solar events strip */}
-        {(sunrise || sunset) ? (
+        {sunrise || sunset ? (
           <dl className="flex gap-md mt-xs text-sm" aria-label="Solar events">
             {sunrise ? (
               <div className="flex gap-xs">

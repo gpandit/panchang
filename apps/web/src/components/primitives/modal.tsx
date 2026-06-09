@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 import { useEffect, useRef, type ReactNode } from "react";
 
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
@@ -37,7 +38,7 @@ export function Modal({
   labelledBy,
   size = "md",
   className = "",
-}: ModalProps): React.JSX.Element | null {
+}: ModalProps): JSX.Element | null {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 

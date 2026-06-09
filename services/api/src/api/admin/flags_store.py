@@ -8,7 +8,7 @@ Resolutions feed back into content/rule fixes — tracked via the audit log.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from api.admin import audit as audit_log
 from api.models.admin import FlagIn, FlagRecord, FlagStatus
@@ -17,7 +17,7 @@ _queue: dict[str, FlagRecord] = {}
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def create_flag(data: FlagIn, *, reported_by: str) -> FlagRecord:

@@ -1,6 +1,8 @@
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { FestivalShareBar } from "./FestivalShareBar";
 import type { FestivalDetailOut } from "./types";
@@ -9,7 +11,7 @@ interface FestivalDetailScreenProps {
   festival: FestivalDetailOut;
 }
 
-export function FestivalDetailScreen({ festival }: FestivalDetailScreenProps): React.JSX.Element {
+export function FestivalDetailScreen({ festival }: FestivalDetailScreenProps): JSX.Element {
   return (
     <main aria-label={`Festival detail: ${festival.name}`} className="flex flex-col min-h-screen">
       <header className="px-md py-sm border-b border-border flex items-center gap-sm">
@@ -72,13 +74,7 @@ export function FestivalDetailScreen({ festival }: FestivalDetailScreenProps): R
   );
 }
 
-function Section({
-  heading,
-  children,
-}: {
-  heading: string;
-  children: React.ReactNode;
-}): React.JSX.Element {
+function Section({ heading, children }: { heading: string; children: ReactNode }): JSX.Element {
   return (
     <section aria-labelledby={`section-${heading.toLowerCase().replace(/\s+/g, "-")}`}>
       <h2

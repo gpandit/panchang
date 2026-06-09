@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -40,7 +39,13 @@ class TestPdfGoldGate:
     async def test_basic_tier_denied(self, client: AsyncClient, basic_token: str) -> None:
         response = await client.post(
             "/v1/pdf/jobs",
-            json={"year": 2025, "month": 1, "lat": 28.6139, "lon": 77.2090, "tz": "Asia/Kolkata"},
+            json={
+                "year": 2025,
+                "month": 1,
+                "lat": 28.6139,
+                "lon": 77.2090,
+                "tz": "Asia/Kolkata",
+            },
             headers={"Authorization": f"Bearer {basic_token}"},
         )
         assert response.status_code == 403
@@ -48,7 +53,13 @@ class TestPdfGoldGate:
     async def test_silver_tier_denied(self, client: AsyncClient, silver_token: str) -> None:
         response = await client.post(
             "/v1/pdf/jobs",
-            json={"year": 2025, "month": 1, "lat": 28.6139, "lon": 77.2090, "tz": "Asia/Kolkata"},
+            json={
+                "year": 2025,
+                "month": 1,
+                "lat": 28.6139,
+                "lon": 77.2090,
+                "tz": "Asia/Kolkata",
+            },
             headers={"Authorization": f"Bearer {silver_token}"},
         )
         assert response.status_code == 403
@@ -56,7 +67,13 @@ class TestPdfGoldGate:
     async def test_gold_tier_allowed(self, client: AsyncClient, gold_token: str) -> None:
         response = await client.post(
             "/v1/pdf/jobs",
-            json={"year": 2025, "month": 1, "lat": 28.6139, "lon": 77.2090, "tz": "Asia/Kolkata"},
+            json={
+                "year": 2025,
+                "month": 1,
+                "lat": 28.6139,
+                "lon": 77.2090,
+                "tz": "Asia/Kolkata",
+            },
             headers={"Authorization": f"Bearer {gold_token}"},
         )
         # 202 Accepted — queued

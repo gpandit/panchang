@@ -72,7 +72,7 @@ export class PanditApiClient {
     };
     const res = await fetch(`${this.baseUrl}${path}`, { ...init, headers });
     if (!res.ok) {
-      const body = await res.json().catch(() => ({})) as { error?: { message?: string } };
+      const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
       const msg = body?.error?.message ?? res.statusText;
       throw Object.assign(new Error(msg), { status: res.status, body });
     }
@@ -91,11 +91,15 @@ export class PanditApiClient {
   // ── Panchang ────────────────────────────────────────────────────────────────
 
   async getDailyPanchang(params: DailyPanchangParams): Promise<ApiResponse<DailyPanchangOut>> {
-    return this.request(`/v1/panchang/daily${this.qs(params as unknown as Record<string, unknown>)}`);
+    return this.request(
+      `/v1/panchang/daily${this.qs(params as unknown as Record<string, unknown>)}`,
+    );
   }
 
   async getMonthCalendar(params: MonthCalendarParams): Promise<ApiResponse<MonthCalendarOut>> {
-    return this.request(`/v1/panchang/month${this.qs(params as unknown as Record<string, unknown>)}`);
+    return this.request(
+      `/v1/panchang/month${this.qs(params as unknown as Record<string, unknown>)}`,
+    );
   }
 
   // ── Festivals ───────────────────────────────────────────────────────────────

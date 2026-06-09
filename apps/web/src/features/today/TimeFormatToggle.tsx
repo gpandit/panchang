@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -16,7 +17,7 @@ interface TimeFormatToggleProps {
   onChange: (f: TimeFormat) => void;
 }
 
-export function TimeFormatToggle({ value, onChange }: TimeFormatToggleProps): React.JSX.Element {
+export function TimeFormatToggle({ value, onChange }: TimeFormatToggleProps): JSX.Element {
   return (
     <div
       role="group"

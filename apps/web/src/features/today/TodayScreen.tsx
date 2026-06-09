@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -34,7 +35,7 @@ export function TodayScreen({
   longitude,
   timezone,
   ssrData = null,
-}: TodayScreenProps): React.JSX.Element {
+}: TodayScreenProps): JSX.Element {
   const today = todayISODate();
   const minDate = minNavigableDate();
   const [date, setDate] = useState(initialDate ?? today);
@@ -132,7 +133,7 @@ export function TodayScreen({
   );
 }
 
-function TodayLoading(): React.JSX.Element {
+function TodayLoading(): JSX.Element {
   return (
     <div
       role="status"
@@ -150,7 +151,7 @@ interface TodayErrorProps {
   onRetry: () => Promise<void>;
 }
 
-function TodayError({ error, onRetry }: TodayErrorProps): React.JSX.Element {
+function TodayError({ error, onRetry }: TodayErrorProps): JSX.Element {
   return (
     <div
       role="alert"

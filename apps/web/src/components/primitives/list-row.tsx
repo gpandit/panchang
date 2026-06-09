@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { ReactNode } from "react";
 
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
@@ -25,7 +26,7 @@ export function ListRow({
   selected = false,
   onActivate,
   className = "",
-}: ListRowProps): React.JSX.Element {
+}: ListRowProps): JSX.Element {
   const content = (
     <>
       {leading ? <div>{leading}</div> : null}

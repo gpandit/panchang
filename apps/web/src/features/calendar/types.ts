@@ -7,14 +7,14 @@ export type MoonPhase = "new" | "waxing" | "full" | "waning";
 export interface DayCellMarkers {
   tithi: string | null;
   moonPhase: MoonPhase;
-  festivals: string[];   // non-vrat festival names
-  vrats: string[];       // vrat/fast names (festivals tagged "vrat")
+  festivals: string[]; // non-vrat festival names
+  vrats: string[]; // vrat/fast names (festivals tagged "vrat")
   hasNote: boolean;
   hasBookmark: boolean;
 }
 
 export interface CalendarDayCell {
-  date: string;              // "YYYY-MM-DD"
+  date: string; // "YYYY-MM-DD"
   dayOfMonth: number;
   isCurrentMonth: boolean;
   isToday: boolean;
@@ -24,7 +24,7 @@ export interface CalendarDayCell {
 
 export interface CalendarMonthData {
   year: number;
-  month: number;  // 1-12
+  month: number; // 1-12
   days: DailyPanchangOut[];
   festivals: FestivalOut[];
 }
@@ -63,8 +63,8 @@ export interface SyncOp {
   opId: string;
   type: SyncOpType;
   payload:
-    | { note: NoteIn; tempId: string }          // create_note
-    | { id: string; note: NoteIn }              // update_note
-    | { id: string }                            // delete_note | delete_reminder
+    | { note: NoteIn; tempId: string } // create_note
+    | { id: string; note: NoteIn } // update_note
+    | { id: string } // delete_note | delete_reminder
     | { reminder: ReminderIn; tempId: string }; // create_reminder
 }

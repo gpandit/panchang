@@ -11,12 +11,13 @@ from api.admin import content_store, flags_store
 from api.auth import create_admin_token, create_token
 from api.models.auth import SubscriptionTier
 
-
 # ── Fixtures ───────────────────────────────────────────────────────────────────
+
 
 @pytest_asyncio.fixture
 async def client():
     from api.main import app
+
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
 
@@ -73,6 +74,7 @@ _FESTIVAL_PAYLOAD = {
 
 # ── Role protection ────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_viewer_cannot_create_festival(client, viewer_token):
     """VIEWER role must not be able to create content (requires EDITOR)."""
@@ -125,8 +127,11 @@ async def test_editor_cannot_publish(client, editor_token):
 
 # ── Content workflow ───────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
-async def test_full_create_review_publish_workflow(client, editor_token, publisher_token, user_token):
+async def test_full_create_review_publish_workflow(
+    client, editor_token, publisher_token, user_token
+):
     """Create → submit for review → publish → appears in public API."""
     # Create (DRAFT)
     resp = await client.post(
@@ -192,6 +197,7 @@ async def test_version_history_grows_with_workflow(client, editor_token, publish
 
 # ── Audit trail ────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_authorised_action_is_logged(client, publisher_token, editor_token):
     resp = await client.post(
@@ -222,6 +228,7 @@ async def test_authorised_action_is_logged(client, publisher_token, editor_token
 
 
 # ── Flag / review queue ────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_flagged_item_appears_in_review_queue(client, user_token, editor_token):
@@ -279,6 +286,7 @@ async def test_resolve_flag_updates_status_and_audit(client, user_token, editor_
 
 
 # ── Reporting ──────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_reports_render_signups_active_conversions(client, viewer_token):

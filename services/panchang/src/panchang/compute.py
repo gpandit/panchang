@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 import swisseph as swe
 
-from panchang import constants as C
+from panchang import constants as C  # noqa: N812
 from panchang import engine
 from panchang.models import (
     AngaSpan,
@@ -37,6 +37,7 @@ _SYNODIC_MONTH = 29.530588853  # mean length of a lunar month, days
 # ──────────────────────────────────────────────────────────────────────────
 # Generic angle helpers & boundary root-finding
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def _sun(jd: float) -> float:
     return engine.sidereal_longitude(jd, swe.SUN)
@@ -123,7 +124,10 @@ def _anga_spans(
 # Day events
 # ──────────────────────────────────────────────────────────────────────────
 
-def _find_event(jd_search_from: float, planet: int, rsmi: int, lat: float, lon: float) -> float | None:
+
+def _find_event(
+    jd_search_from: float, planet: int, rsmi: int, lat: float, lon: float
+) -> float | None:
     return engine.rise_trans(jd_search_from, planet, lon, lat, rsmi)
 
 
@@ -131,16 +135,21 @@ def _find_event(jd_search_from: float, planet: int, rsmi: int, lat: float, lon: 
 # Main entry point
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def compute_panchang(request: PanchangRequest) -> PanchangResult:
     tz = ZoneInfo(request.tz)
     engine.set_ayanamsa(request.ayanamsa.value)
 
     # Local midnight at the start of the requested date -> UT Julian Day,
     # used purely as a search anchor for the sunrise that opens this Panchang day.
-    local_midnight = datetime(request.date.year, request.date.month, request.date.day, 0, 0, 0, tzinfo=tz)
+    local_midnight = datetime(
+        request.date.year, request.date.month, request.date.day, 0, 0, 0, tzinfo=tz
+    )
     midnight_utc = local_midnight.astimezone(ZoneInfo("UTC"))
     jd_midnight = engine.julday(
-        midnight_utc.year, midnight_utc.month, midnight_utc.day,
+        midnight_utc.year,
+        midnight_utc.month,
+        midnight_utc.day,
         midnight_utc.hour + midnight_utc.minute / 60 + midnight_utc.second / 3600,
     )
 
@@ -208,20 +217,44 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
         return C.KARANA_NAMES_MOVABLE[(k - 1) % 7]
 
     tithi = _anga_spans(
-        tithi_angle, 12.0, lambda i: C.TITHI_NAMES[i % 30],
-        day_start, day_end, search_back=1.3, search_fwd=1.3, tv=tv,
+        tithi_angle,
+        12.0,
+        lambda i: C.TITHI_NAMES[i % 30],
+        day_start,
+        day_end,
+        search_back=1.3,
+        search_fwd=1.3,
+        tv=tv,
     )
     nakshatra = _anga_spans(
-        nakshatra_angle, nak_step, lambda i: C.NAKSHATRA_NAMES[i % 27],
-        day_start, day_end, search_back=1.3, search_fwd=1.3, tv=tv,
+        nakshatra_angle,
+        nak_step,
+        lambda i: C.NAKSHATRA_NAMES[i % 27],
+        day_start,
+        day_end,
+        search_back=1.3,
+        search_fwd=1.3,
+        tv=tv,
     )
     yoga = _anga_spans(
-        yoga_angle, yoga_step, lambda i: C.YOGA_NAMES[i % 27],
-        day_start, day_end, search_back=1.3, search_fwd=1.3, tv=tv,
+        yoga_angle,
+        yoga_step,
+        lambda i: C.YOGA_NAMES[i % 27],
+        day_start,
+        day_end,
+        search_back=1.3,
+        search_fwd=1.3,
+        tv=tv,
     )
     karana = _anga_spans(
-        tithi_angle, karana_step, karana_name,
-        day_start, day_end, search_back=0.7, search_fwd=0.7, tv=tv,
+        tithi_angle,
+        karana_step,
+        karana_name,
+        day_start,
+        day_end,
+        search_back=0.7,
+        search_fwd=0.7,
+        tv=tv,
     )
 
     weekday_index = (request.date.weekday() + 1) % 7  # 0 = Sunday
@@ -272,6 +305,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
 # Muhurat / Choghadiya / Hora
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def _compute_muhurat(sunrise: float, sunset: float, next_sunrise: float, tv) -> list[MuhuratPeriod]:
     day_dur = sunset - sunrise
     night_dur = next_sunrise - sunset
@@ -292,19 +326,31 @@ def _compute_muhurat(sunrise: float, sunset: float, next_sunrise: float, tv) -> 
     minute = 1.0 / (24.0 * 60.0)
 
     midday = sunrise + day_dur / 2.0
-    periods.append(MuhuratPeriod(name="Abhijit Muhurat", start=tv(midday - 24 * minute), end=tv(midday + 24 * minute)))
+    periods.append(
+        MuhuratPeriod(
+            name="Abhijit Muhurat", start=tv(midday - 24 * minute), end=tv(midday + 24 * minute)
+        )
+    )
 
     periods.append(
-        MuhuratPeriod(name="Brahma Muhurat", start=tv(sunrise - 96 * minute), end=tv(sunrise - 48 * minute))
+        MuhuratPeriod(
+            name="Brahma Muhurat", start=tv(sunrise - 96 * minute), end=tv(sunrise - 48 * minute)
+        )
     )
 
     midnight = sunset + night_dur / 2.0
-    periods.append(MuhuratPeriod(name="Nishita Muhurat", start=tv(midnight - 24 * minute), end=tv(midnight + 24 * minute)))
+    periods.append(
+        MuhuratPeriod(
+            name="Nishita Muhurat", start=tv(midnight - 24 * minute), end=tv(midnight + 24 * minute)
+        )
+    )
 
     return periods
 
 
-def _compute_choghadiya(sunrise: float, sunset: float, next_sunrise: float, weekday_index: int, tv) -> list[Choghadiya]:
+def _compute_choghadiya(
+    sunrise: float, sunset: float, next_sunrise: float, weekday_index: int, tv
+) -> list[Choghadiya]:
     result: list[Choghadiya] = []
 
     day_segment = (sunset - sunrise) / 8.0
@@ -322,7 +368,9 @@ def _compute_choghadiya(sunrise: float, sunset: float, next_sunrise: float, week
     return result
 
 
-def _compute_hora(sunrise: float, sunset: float, next_sunrise: float, weekday_index: int, tv) -> list[MuhuratPeriod]:
+def _compute_hora(
+    sunrise: float, sunset: float, next_sunrise: float, weekday_index: int, tv
+) -> list[MuhuratPeriod]:
     result: list[MuhuratPeriod] = []
     start_idx = C.HORA_START_INDEX[weekday_index]
 
@@ -353,6 +401,7 @@ def _weekday_from_jd(jd_ut: float) -> int:
 # Samvat & calendrical fields
 # ──────────────────────────────────────────────────────────────────────────
 
+
 def _detect_adhika_kshaya(tithi_angle, day_start: float, tithi_index: int) -> tuple[bool, bool]:
     """Detect Adhika (leap) and Kshaya (skipped) lunar months.
 
@@ -365,7 +414,7 @@ def _detect_adhika_kshaya(tithi_angle, day_start: float, tithi_index: int) -> tu
         absorbed/skipped in the sequence.
       - Otherwise (exactly one sankranti) the month is a normal month.
 
-    New-moon instants are located by bisecting the tithi angle (Moon − Sun)
+    New-moon instants are located by bisecting the tithi angle (Moon - Sun)
     to 0° within a window around the mean-tithi-length estimate of where
     each bounding new moon should fall; see docs/edge-cases.md for the
     rationale and accuracy margin of this approximation.
@@ -418,7 +467,7 @@ def _compute_calendrical(
 
     ritu = C.RITU_NAMES[sun_rashi_index // 2]
 
-    # Uttarayana: Sun's sidereal longitude in [270°, 360°) ∪ [0°, 90°)
+    # Uttarayana: Sun's sidereal longitude in [270 deg, 360 deg) U [0 deg, 90 deg)
     # (Makar Sankranti to Karka Sankranti).
     ayana = "Uttarayana" if (sun_lon >= 270.0 or sun_lon < 90.0) else "Dakshinayana"
 

@@ -6,7 +6,7 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ContentPage } from "@/pages/ContentPage";
 import { FlagsPage } from "@/pages/FlagsPage";
@@ -23,20 +23,12 @@ function makeToken(role: string) {
   return `${header}.${payload}.sig`;
 }
 
-function Wrapper({
-  role,
-  children,
-}: {
-  role: string;
-  children: React.ReactNode;
-}) {
+function Wrapper({ role, children }: { role: string; children: React.ReactNode }) {
   // Pre-populate sessionStorage so AuthProvider picks it up on mount
   sessionStorage.setItem(SESSION_KEY, makeToken(role));
   return (
     <MemoryRouter>
-      <AuthProvider>
-        {children}
-      </AuthProvider>
+      <AuthProvider>{children}</AuthProvider>
     </MemoryRouter>
   );
 }
@@ -70,9 +62,9 @@ vi.mock("@/api/client", async (importOriginal) => {
   };
 });
 
-const mockContent = client.content as Record<string, ReturnType<typeof vi.fn>>;
-const mockFlags = client.flags as Record<string, ReturnType<typeof vi.fn>>;
-const mockReporting = client.reporting as Record<string, ReturnType<typeof vi.fn>>;
+const mockContent = client.content as unknown as Record<string, ReturnType<typeof vi.fn>>;
+const mockFlags = client.flags as unknown as Record<string, ReturnType<typeof vi.fn>>;
+const mockReporting = client.reporting as unknown as Record<string, ReturnType<typeof vi.fn>>;
 
 // ── Content management tests ───────────────────────────────────────────────────
 
@@ -86,8 +78,23 @@ describe("ContentPage", () => {
       {
         id: "fest-1",
         status: "draft",
-        versions: [{ version: 1, status: "draft", changed_by: "u1", changed_at: new Date().toISOString(), snapshot: {} }],
-        current: { name: "Test Festival", slug: "test-festival", date: "", tags: [], region: "all", locale: "en" },
+        versions: [
+          {
+            version: 1,
+            status: "draft",
+            changed_by: "u1",
+            changed_at: new Date().toISOString(),
+            snapshot: {},
+          },
+        ],
+        current: {
+          name: "Test Festival",
+          slug: "test-festival",
+          date: "",
+          tags: [],
+          region: "all",
+          locale: "en",
+        },
         created_by: "u1",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -112,7 +119,14 @@ describe("ContentPage", () => {
         id: "fest-1",
         status: "draft",
         versions: [],
-        current: { name: "A Festival", slug: "a-festival", date: "", tags: [], region: "all", locale: "en" },
+        current: {
+          name: "A Festival",
+          slug: "a-festival",
+          date: "",
+          tags: [],
+          region: "all",
+          locale: "en",
+        },
         created_by: "u1",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -136,7 +150,14 @@ describe("ContentPage", () => {
         id: "fest-1",
         status: "review",
         versions: [],
-        current: { name: "In Review", slug: "in-review", date: "", tags: [], region: "all", locale: "en" },
+        current: {
+          name: "In Review",
+          slug: "in-review",
+          date: "",
+          tags: [],
+          region: "all",
+          locale: "en",
+        },
         created_by: "u1",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -161,7 +182,14 @@ describe("ContentPage", () => {
         id: "fest-1",
         status: "review",
         versions: [],
-        current: { name: "Ready to Publish", slug: "ready", date: "", tags: [], region: "all", locale: "en" },
+        current: {
+          name: "Ready to Publish",
+          slug: "ready",
+          date: "",
+          tags: [],
+          region: "all",
+          locale: "en",
+        },
         created_by: "u1",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -246,9 +274,7 @@ describe("ReportsPage", () => {
   it("renders signups, active users and conversions from report data", async () => {
     mockReporting.overview.mockResolvedValueOnce({
       period: "last_7d",
-      rows: [
-        { date: "2026-06-09", signups: 12, active_users: 95, conversions: 2 },
-      ],
+      rows: [{ date: "2026-06-09", signups: 12, active_users: 95, conversions: 2 }],
       totals: { date: "total", signups: 12, active_users: 95, conversions: 2 },
     });
 

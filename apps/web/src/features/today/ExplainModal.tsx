@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -11,7 +12,7 @@ interface ExplainModalProps {
   onClose: () => void;
 }
 
-export function ExplainModal({ element, onClose }: ExplainModalProps): React.JSX.Element {
+export function ExplainModal({ element, onClose }: ExplainModalProps): JSX.Element {
   const HEADER_ID = "explain-modal-title";
   return (
     <Modal

@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -27,7 +28,7 @@ export function MonthView({
   loadState,
   error,
   onRetry,
-}: MonthViewProps): React.JSX.Element {
+}: MonthViewProps): JSX.Element {
   if (loadState === "loading" || loadState === "idle") {
     return (
       <div

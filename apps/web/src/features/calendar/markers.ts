@@ -14,8 +14,8 @@ import type {
 
 export function deriveMoonPhase(day: DailyPanchangOut): MoonPhase {
   const tithiIndex = day.tithi[0]?.index ?? 0;
-  if (tithiIndex === 30 || tithiIndex === 0) return "new";   // Amavasya
-  if (tithiIndex === 15) return "full";                       // Purnima
+  if (tithiIndex === 30 || tithiIndex === 0) return "new"; // Amavasya
+  if (tithiIndex === 15) return "full"; // Purnima
   const paksha = day.calendrical.paksha.toLowerCase();
   return paksha.includes("shukla") ? "waxing" : "waning";
 }
@@ -46,7 +46,14 @@ function isoDate(year: number, month: number, day: number): string {
 }
 
 function emptyMarkers(): DayCellMarkers {
-  return { tithi: null, moonPhase: "waxing", festivals: [], vrats: [], hasNote: false, hasBookmark: false };
+  return {
+    tithi: null,
+    moonPhase: "waxing",
+    festivals: [],
+    vrats: [],
+    hasNote: false,
+    hasBookmark: false,
+  };
 }
 
 /**
@@ -79,7 +86,14 @@ export function buildDayGrid(
   for (let i = 0; i < firstDow; i++) {
     const dom = daysInPrevMonth - (firstDow - 1 - i);
     const dateStr = isoDate(prevYear, prevMonth, dom);
-    cells.push({ date: dateStr, dayOfMonth: dom, isCurrentMonth: false, isToday: dateStr === todayISO, markers: emptyMarkers(), panchang: null });
+    cells.push({
+      date: dateStr,
+      dayOfMonth: dom,
+      isCurrentMonth: false,
+      isToday: dateStr === todayISO,
+      markers: emptyMarkers(),
+      panchang: null,
+    });
   }
 
   // Current month
@@ -100,7 +114,14 @@ export function buildDayGrid(
   const trailing = (7 - (cells.length % 7)) % 7;
   for (let i = 1; i <= trailing; i++) {
     const dateStr = isoDate(nextYear, nextMonth, i);
-    cells.push({ date: dateStr, dayOfMonth: i, isCurrentMonth: false, isToday: dateStr === todayISO, markers: emptyMarkers(), panchang: null });
+    cells.push({
+      date: dateStr,
+      dayOfMonth: i,
+      isCurrentMonth: false,
+      isToday: dateStr === todayISO,
+      markers: emptyMarkers(),
+      panchang: null,
+    });
   }
 
   return cells;

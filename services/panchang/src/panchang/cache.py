@@ -25,9 +25,10 @@ of each minting their own. See `LOCATION_GRID_DEGREES`.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date, timedelta
-from typing import Callable, Protocol
+from datetime import date
+from typing import Protocol
 
 from panchang.models import PanchangRequest, PanchangResult
 
@@ -104,18 +105,17 @@ class CacheStore(Protocol):
         """Return (engine_version, result) for *key*, or None on miss."""
         ...
 
-    def set(self, key: str, engine_version: str, result: PanchangResult, ttl_seconds: int) -> None:
-        ...
+    def set(
+        self, key: str, engine_version: str, result: PanchangResult, ttl_seconds: int
+    ) -> None: ...
 
 
 class PanchangDayRepository(Protocol):
     """Durable system of record (Postgres in production)."""
 
-    def get(self, key: str) -> tuple[str, PanchangResult] | None:
-        ...
+    def get(self, key: str) -> tuple[str, PanchangResult] | None: ...
 
-    def put(self, key: str, engine_version: str, result: PanchangResult) -> None:
-        ...
+    def put(self, key: str, engine_version: str, result: PanchangResult) -> None: ...
 
 
 class InMemoryCacheStore:

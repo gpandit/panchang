@@ -25,10 +25,18 @@ import {
 const lsStore: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => lsStore[key] ?? null,
-  setItem: (key: string, value: string) => { lsStore[key] = value; },
-  removeItem: (key: string) => { delete lsStore[key]; },
-  clear: () => { Object.keys(lsStore).forEach((k) => delete lsStore[k]); },
-  get length() { return Object.keys(lsStore).length; },
+  setItem: (key: string, value: string) => {
+    lsStore[key] = value;
+  },
+  removeItem: (key: string) => {
+    delete lsStore[key];
+  },
+  clear: () => {
+    Object.keys(lsStore).forEach((k) => delete lsStore[k]);
+  },
+  get length() {
+    return Object.keys(lsStore).length;
+  },
   key: (i: number) => Object.keys(lsStore)[i] ?? null,
 };
 
@@ -60,12 +68,18 @@ describe("createNote — online", () => {
     localStorageMock.clear();
     vi.stubGlobal("localStorage", localStorageMock);
     writeNotesStore([]);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: MOCK_NOTE_RESPONSE }),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: MOCK_NOTE_RESPONSE }),
+      }),
+    );
   });
-  afterEach(() => { vi.unstubAllGlobals(); localStorageMock.clear(); });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorageMock.clear();
+  });
 
   it("writes the server-returned note to the local store", async () => {
     await createNote({ date: "2026-06-09", body: "Morning puja done", tags: [] });
@@ -83,10 +97,13 @@ describe("createNote — online", () => {
 
   it("stores bookmark note with 'bookmark' tag", async () => {
     const bookmarkResponse = { ...MOCK_NOTE_RESPONSE, id: "bm-1", tags: ["bookmark"] };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: bookmarkResponse }),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: bookmarkResponse }),
+      }),
+    );
     const note = await createNote({ date: "2026-06-09", body: "Special day", tags: ["bookmark"] });
     expect(note.tags).toContain("bookmark");
     const store = readNotesStore();
@@ -103,7 +120,10 @@ describe("createNote — offline (fetch throws)", () => {
     writeNotesStore([]);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
   });
-  afterEach(() => { vi.unstubAllGlobals(); localStorageMock.clear(); });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorageMock.clear();
+  });
 
   it("writes a pending note to local store when offline", async () => {
     const note = await createNote({ date: "2026-06-09", body: "Offline note", tags: [] });
@@ -128,16 +148,28 @@ describe("updateNote — online", () => {
   beforeEach(() => {
     localStorageMock.clear();
     vi.stubGlobal("localStorage", localStorageMock);
-    writeNotesStore([{
-      id: "server-note-1", date: "2026-06-09", body: "Old body", tags: [],
-      created_at: "2026-06-09T06:00:00Z", updated_at: "2026-06-09T06:00:00Z",
-    }]);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: { ...MOCK_NOTE_RESPONSE, body: "New body" } }),
-    }));
+    writeNotesStore([
+      {
+        id: "server-note-1",
+        date: "2026-06-09",
+        body: "Old body",
+        tags: [],
+        created_at: "2026-06-09T06:00:00Z",
+        updated_at: "2026-06-09T06:00:00Z",
+      },
+    ]);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { ...MOCK_NOTE_RESPONSE, body: "New body" } }),
+      }),
+    );
   });
-  afterEach(() => { vi.unstubAllGlobals(); localStorageMock.clear(); });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorageMock.clear();
+  });
 
   it("replaces the old note body in local store", async () => {
     await updateNote("server-note-1", { date: "2026-06-09", body: "New body", tags: [] });
@@ -153,13 +185,22 @@ describe("deleteNote — online", () => {
   beforeEach(() => {
     localStorageMock.clear();
     vi.stubGlobal("localStorage", localStorageMock);
-    writeNotesStore([{
-      id: "server-note-1", date: "2026-06-09", body: "To delete", tags: [],
-      created_at: "", updated_at: "",
-    }]);
+    writeNotesStore([
+      {
+        id: "server-note-1",
+        date: "2026-06-09",
+        body: "To delete",
+        tags: [],
+        created_at: "",
+        updated_at: "",
+      },
+    ]);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
   });
-  afterEach(() => { vi.unstubAllGlobals(); localStorageMock.clear(); });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorageMock.clear();
+  });
 
   it("removes the note from local store", async () => {
     await deleteNote("server-note-1");
@@ -174,12 +215,18 @@ describe("createReminder — online", () => {
     localStorageMock.clear();
     vi.stubGlobal("localStorage", localStorageMock);
     writeRemindersStore([]);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: MOCK_REMINDER_RESPONSE }),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: MOCK_REMINDER_RESPONSE }),
+      }),
+    );
   });
-  afterEach(() => { vi.unstubAllGlobals(); localStorageMock.clear(); });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorageMock.clear();
+  });
 
   it("writes the server-returned reminder to the local store", async () => {
     await createReminder({
@@ -216,7 +263,10 @@ describe("createReminder — offline", () => {
     writeRemindersStore([]);
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
   });
-  afterEach(() => { vi.unstubAllGlobals(); localStorageMock.clear(); });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorageMock.clear();
+  });
 
   it("writes a pending reminder when offline", async () => {
     const r = await createReminder({
@@ -238,13 +288,23 @@ describe("deleteReminder — online", () => {
   beforeEach(() => {
     localStorageMock.clear();
     vi.stubGlobal("localStorage", localStorageMock);
-    writeRemindersStore([{
-      id: "server-rem-1", title: "Old reminder", trigger_type: "gregorian",
-      trigger_value: "2026-06-09", advance_minutes: 0, next_fire_at: null, is_active: true,
-    }]);
+    writeRemindersStore([
+      {
+        id: "server-rem-1",
+        title: "Old reminder",
+        trigger_type: "gregorian",
+        trigger_value: "2026-06-09",
+        advance_minutes: 0,
+        next_fire_at: null,
+        is_active: true,
+      },
+    ]);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
   });
-  afterEach(() => { vi.unstubAllGlobals(); localStorageMock.clear(); });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorageMock.clear();
+  });
 
   it("removes the reminder from local store", async () => {
     await deleteReminder("server-rem-1");

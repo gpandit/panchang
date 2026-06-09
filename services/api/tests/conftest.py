@@ -26,6 +26,7 @@ async def client():
 
 # ── Pre-built tokens for common tiers ─────────────────────────────────────────
 
+
 @pytest.fixture
 def basic_token() -> str:
     return create_token(sub="user-basic-001", tier=SubscriptionTier.BASIC)
@@ -52,10 +53,9 @@ def clear_panchang_cache():
 @pytest.fixture(autouse=True)
 def reset_rate_limiter():
     """Clear the in-process rate limiter state between tests."""
-    from api.middleware.rate_limit import SlidingWindowRateLimiter
-
     # Walk the ASGI middleware chain to find the SlidingWindowRateLimiter
     from api.main import app
+    from api.middleware.rate_limit import SlidingWindowRateLimiter
 
     node = getattr(app, "middleware_stack", None)
     while node is not None:

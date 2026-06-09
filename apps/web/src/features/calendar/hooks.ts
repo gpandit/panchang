@@ -18,12 +18,7 @@ import {
   type ReminderInput,
 } from "./api";
 import { buildDayGrid } from "./markers";
-import type {
-  CalendarDayCell,
-  CalendarMonthData,
-  LocalNote,
-  LocalReminder,
-} from "./types";
+import type { CalendarDayCell, CalendarMonthData, LocalNote, LocalReminder } from "./types";
 
 export type LoadState = "idle" | "loading" | "success" | "error";
 
@@ -31,7 +26,7 @@ export type LoadState = "idle" | "loading" | "success" | "error";
 
 export interface UseMonthCalendarParams {
   year: number;
-  month: number;  // 1-12
+  month: number; // 1-12
   lat: number;
   lon: number;
   tz: string;
@@ -67,15 +62,31 @@ export function useMonthCalendar(
       setError(result.error ?? null);
       setLoadState(result.data ? "success" : "error");
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [params.year, params.month, params.lat, params.lon, params.tz, params.ayanamsa, params.monthScheme],
+    [
+      params.year,
+      params.month,
+      params.lat,
+      params.lon,
+      params.tz,
+      params.ayanamsa,
+      params.monthScheme,
+    ],
   );
 
-  useEffect(() => { void load(false); }, [load]);
+  useEffect(() => {
+    void load(false);
+  }, [load]);
 
   const cells = data ? buildDayGrid(data, notes, todayISO) : [];
 
-  return { data, cells, loadState, fromCache, error, refresh: useCallback(() => load(true), [load]) };
+  return {
+    data,
+    cells,
+    loadState,
+    fromCache,
+    error,
+    refresh: useCallback(() => load(true), [load]),
+  };
 }
 
 // ─── Notes store ──────────────────────────────────────────────────────────────
@@ -97,24 +108,45 @@ export function useNotes(token?: string): UseNotesResult {
   useEffect(() => {
     setLoadState("loading");
     syncNotesFromAPI(token)
-      .then(() => { reload(); setLoadState("success"); })
-      .catch(() => { reload(); setLoadState("error"); });
+      .then(() => {
+        reload();
+        setLoadState("success");
+      })
+      .catch(() => {
+        reload();
+        setLoadState("error");
+      });
   }, [token, reload]);
 
   const handleCreate = useCallback(
-    async (noteIn: NoteInput) => { await apiCreateNote(noteIn, token); reload(); },
+    async (noteIn: NoteInput) => {
+      await apiCreateNote(noteIn, token);
+      reload();
+    },
     [token, reload],
   );
   const handleUpdate = useCallback(
-    async (id: string, noteIn: NoteInput) => { await apiUpdateNote(id, noteIn, token); reload(); },
+    async (id: string, noteIn: NoteInput) => {
+      await apiUpdateNote(id, noteIn, token);
+      reload();
+    },
     [token, reload],
   );
   const handleDelete = useCallback(
-    async (id: string) => { await apiDeleteNote(id, token); reload(); },
+    async (id: string) => {
+      await apiDeleteNote(id, token);
+      reload();
+    },
     [token, reload],
   );
 
-  return { notes, loadState, createNote: handleCreate, updateNote: handleUpdate, deleteNote: handleDelete };
+  return {
+    notes,
+    loadState,
+    createNote: handleCreate,
+    updateNote: handleUpdate,
+    deleteNote: handleDelete,
+  };
 }
 
 // ─── Reminders store ──────────────────────────────────────────────────────────
@@ -135,16 +167,28 @@ export function useReminders(token?: string): UseRemindersResult {
   useEffect(() => {
     setLoadState("loading");
     syncRemindersFromAPI(token)
-      .then(() => { reload(); setLoadState("success"); })
-      .catch(() => { reload(); setLoadState("error"); });
+      .then(() => {
+        reload();
+        setLoadState("success");
+      })
+      .catch(() => {
+        reload();
+        setLoadState("error");
+      });
   }, [token, reload]);
 
   const handleCreate = useCallback(
-    async (r: ReminderInput) => { await apiCreateReminder(r, token); reload(); },
+    async (r: ReminderInput) => {
+      await apiCreateReminder(r, token);
+      reload();
+    },
     [token, reload],
   );
   const handleDelete = useCallback(
-    async (id: string) => { await apiDeleteReminder(id, token); reload(); },
+    async (id: string) => {
+      await apiDeleteReminder(id, token);
+      reload();
+    },
     [token, reload],
   );
 

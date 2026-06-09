@@ -9,9 +9,10 @@ Token shape (extra claims passed to create_token):
 
 from __future__ import annotations
 
-import jwt
+from collections.abc import Callable
 from typing import Annotated
 
+import jwt
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -42,13 +43,13 @@ def _get_admin_claims(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from None
     except (jwt.DecodeError, jwt.InvalidTokenError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token: {exc}",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from exc
 
     role_raw = payload.get("admin_role", "")
     try:
@@ -60,7 +61,7 @@ def _get_admin_claims(
                 "code": "not_admin",
                 "message": "This endpoint requires an admin role.",
             },
-        )
+        ) from None
 
     tier_raw = payload.get("tier", "basic")
     try:
@@ -78,10 +79,14 @@ def _get_admin_claims(
     )
 
 
-def require_admin_role(min_role: AdminRole):
+def require_admin_role(
+    min_role: AdminRole,
+) -> Callable[[Annotated[AdminClaims, object]], AdminClaims]:
     """Return a FastAPI dependency that enforces a minimum admin role."""
 
-    def _check(claims: Annotated[AdminClaims, Depends(_get_admin_claims)]) -> AdminClaims:
+    def _check(
+        claims: Annotated[AdminClaims, Depends(_get_admin_claims)],
+    ) -> AdminClaims:
         if not claims.admin_role.meets(min_role):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

@@ -7,7 +7,7 @@ persist this to the PostgreSQL audit_log table.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from api.models.admin import AuditEntry
@@ -26,7 +26,7 @@ def record(
 ) -> AuditEntry:
     entry = AuditEntry(
         id=str(uuid.uuid4()),
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         actor_id=actor_id,
         actor_email=actor_email,
         action=action,

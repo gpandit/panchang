@@ -3,7 +3,12 @@
  * All data comes from the gateway — never computed on the client.
  */
 
-import type { FestivalDetailOut, FestivalOut, PaginatedMeta, PaginatedResponse } from "@pandit/api-client-ts";
+import type {
+  FestivalDetailOut,
+  FestivalOut,
+  PaginatedMeta,
+  PaginatedResponse,
+} from "@pandit/api-client-ts";
 import type { FestivalDetailResult, FestivalFilters, FestivalListResult } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "/api";
@@ -76,8 +81,19 @@ export async function fetchFestivals(
     });
     if (!res.ok) {
       const stale = readListCache(cacheKey);
-      if (stale) return { items: stale.items, meta: stale.meta, fromCache: true, error: `HTTP ${res.status}` };
-      return { items: [], meta: emptyMeta(page, pageSize), fromCache: false, error: `HTTP ${res.status}` };
+      if (stale)
+        return {
+          items: stale.items,
+          meta: stale.meta,
+          fromCache: true,
+          error: `HTTP ${res.status}`,
+        };
+      return {
+        items: [],
+        meta: emptyMeta(page, pageSize),
+        fromCache: false,
+        error: `HTTP ${res.status}`,
+      };
     }
     const json = (await res.json()) as PaginatedResponse<FestivalOut>;
     writeListCache(cacheKey, json.data, json.meta);

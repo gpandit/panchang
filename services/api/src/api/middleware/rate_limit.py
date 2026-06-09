@@ -55,16 +55,20 @@ class SlidingWindowRateLimiter(BaseHTTPMiddleware):
             return f"token:{hashlib.sha256(token.encode()).hexdigest()[:16]}"
 
         forwarded = request.headers.get("X-Forwarded-For")
-        ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+        ip = (
+            forwarded.split(",")[0].strip()
+            if forwarded
+            else (request.client.host if request.client else "unknown")
+        )
         return f"ip:{ip}"
 
     def _is_burst(self, request: Request) -> bool:
         return request.headers.get("X-Rate-Limit-Tier") == "burst"
 
-    async def dispatch(self, request: Request, call_next: object) -> Response:  # type: ignore[override]
+    async def dispatch(self, request: Request, call_next: object) -> Response:
         # Health check is exempt
         if request.url.path in {"/health", "/docs", "/redoc", "/openapi.json"}:
-            return await call_next(request)  # type: ignore[operator]
+            return await call_next(request)  # type: ignore[operator,no-any-return]
 
         key = self._identity(request)
         limit = self._burst_rpm if self._is_burst(request) else self._rpm

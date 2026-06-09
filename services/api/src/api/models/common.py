@@ -6,14 +6,10 @@ so clients have a consistent shape regardless of domain.
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
-
 from pydantic import BaseModel
 
-T = TypeVar("T")
 
-
-class ApiResponse(BaseModel, Generic[T]):
+class ApiResponse[T](BaseModel):
     """Success envelope for all v1 endpoints."""
 
     data: T
@@ -37,7 +33,7 @@ class PaginatedMeta(BaseModel):
     has_next: bool
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse[T](BaseModel):
     """Paginated success envelope."""
 
     data: list[T]

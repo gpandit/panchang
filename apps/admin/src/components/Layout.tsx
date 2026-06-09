@@ -1,13 +1,12 @@
-import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { tokens } from "@/tokens";
 
 const NAV_ITEMS = [
-  { to: "/content",   label: "Content" },
-  { to: "/flags",     label: "Flag Queue" },
-  { to: "/reports",   label: "Reports" },
-  { to: "/audit",     label: "Audit Trail" },
+  { to: "/content", label: "Content" },
+  { to: "/flags", label: "Flag Queue" },
+  { to: "/reports", label: "Reports" },
+  { to: "/audit", label: "Audit Trail" },
 ];
 
 export function Layout() {

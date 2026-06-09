@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
@@ -7,7 +8,7 @@ import { useState, useId } from "react";
 import type { LocalNote } from "./types";
 
 interface NoteEditorProps {
-  date: string;  // "YYYY-MM-DD" — the anchor date
+  date: string; // "YYYY-MM-DD" — the anchor date
   /** If provided, the form is in edit mode pre-filled with this note. */
   editingNote?: LocalNote;
   onSubmit: (body: string, tags: string[]) => Promise<void>;
@@ -22,7 +23,7 @@ export function NoteEditor({
   onSubmit,
   onCancel,
   isBookmark = false,
-}: NoteEditorProps): React.JSX.Element {
+}: NoteEditorProps): JSX.Element {
   const labelId = useId();
   const bodyId = useId();
 
@@ -35,7 +36,9 @@ export function NoteEditor({
 
   const isEditing = !!editingNote;
   const entityLabel = isBookmark ? "bookmark" : "note";
-  const formLabel = isEditing ? `Edit ${entityLabel} for ${date}` : `Add ${entityLabel} for ${date}`;
+  const formLabel = isEditing
+    ? `Edit ${entityLabel} for ${date}`
+    : `Add ${entityLabel} for ${date}`;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();

@@ -15,12 +15,7 @@ export function getToken(): string | null {
   return _token;
 }
 
-async function request<T>(
-  method: string,
-  path: string,
-  body?: unknown,
-  base = BASE,
-): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, base = BASE): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -40,7 +35,12 @@ async function request<T>(
     try {
       const errData = await resp.json();
       const detail = errData?.detail?.message ?? errData?.detail;
-      msg = typeof detail === "string" ? detail : detail != null ? JSON.stringify(detail) : `HTTP ${resp.status}`;
+      msg =
+        typeof detail === "string"
+          ? detail
+          : detail != null
+            ? JSON.stringify(detail)
+            : `HTTP ${resp.status}`;
     } catch {
       msg = (await resp.text().catch(() => "")) || `HTTP ${resp.status}`;
     }
@@ -130,13 +130,14 @@ export interface ReportOut {
 
 export const content = {
   list: (status?: ContentStatus) =>
-    request<FestivalRecord[]>("GET", `/content/festivals${status ? `?status_filter=${status}` : ""}`),
+    request<FestivalRecord[]>(
+      "GET",
+      `/content/festivals${status ? `?status_filter=${status}` : ""}`,
+    ),
 
-  get: (id: string) =>
-    request<FestivalRecord>("GET", `/content/festivals/${id}`),
+  get: (id: string) => request<FestivalRecord>("GET", `/content/festivals/${id}`),
 
-  create: (data: FestivalIn) =>
-    request<FestivalRecord>("POST", `/content/festivals`, data),
+  create: (data: FestivalIn) => request<FestivalRecord>("POST", `/content/festivals`, data),
 
   update: (id: string, data: FestivalIn) =>
     request<FestivalRecord>("PUT", `/content/festivals/${id}`, data),
@@ -144,14 +145,11 @@ export const content = {
   submitReview: (id: string) =>
     request<FestivalRecord>("POST", `/content/festivals/${id}/submit-review`),
 
-  publish: (id: string) =>
-    request<FestivalRecord>("POST", `/content/festivals/${id}/publish`),
+  publish: (id: string) => request<FestivalRecord>("POST", `/content/festivals/${id}/publish`),
 
-  reject: (id: string) =>
-    request<FestivalRecord>("POST", `/content/festivals/${id}/reject`),
+  reject: (id: string) => request<FestivalRecord>("POST", `/content/festivals/${id}/reject`),
 
-  delete: (id: string) =>
-    request<void>("DELETE", `/content/festivals/${id}`),
+  delete: (id: string) => request<void>("DELETE", `/content/festivals/${id}`),
 
   audit: (params?: { resource_type?: string; resource_id?: string }) => {
     const qs = new URLSearchParams(
@@ -167,11 +165,14 @@ export const flags = {
   list: (status?: FlagStatus) =>
     request<FlagRecord[]>("GET", `/flags${status ? `?status_filter=${status}` : ""}`),
 
-  get: (id: string) =>
-    request<FlagRecord>("GET", `/flags/${id}`),
+  get: (id: string) => request<FlagRecord>("GET", `/flags/${id}`),
 
-  report: (data: { resource_type: string; resource_id: string; reason: string; details?: string }) =>
-    request<FlagRecord>("POST", `/flags/report`, data),
+  report: (data: {
+    resource_type: string;
+    resource_id: string;
+    reason: string;
+    details?: string;
+  }) => request<FlagRecord>("POST", `/flags/report`, data),
 
   resolve: (id: string, action: "resolve" | "dismiss", note?: string) =>
     request<FlagRecord>("POST", `/flags/${id}/resolve`, { action, resolution_note: note }),

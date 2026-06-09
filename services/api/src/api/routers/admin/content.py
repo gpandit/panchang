@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 
 from api.admin import audit as audit_log
 from api.admin import content_store
 from api.admin.rbac import AdminClaims, require_admin_role
-from api.models.admin import AdminRole, ContentStatus, FestivalIn, FestivalRecord
+from api.models.admin import AdminRole, AuditEntry, ContentStatus, FestivalIn, FestivalRecord
 
 router = APIRouter(prefix="/content", tags=["admin-content"])
 
@@ -120,7 +120,7 @@ async def get_audit_trail(
     resource_type: str | None = None,
     resource_id: str | None = None,
     limit: int = 100,
-) -> list:
+) -> list[AuditEntry]:
     return audit_log.list_entries(
         resource_type=resource_type,
         resource_id=resource_id,

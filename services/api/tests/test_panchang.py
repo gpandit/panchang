@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from httpx import AsyncClient
 
 from api.cache import get_panchang_cache, panchang_cache_key
@@ -20,6 +19,7 @@ from api.models.panchang import (
 )
 
 # ── Fixture: a minimal but valid DailyPanchangOut ─────────────────────────────
+
 
 def _time(t: str) -> TimeValueOut:
     return TimeValueOut(iso=t, hour_24=t[:5], hour_12=t[:5], hour_24_plus=t[:5])
@@ -75,6 +75,7 @@ DAILY_URL = "/v1/panchang/daily?date=2025-01-14&lat=28.6139&lon=77.2090&tz=Asia/
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _seed_cache() -> None:
     """Pre-populate the in-process cache so tests bypass the HTTP call."""
     cache = get_panchang_cache()
@@ -83,6 +84,7 @@ def _seed_cache() -> None:
 
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
+
 
 async def test_daily_requires_auth(client: AsyncClient) -> None:
     r = await client.get(DAILY_URL)
@@ -123,7 +125,9 @@ async def test_daily_cache_miss_calls_downstream(client: AsyncClient, basic_toke
     mock_fetch.assert_awaited_once()
 
 
-async def test_daily_cache_miss_latency_mock_under_2s(client: AsyncClient, basic_token: str) -> None:
+async def test_daily_cache_miss_latency_mock_under_2s(
+    client: AsyncClient, basic_token: str
+) -> None:
     """Even a mocked downstream call (0 ms) stays under the budget."""
     with patch(
         "api.routers.v1.panchang.fetch_daily_panchang",

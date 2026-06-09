@@ -15,6 +15,7 @@ Usage in routers:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
@@ -33,7 +34,9 @@ def require_auth(
     return decode_token(credentials.credentials)
 
 
-def require_tier(min_tier: SubscriptionTier):
+def require_tier(
+    min_tier: SubscriptionTier,
+) -> Callable[[Annotated[TokenClaims, object]], TokenClaims]:
     """Return a FastAPI dependency that enforces a minimum subscription tier.
 
     Usage:  Depends(require_tier(SubscriptionTier.SILVER))

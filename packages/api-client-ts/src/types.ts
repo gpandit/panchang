@@ -46,9 +46,9 @@ export type Ayanamsa = "lahiri";
 export type MonthScheme = "amanta" | "purnimanta";
 
 export interface TimeValueOut {
-  iso: string;       // ISO-8601 timestamp with offset
-  hour_24: string;   // "HH:MM:SS"
-  hour_12: string;   // "hh:MM:SS AM/PM"
+  iso: string; // ISO-8601 timestamp with offset
+  hour_24: string; // "HH:MM:SS"
+  hour_12: string; // "hh:MM:SS AM/PM"
   hour_24_plus: string; // "HH:MM:SS" where HH may exceed 23
 }
 
@@ -96,10 +96,10 @@ export interface ChoghadiyaOut {
 
 /** Full Panchang for one (date, location, settings) day — the primary API payload. */
 export interface DailyPanchangOut {
-  date: string;           // "YYYY-MM-DD"
+  date: string; // "YYYY-MM-DD"
   lat: number;
   lon: number;
-  tz: string;             // IANA timezone
+  tz: string; // IANA timezone
   ayanamsa: string;
   month_scheme: string;
 

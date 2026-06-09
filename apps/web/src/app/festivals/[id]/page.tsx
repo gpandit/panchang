@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { FestivalDetailScreen } from "@/features/festivals/FestivalDetailScreen";
@@ -19,13 +20,14 @@ export async function generateMetadata({ params }: FestivalDetailPageProps): Pro
   }
   return {
     title: `${festival.name} | The Pandit`,
-    description: festival.description ?? `Learn about ${festival.name} — puja vidhi, katha and more.`,
+    description:
+      festival.description ?? `Learn about ${festival.name} — puja vidhi, katha and more.`,
   };
 }
 
 export default async function FestivalDetailPage({
   params,
-}: FestivalDetailPageProps): Promise<React.JSX.Element> {
+}: FestivalDetailPageProps): Promise<JSX.Element> {
   const { id } = await params;
   const { festival, error } = await fetchFestivalDetail(decodeURIComponent(id)).catch(() => ({
     festival: null,

@@ -18,18 +18,22 @@ import pytest
 from api.pdf.queue import InProcessJobStore, LocalFileStorage, process_job
 from api.pdf.worker import CalendarJob, render_calendar_pdf
 
-
 # ── Unit: PDF renderer ────────────────────────────────────────────────────────
 
+
 def test_render_produces_valid_pdf_bytes():
-    job = CalendarJob(job_id="test-render-001", year=2026, lat=19.076, lon=72.877, tz="Asia/Kolkata")
+    job = CalendarJob(
+        job_id="test-render-001", year=2026, lat=19.076, lon=72.877, tz="Asia/Kolkata"
+    )
     pdf_bytes = render_calendar_pdf(job)
     assert isinstance(pdf_bytes, bytes)
     assert pdf_bytes[:4] == b"%PDF", "Output must be a valid PDF document"
 
 
 def test_render_includes_all_12_months():
-    job = CalendarJob(job_id="test-render-002", year=2026, lat=19.076, lon=72.877, tz="Asia/Kolkata")
+    job = CalendarJob(
+        job_id="test-render-002", year=2026, lat=19.076, lon=72.877, tz="Asia/Kolkata"
+    )
     pdf_bytes = render_calendar_pdf(job)
     # A 12-page PDF must mention each month name in its structure.
     # We verify by checking the PDF is at least a minimal size.
@@ -50,6 +54,7 @@ def test_render_with_festival_overlay():
 
 
 # ── Unit: queue + storage ─────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_process_job_transitions_to_done():
@@ -87,9 +92,11 @@ async def test_process_job_download_url_resolves_to_valid_pdf():
 
 # ── Integration: API endpoints ────────────────────────────────────────────────
 
+
 @pytest.fixture(autouse=True)
 def _clear_job_store():
     from api.pdf.queue import _default_store
+
     _default_store.clear()
     yield
     _default_store.clear()

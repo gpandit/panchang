@@ -39,14 +39,17 @@ export function FestivalEditorPage() {
       setLoading(false);
       return;
     }
-    api.get(id!).then((r) => {
-      setRecord(r);
-      setForm(r.current);
-      setLoading(false);
-    }).catch((e) => {
-      setError(e.message);
-      setLoading(false);
-    });
+    api
+      .get(id!)
+      .then((r) => {
+        setRecord(r);
+        setForm(r.current);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(e.message);
+        setLoading(false);
+      });
   }, [id, isNew]);
 
   function set<K extends keyof FestivalIn>(key: K, val: FestivalIn[K]) {
@@ -155,7 +158,9 @@ export function FestivalEditorPage() {
               style={inputStyle()}
             >
               {["all", "north", "south", "east", "west"].map((r) => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r} value={r}>
+                  {r}
+                </option>
               ))}
             </select>
           </Field>
@@ -166,7 +171,9 @@ export function FestivalEditorPage() {
               style={inputStyle()}
             >
               {["en", "hi", "gu", "mr", "ta", "te"].map((l) => (
-                <option key={l} value={l}>{l}</option>
+                <option key={l} value={l}>
+                  {l}
+                </option>
               ))}
             </select>
           </Field>
@@ -248,7 +255,13 @@ export function FestivalEditorPage() {
       {/* Version history */}
       {record && record.versions.length > 0 && (
         <section style={{ marginTop: tokens.space.xl }}>
-          <h2 style={{ fontSize: tokens.font.sizeLg, fontWeight: tokens.font.weightBold, marginBottom: tokens.space.md }}>
+          <h2
+            style={{
+              fontSize: tokens.font.sizeLg,
+              fontWeight: tokens.font.weightBold,
+              marginBottom: tokens.space.md,
+            }}
+          >
             Version history
           </h2>
           <table
@@ -284,10 +297,22 @@ export function FestivalEditorPage() {
                   <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}` }}>
                     <StatusBadge status={v.status} />
                   </td>
-                  <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, fontFamily: "monospace", fontSize: tokens.font.sizeSm }}>
+                  <td
+                    style={{
+                      padding: `${tokens.space.sm} ${tokens.space.md}`,
+                      fontFamily: "monospace",
+                      fontSize: tokens.font.sizeSm,
+                    }}
+                  >
                     {v.changed_by}
                   </td>
-                  <td style={{ padding: `${tokens.space.sm} ${tokens.space.md}`, fontSize: tokens.font.sizeSm, color: tokens.color.textMuted }}>
+                  <td
+                    style={{
+                      padding: `${tokens.space.sm} ${tokens.space.md}`,
+                      fontSize: tokens.font.sizeSm,
+                      color: tokens.color.textMuted,
+                    }}
+                  >
                     {new Date(v.changed_at).toLocaleString()}
                   </td>
                 </tr>
@@ -311,7 +336,13 @@ function Field({
 }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: tokens.space.xs, ...style }}>
-      <span style={{ fontSize: tokens.font.sizeSm, fontWeight: tokens.font.weightMedium, color: tokens.color.textMuted }}>
+      <span
+        style={{
+          fontSize: tokens.font.sizeSm,
+          fontWeight: tokens.font.weightMedium,
+          color: tokens.color.textMuted,
+        }}
+      >
         {label}
       </span>
       {children}
