@@ -15,6 +15,15 @@ class FestivalOut(BaseModel):
     date: str  # "YYYY-MM-DD"
     description: str | None
     tags: list[str]
+    region: str | None = None
+    locale: str | None = None
+
+
+class FestivalDetailOut(FestivalOut):
+    """Full festival record including CMS prose — returned by the detail endpoint."""
+    body: str | None = None
+    puja: str | None = None
+    katha: str | None = None
 
 
 # ── Notes / Bookmarks ─────────────────────────────────────────────────────────
@@ -60,7 +69,6 @@ class SubscriptionOut(BaseModel):
 
 class PdfJobIn(BaseModel):
     year: int
-    month: int
     lat: float
     lon: float
     tz: str
