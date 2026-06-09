@@ -224,3 +224,81 @@ export interface PdfJobOut {
   download_url: string | null;
   created_at: string; // ISO-8601
 }
+
+// ─── Today / Daily view types (Step 3.2) ─────────────────────────────────────
+// View-ready aggregate payload produced by the gateway for the Today screen.
+// Clients must never recompute Panchang — always read from the API.
+
+/** Which clock display the user has chosen. Persisted client-side. */
+export type TimeFormat = "12h" | "24h" | "24plus";
+
+export interface MuhuratWindow {
+  name: string;
+  startTime: string; // ISO 8601
+  endTime: string;
+  type: "auspicious" | "inauspicious";
+  description?: string;
+}
+
+export interface Festival {
+  name: string;
+  type: "festival" | "vrat" | "ekadashi" | "other";
+  description?: string;
+  significance?: string;
+}
+
+export interface Advisory {
+  category: "good" | "avoid";
+  label: string;
+  detail?: string;
+}
+
+export interface DailyHighlight {
+  label: string;
+  value: string;
+  detail?: string;
+}
+
+export interface DharmaCard {
+  title: string;
+  body: string;
+  attribution?: string;
+}
+
+export interface PanchangElement {
+  key: string;
+  label: string;
+  value: string;
+  /** Optional secondary value; prefix "ends:" is resolved to a formatted time. */
+  secondaryValue?: string;
+  group: "core" | "solar" | "lunar" | "other";
+  explanation?: string; // CMS-sourced
+}
+
+/** View-ready daily Panchang payload from the /v1/panchang/daily endpoint. */
+export interface DailyPanchangView {
+  date: string; // "YYYY-MM-DD"
+  lat: number;
+  lon: number;
+  tz: string;
+  locationLabel: string;
+
+  summaryTitle: string;
+  panchangHindiDate: string;
+
+  elements: PanchangElement[];
+
+  sunrise: string | null;
+  sunset: string | null;
+  moonrise: string | null;
+  moonset: string | null;
+
+  muhurats: MuhuratWindow[];
+  festivals: Festival[];
+  advisories: Advisory[];
+  highlights: DailyHighlight[];
+  dharmaCard: DharmaCard | null;
+
+  leapMonthFlag: "adhika" | "kshaya" | null;
+  cachedAt: string;
+}
