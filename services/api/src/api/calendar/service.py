@@ -132,9 +132,7 @@ class CalendarService:
             overlay=overlay or UserOverlay(),
         )
 
-    def _cells_for_range(
-        self, start: date, end: date, loc: LocationParams
-    ) -> list[DayCell]:
+    def _cells_for_range(self, start: date, end: date, loc: LocationParams) -> list[DayCell]:
         fest_index = self._festival_index(start, end, loc)
         cells: list[DayCell] = []
         d = start

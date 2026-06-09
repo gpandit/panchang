@@ -102,4 +102,8 @@ class DeliveryService:
             try:
                 await ch.send(occurrence, title, body)
             except Exception:
-                log.exception("Delivery channel %s failed for key=%s", type(ch).__name__, occurrence.idempotency_key)
+                log.exception(
+                    "Delivery channel %s failed for key=%s",
+                    type(ch).__name__,
+                    occurrence.idempotency_key,
+                )

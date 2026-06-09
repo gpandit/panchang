@@ -62,7 +62,7 @@ def _span(index: int, name: str) -> AngaSpan:
 def _make_result(
     day: date,
     *,
-    tithi_index: int = 1,          # global 1..30
+    tithi_index: int = 1,  # global 1..30
     nakshatra_name: str = "Ashwini",
     lunar_month: str = "Kartika",
     paksha: str = "Shukla Paksha",
@@ -106,10 +106,12 @@ def _make_result(
 def _make_source(seed: dict[date, PanchangResult]) -> PanchangSource:
     def _source(d: date) -> PanchangResult:
         return seed.get(d, _make_result(d))
+
     return _source
 
 
 # ── DB fixtures ────────────────────────────────────────────────────────────────
+
 
 @pytest_asyncio.fixture
 async def session() -> AsyncSession:
@@ -118,12 +120,14 @@ async def session() -> AsyncSession:
     _factory = make_session_factory("sqlite+aiosqlite://")
     # Recreate with the initialised engine so tables exist.
     from sqlalchemy.ext.asyncio import async_sessionmaker
+
     factory2 = async_sessionmaker(engine, expire_on_commit=False)
     async with factory2() as s:
         yield s
 
 
 # ── StubCache helper ───────────────────────────────────────────────────────────
+
 
 class StubCache:
     """Thin stand-in for PanchangCache backed by a seed dict."""
@@ -136,6 +140,7 @@ class StubCache:
 
 
 # ── Ekadashi resolver tests ────────────────────────────────────────────────────
+
 
 class TestEkadashiResolver:
     """Ekadashi = 11th Tithi of either Paksha; global tithi index 11 (Shukla)
@@ -238,6 +243,7 @@ class TestEkadashiResolver:
 
 # ── Vriddhi (repeated Tithi) tests ─────────────────────────────────────────────
 
+
 class TestVriddhiTithi:
     """A Vriddhi Tithi spans two consecutive sunrises.
     The resolver must fire exactly once (first sunrise)."""
@@ -269,6 +275,7 @@ class TestVriddhiTithi:
 
 
 # ── Adhika (leap) month tests ──────────────────────────────────────────────────
+
 
 class TestAdhikaMonth:
     """Reminders without observe_in_adhika skip the leap occurrence.
@@ -341,6 +348,7 @@ class TestAdhikaMonth:
 
 # ── Kshaya (skipped) month tests ───────────────────────────────────────────────
 
+
 class TestKshayaMonth:
     """In a Kshaya year the named lunar month is absent — resolver must not
     invent a spurious occurrence."""
@@ -360,7 +368,7 @@ class TestKshayaMonth:
         spec = RecurrenceSpec(
             kind=RecurrenceKind.TITHI,
             tithi_index=11,
-            lunar_month="Pausha",   # this month is absent — Kshaya
+            lunar_month="Pausha",  # this month is absent — Kshaya
         )
         occurrences = resolve(
             reminder_id=str(uuid.uuid4()),
@@ -374,6 +382,7 @@ class TestKshayaMonth:
 
 
 # ── Gregorian recurrence tests ─────────────────────────────────────────────────
+
 
 class TestGregorianRecurrence:
     def test_annual_anniversary(self):
@@ -421,12 +430,13 @@ class TestGregorianRecurrence:
 
 # ── Weekday recurrence tests ───────────────────────────────────────────────────
 
+
 class TestWeekdayRecurrence:
     def test_every_monday_in_january(self):
         source = _make_source({})
         spec = RecurrenceSpec(
             kind=RecurrenceKind.WEEKDAY,
-            weekday=0,   # Monday
+            weekday=0,  # Monday
             fire_at_sunrise=False,
             fire_hour=9,
             fire_minute=0,
@@ -464,6 +474,7 @@ class TestWeekdayRecurrence:
 
 # ── Nakshatra recurrence tests ─────────────────────────────────────────────────
 
+
 class TestNakshatraRecurrence:
     def test_rohini_nakshatra_fires_on_matching_days(self):
         seed: dict[date, PanchangResult] = {}
@@ -488,6 +499,7 @@ class TestNakshatraRecurrence:
 
 # ── Idempotency (scheduler) tests ──────────────────────────────────────────────
 
+
 class TestSchedulerIdempotency:
     """Re-running the scheduler must not duplicate deliveries."""
 
@@ -503,7 +515,9 @@ class TestSchedulerIdempotency:
             d = date(2024, 1, 1) + timedelta(days=i)
             global_idx = i + 1 if i < 15 else i - 14
             paksha = "Shukla Paksha" if i < 15 else "Krishna Paksha"
-            seed[d] = _make_result(d, tithi_index=11 if d in ekadashi_days else global_idx, paksha=paksha)
+            seed[d] = _make_result(
+                d, tithi_index=11 if d in ekadashi_days else global_idx, paksha=paksha
+            )
 
         cache = StubCache(seed)
 
@@ -585,24 +599,29 @@ class TestSchedulerIdempotency:
 
 # ── RecurrenceSpec validation ──────────────────────────────────────────────────
 
+
 class TestRecurrenceSpecValidation:
     def test_tithi_requires_tithi_index(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             RecurrenceSpec(kind=RecurrenceKind.TITHI)
 
     def test_nakshatra_requires_nakshatra_name(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             RecurrenceSpec(kind=RecurrenceKind.NAKSHATRA)
 
     def test_gregorian_requires_month_and_day(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             RecurrenceSpec(kind=RecurrenceKind.GREGORIAN, gregorian_month=8)
 
     def test_weekday_requires_weekday(self):
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             RecurrenceSpec(kind=RecurrenceKind.WEEKDAY)
 

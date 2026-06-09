@@ -27,9 +27,7 @@ class Reminder(Base):
     lon: Mapped[float] = mapped_column(Float, nullable=False)
     month_scheme: Mapped[str] = mapped_column(String(16), nullable=False, default="amanta")
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     occurrences: Mapped[list[DeliveredOccurrence]] = relationship(
         back_populates="reminder", cascade="all, delete-orphan"

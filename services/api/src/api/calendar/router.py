@@ -29,9 +29,7 @@ def _loc(
     lon: float = Query(..., description="Longitude (-180 to 180)"),
     tz: str = Query(..., description="IANA timezone, e.g. Asia/Kolkata"),
     ayanamsa: str = Query("lahiri", description="Ayanamsa — only 'lahiri' supported"),
-    month_scheme: str = Query(
-        "amanta", description="Month scheme: 'amanta' or 'purnimanta'"
-    ),
+    month_scheme: str = Query("amanta", description="Month scheme: 'amanta' or 'purnimanta'"),
     region_tags: list[str] = Query(default=[], description="Optional regional variant tags"),
 ) -> LocationParams:
     if ayanamsa not in ("lahiri",):
@@ -60,9 +58,7 @@ def get_day(
 
 @router.get("/week", response_model=WeekView)
 def get_week(
-    date_: date = Query(
-        ..., alias="date", description="Any date within the target week"
-    ),
+    date_: date = Query(..., alias="date", description="Any date within the target week"),
     loc: LocationParams = Depends(_loc),
     svc: CalendarService = Depends(get_calendar_service),
 ) -> WeekView:

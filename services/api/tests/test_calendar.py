@@ -268,6 +268,7 @@ class TestMonthView:
 
     def test_amanta_and_purnimanta_differ_in_lunar_month(self):
         """Views under different schemes may report different lunar months for the same day."""
+
         # Build two stubs that return different lunar_month values per scheme —
         # the cache is scheme-keyed in production; here we just assert the
         # service wires the month_scheme through to the request.

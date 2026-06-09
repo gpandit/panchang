@@ -65,9 +65,7 @@ class ReminderScheduler:
     async def run_all(self, today: date | None = None) -> int:
         """Process every enabled Reminder. Returns the count of occurrences fired."""
         today = today or date.today()
-        result = await self._session.execute(
-            select(Reminder).where(Reminder.enabled.is_(True))
-        )
+        result = await self._session.execute(select(Reminder).where(Reminder.enabled.is_(True)))
         reminders = result.scalars().all()
 
         total_fired = 0
@@ -79,9 +77,7 @@ class ReminderScheduler:
         """Process a single Reminder by ID. Returns occurrences fired."""
         today = today or date.today()
         result = await self._session.execute(
-            select(Reminder).where(
-                Reminder.id == str(reminder_id), Reminder.enabled.is_(True)
-            )
+            select(Reminder).where(Reminder.id == str(reminder_id), Reminder.enabled.is_(True))
         )
         reminder = result.scalar_one_or_none()
         if reminder is None:
