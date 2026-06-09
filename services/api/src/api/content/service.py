@@ -151,6 +151,7 @@ class ContentService:
             select(ContentItem)
             .where(ContentItem.status == ContentStatus.PUBLISHED.value)
             .options(selectinload(ContentItem.versions))
+            .execution_options(populate_existing=True)
         )
         if locale:
             stmt = stmt.where(ContentItem.locale == locale)
@@ -207,23 +208,35 @@ class ContentService:
     async def flag(self, item_id: str, req: FlagRequest) -> ContentFlag:
         """Flag a published item for review.
 
-        Transitions status back to in_review and creates a pending version copy
-        of the current published version body so editors can revise it.
+        Transitions status back to in_review and resets the pending version body
+        to a copy of the current published version so editors can revise it.
         """
         item = await self._get(item_id, load_versions=True)
         if item.status != ContentStatus.PUBLISHED.value:
             raise ContentError(f"Only published items can be flagged (current: {item.status})")
 
-        # Copy current published body into a pending (version_number=0 placeholder) row.
         current = self._published_version(item)
-        pending = ContentVersion(
-            item_id=item_id,
-            version_number=0,
-            body=current.body if current else {},
-            author_id=None,
-            source_attribution=current.source_attribution if current else None,
+
+        # Re-use or create the pending (version_number=0) slot.
+        existing_pending = await self._s.execute(
+            select(ContentVersion).where(
+                ContentVersion.item_id == item_id,
+                ContentVersion.version_number == 0,
+            ).limit(1)
         )
-        self._s.add(pending)
+        pending = existing_pending.scalar_one_or_none()
+        if pending is None:
+            pending = ContentVersion(
+                item_id=item_id,
+                version_number=0,
+                body=current.body if current else {},
+                author_id=None,
+                source_attribution=current.source_attribution if current else None,
+            )
+            self._s.add(pending)
+        else:
+            pending.body = current.body if current else {}
+            pending.source_attribution = current.source_attribution if current else None
 
         item.status = ContentStatus.IN_REVIEW.value
 
@@ -246,7 +259,11 @@ class ContentService:
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     async def _get(self, item_id: str, *, load_versions: bool = False) -> ContentItem:
-        stmt = select(ContentItem).where(ContentItem.id == item_id)
+        stmt = (
+            select(ContentItem)
+            .where(ContentItem.id == item_id)
+            .execution_options(populate_existing=True)
+        )
         if load_versions:
             stmt = stmt.options(selectinload(ContentItem.versions))
         result = await self._s.execute(stmt)
@@ -261,7 +278,7 @@ class ContentService:
             select(ContentVersion).where(
                 ContentVersion.item_id == item_id,
                 ContentVersion.version_number == 0,
-            )
+            ).limit(1)
         )
         pending = result.scalar_one_or_none()
         if pending is None:
