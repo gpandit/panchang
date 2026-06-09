@@ -3,6 +3,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.calendar.router import get_calendar_service
+from api.calendar.router import router as calendar_router
+from api.calendar.service import CalendarService
 from api.content.db import make_session_factory as make_content_session_factory
 from api.content.router import get_content_service
 from api.content.router import router as content_router
@@ -16,6 +19,9 @@ from api.users.router import get_secret_key, get_user_service
 from api.users.router import router as users_router
 from api.users.service import UserService
 from api.users.vault import Vault
+from festivals.rules import DIWALI, HOLI, RAKSHA_BANDHAN
+from panchang.cache import InMemoryCacheStore, InMemoryPanchangDayStore, PanchangCache
+from panchang.compute import compute_panchang
 
 settings = get_settings()
 
@@ -27,6 +33,16 @@ _oauth_verifiers = {
 }
 
 _content_session_factory = make_content_session_factory(settings.database_url)
+
+# Calendar assembly — uses an in-memory panchang cache backed by the real engine
+# (Redis + Postgres are wired in staging/prod via infrastructure config).
+_panchang_cache = PanchangCache(
+    compute=compute_panchang,
+    hot_store=InMemoryCacheStore(),
+    durable_store=InMemoryPanchangDayStore(),
+)
+_festival_rules = [DIWALI, HOLI, RAKSHA_BANDHAN]
+_calendar_service = CalendarService(_panchang_cache, _festival_rules)
 
 
 async def _provide_user_service() -> UserService:
@@ -44,6 +60,10 @@ async def _provide_content_service() -> ContentService:
     async with _content_session_factory() as session:
         yield ContentService(session)
         await session.commit()
+
+
+def _provide_calendar_service() -> CalendarService:
+    return _calendar_service
 
 
 def _provide_secret_key() -> str:
@@ -65,8 +85,10 @@ app = FastAPI(
 app.dependency_overrides[get_user_service] = _provide_user_service
 app.dependency_overrides[get_secret_key] = _provide_secret_key
 app.dependency_overrides[get_content_service] = _provide_content_service
+app.dependency_overrides[get_calendar_service] = _provide_calendar_service
 app.include_router(users_router)
 app.include_router(content_router)
+app.include_router(calendar_router)
 
 app.add_middleware(
     CORSMiddleware,

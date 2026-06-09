@@ -17,6 +17,9 @@ dependencies = [
     "passlib[argon2]>=1.7",
     "authlib>=1.3",
     "email-validator>=2.2",
+    # Domain services (installed as editable siblings in dev)
+    "the-pandit-panchang",
+    "the-pandit-festivals",
 ]
 
 [project.optional-dependencies]
