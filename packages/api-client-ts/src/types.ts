@@ -137,6 +137,15 @@ export interface FestivalOut {
   date: string; // "YYYY-MM-DD"
   description: string | null;
   tags: string[];
+  region: string | null;
+  locale: string | null;
+}
+
+/** Full festival record including CMS prose — returned by the detail endpoint. */
+export interface FestivalDetailOut extends FestivalOut {
+  body: string | null;
+  puja: string | null;
+  katha: string | null;
 }
 
 // ─── Notes / Bookmarks ───────────────────────────────────────────────────────
@@ -210,7 +219,6 @@ export interface SubscriptionOut {
 
 export interface PdfJobIn {
   year: number;
-  month: number;
   lat: number;
   lon: number;
   tz: string;
