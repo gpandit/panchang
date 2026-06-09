@@ -1,0 +1,275 @@
+name: Staging Deploy
+
+# Trigger: every merge to main, plus manual dispatch for hot-fixes.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (defaults to sha)"
+        required: false
+
+concurrency:
+  group: staging-deploy
+  cancel-in-progress: false   # never cancel a running deploy mid-way
+
+env:
+  # All image names share this registry prefix.  Set REGISTRY in repo secrets.
+  REGISTRY: ${{ secrets.IMAGE_REGISTRY || 'ghcr.io/gpandit' }}
+  IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
+  BUILD_PROFILE: staging
+  PANCHANG_EPHEMERIS_LICENSE: agpl   # commercial licence is a hard launch gate
+
+jobs:
+  # ── 1. CI gate — must be green before any image is pushed ──────────────────
+  ci-gate:
+    name: CI gate (required)
+    uses: ./.github/workflows/ci.yml
+
+  # ── 2. Build and push Docker images ────────────────────────────────────────
+  build-images:
+    name: Build & push images
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - name: pandit-api
+            dockerfile: services/api/Dockerfile
+          - name: pandit-panchang
+            dockerfile: services/panchang/Dockerfile
+          - name: pandit-web
+            dockerfile: apps/web/Dockerfile
+            build_args: |
+              NEXT_PUBLIC_API_URL=https://api-staging.thepandit.app/v1
+          - name: pandit-admin
+            dockerfile: apps/admin/Dockerfile
+            build_args: |
+              VITE_API_URL=https://api-staging.thepandit.app/v1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ matrix.name }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ matrix.name }}:staging-latest
+          build-args: ${{ matrix.build_args || '' }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+  # ── 3. Run database migrations ─────────────────────────────────────────────
+  migrate:
+    name: Run migrations
+    needs: build-images
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pull secrets from store
+        uses: google-github-actions/get-secretmanager-secrets@v2
+        id: secrets
+        with:
+          secrets: |-
+            DATABASE_URL:${{ secrets.GCP_PROJECT }}/pandit-staging-db-url
+        continue-on-error: true  # fallback to repo secrets if not using GCP SM
+
+      - name: Run Alembic migrations
+        run: |
+          docker run --rm \
+            -e DATABASE_URL="${{ steps.secrets.outputs.DATABASE_URL || secrets.STAGING_DATABASE_URL }}" \
+            ${{ env.REGISTRY }}/pandit-api:${{ env.IMAGE_TAG }} \
+            python -m alembic upgrade head
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+
+  # ── 4. Deploy to staging ───────────────────────────────────────────────────
+  deploy:
+    name: Deploy to staging
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.thepandit.app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write staging .env from secrets
+        run: |
+          cat > /tmp/staging.env << 'EOF'
+          IMAGE_REGISTRY=${{ env.REGISTRY }}
+          IMAGE_TAG=${{ env.IMAGE_TAG }}
+          POSTGRES_DB=pandit_staging
+          POSTGRES_USER=pandit
+          POSTGRES_PASSWORD=${{ secrets.STAGING_POSTGRES_PASSWORD }}
+          REDIS_PASSWORD=${{ secrets.STAGING_REDIS_PASSWORD }}
+          API_SECRET_KEY=${{ secrets.STAGING_API_SECRET_KEY }}
+          S3_ENDPOINT_URL=${{ secrets.STAGING_S3_ENDPOINT_URL }}
+          S3_ACCESS_KEY=${{ secrets.STAGING_S3_ACCESS_KEY }}
+          S3_SECRET_KEY=${{ secrets.STAGING_S3_SECRET_KEY }}
+          S3_BUCKET=pandit-staging
+          GRAFANA_ADMIN_PASSWORD=${{ secrets.STAGING_GRAFANA_PASSWORD }}
+          SLACK_WEBHOOK_URL=${{ secrets.STAGING_SLACK_WEBHOOK }}
+          EOF
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          envs: IMAGE_TAG,REGISTRY
+          script: |
+            set -euo pipefail
+            cd /opt/pandit-staging
+
+            # Pull the compose file and configs from the deployed ref
+            git fetch origin main && git reset --hard ${{ github.sha }}
+
+            # Pull all new images
+            IMAGE_TAG=${IMAGE_TAG} \
+            IMAGE_REGISTRY=${REGISTRY} \
+              docker compose -f infra/docker-compose.staging.yml pull
+
+            # Rolling restart: infra first, then services
+            IMAGE_TAG=${IMAGE_TAG} \
+            IMAGE_REGISTRY=${REGISTRY} \
+              docker compose -f infra/docker-compose.staging.yml \
+                up -d --remove-orphans \
+                postgres redis otel-collector prometheus alertmanager
+
+            # Give infra 15 s to stabilise
+            sleep 15
+
+            IMAGE_TAG=${IMAGE_TAG} \
+            IMAGE_REGISTRY=${REGISTRY} \
+              docker compose -f infra/docker-compose.staging.yml \
+                up -d panchang api worker web admin nginx grafana
+
+      - name: Smoke check (healthz)
+        run: |
+          for url in \
+            https://api-staging.thepandit.app/health \
+            https://staging.thepandit.app/api/health \
+            https://admin-staging.thepandit.app/healthz; do
+            echo "Checking $url ..."
+            for i in $(seq 1 10); do
+              if curl -sf --max-time 5 "$url" > /dev/null; then
+                echo "  OK"
+                break
+              fi
+              echo "  Attempt $i failed, retrying in 10s..."
+              sleep 10
+            done
+          done
+
+      - name: Post deploy summary
+        if: always()
+        run: |
+          echo "## Staging Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|-|-|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image tag | \`${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web | https://staging.thepandit.app |" >> $GITHUB_STEP_SUMMARY
+          echo "| API | https://api-staging.thepandit.app/docs |" >> $GITHUB_STEP_SUMMARY
+          echo "| Admin | https://admin-staging.thepandit.app |" >> $GITHUB_STEP_SUMMARY
+          echo "| Grafana | https://grafana-staging.thepandit.app |" >> $GITHUB_STEP_SUMMARY
+
+  # ── 5. Run E2E smoke tests against staging ─────────────────────────────────
+  e2e-smoke:
+    name: E2E smoke tests
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test deps
+        run: pip install httpx pytest pytest-asyncio
+
+      - name: Run smoke tests
+        run: pytest tests/e2e/smoke_test.py -v --tb=short
+        env:
+          STAGING_API_URL: https://api-staging.thepandit.app
+          STAGING_WEB_URL: https://staging.thepandit.app
+          STAGING_TEST_EMAIL: ${{ secrets.STAGING_TEST_EMAIL }}
+          STAGING_TEST_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
+
+  # ── 6. Festival-spike load test ────────────────────────────────────────────
+  load-test:
+    name: Festival-spike load test
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Locust
+        run: pip install locust
+
+      - name: Run load test (headless)
+        run: |
+          locust \
+            -f tests/load/festival_spike.py \
+            --headless \
+            --users 200 \
+            --spawn-rate 20 \
+            --run-time 120s \
+            --host https://api-staging.thepandit.app \
+            --html tests/load/report.html \
+            --csv tests/load/results
+        env:
+          LOCUST_TARGET: https://api-staging.thepandit.app
+
+      - name: Assert SLO targets
+        run: python tests/load/assert_slos.py tests/load/results_stats.csv
+
+      - name: Upload load test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-test-report-${{ env.IMAGE_TAG }}
+          path: tests/load/

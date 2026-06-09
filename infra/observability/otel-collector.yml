@@ -1,0 +1,65 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: staging
+        action: upsert
+
+  # Drop high-cardinality health-check spans to avoid noise
+  filter/drop_health:
+    spans:
+      exclude:
+        match_type: strict
+        attributes:
+          - key: http.route
+            value: /healthz
+
+exporters:
+  # Export traces to Tempo (or any Jaeger-compatible backend)
+  otlp/tempo:
+    endpoint: http://tempo:4317
+    tls:
+      insecure: true
+
+  # Export metrics to Prometheus remote-write
+  prometheusremotewrite:
+    endpoint: http://prometheus:9090/api/v1/write
+
+  # Structured logs to stdout so docker logs captures them
+  logging:
+    verbosity: normal
+
+service:
+  telemetry:
+    logs:
+      level: warn
+    metrics:
+      address: 0.0.0.0:8888
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, resource, filter/drop_health]
+      exporters: [otlp/tempo, logging]
+
+    metrics:
+      receivers: [otlp]
+      processors: [batch, resource]
+      exporters: [prometheusremotewrite, logging]
+
+    logs:
+      receivers: [otlp]
+      processors: [batch, resource]
+      exporters: [logging]

@@ -1,0 +1,34 @@
+# Python
+**/__pycache__
+**/*.pyc
+**/.venv
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+**/dist
+**/*.egg-info
+
+# Node
+**/node_modules
+**/.next/cache
+**/dist
+**/.turbo
+
+# Tests (not needed in images)
+tests/
+tools/
+
+# Git / CI
+.git
+.github
+**/.gitignore
+
+# Docs
+docs/
+**/*.md
+prompts/
+
+# IDE
+.idea
+.vscode
+**/.DS_Store
