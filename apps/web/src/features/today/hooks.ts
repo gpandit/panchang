@@ -95,6 +95,9 @@ export function useTodayPanchang(opts: FetchDailyOptions): UseTodayResult {
       setData(result.data);
       setFromCache(result.fromCache);
       setError(result.error ?? null);
+      // A stale-cache hit (data present AND error set) is still treated as
+      // "success" for rendering, but the error string is preserved so callers
+      // can show a stale-data notice alongside the content.
       setLoadState(result.data ? "success" : "error");
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
