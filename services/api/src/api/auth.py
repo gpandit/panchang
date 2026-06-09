@@ -57,6 +57,11 @@ def decode_token(token: str) -> TokenClaims:
     )
 
 
+def create_admin_token(sub: str, admin_role: str, **extra: object) -> str:
+    """Create a JWT with an admin_role claim — used in tests and the admin auth stub."""
+    return create_token(sub, tier=SubscriptionTier.BASIC, admin_role=admin_role, **extra)
+
+
 def create_token(sub: str, tier: SubscriptionTier = SubscriptionTier.BASIC, **extra: object) -> str:
     """Create a signed JWT — used in tests and by the auth service stub."""
     import time
