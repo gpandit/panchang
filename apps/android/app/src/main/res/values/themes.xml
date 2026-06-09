@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TODO(design): theme values are neutral placeholders — replace with Aqualeo design system. -->
+<resources>
+    <style name="Theme.ThePandit" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
