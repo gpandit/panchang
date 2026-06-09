@@ -1023,6 +1023,8 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyjwt" },
     { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "the-pandit-festivals" },
+    { name = "the-pandit-panchang" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -1055,6 +1057,8 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.25" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
+    { name = "the-pandit-festivals", editable = "services/festivals" },
+    { name = "the-pandit-panchang", editable = "services/panchang" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34" },
 ]
 provides-extras = ["dev"]
