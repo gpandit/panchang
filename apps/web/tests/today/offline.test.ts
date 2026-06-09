@@ -14,10 +14,10 @@ import type { DailyPanchangView } from "@pandit/api-client-ts";
 
 const MOCK_PAYLOAD: DailyPanchangView = {
   date: "2025-06-09",
-  location: { latitude: 19.076, longitude: 72.877, timezone: "Asia/Kolkata" },
+  lat: 19.076,
+  lon: 72.877,
+  tz: "Asia/Kolkata",
   locationLabel: "Mumbai, Maharashtra",
-  ayanamsa: "lahiri",
-  monthScheme: "amanta",
   summaryTitle: "Shukla Panchami · Rohini",
   panchangHindiDate: "Jyeshtha Shukla Panchami, VS 2082",
   elements: [

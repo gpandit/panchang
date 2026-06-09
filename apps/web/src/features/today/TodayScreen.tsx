@@ -84,7 +84,6 @@ export function TodayScreen({
         <>
           <TodayHeader
             locationLabel={payload.locationLabel}
-            location={payload.location}
             date={date}
             panchangHindiDate={payload.panchangHindiDate}
             onLocationChange={handleLocationChange}

@@ -1,13 +1,10 @@
 // TODO(design): skin via Aqualeo design system. Structure, a11y, and token
 // wiring are final — only className/visual treatment changes.
 
-import type { Location } from "@pandit/api-client-ts";
-
 interface TodayHeaderProps {
   locationLabel: string;
-  location: Location;
   date: string; // "YYYY-MM-DD" — the Panchang date being viewed
-  panchangHindiDate: string; // Formatted traditional date string
+  panchangHindiDate: string;
   onLocationChange?: () => void;
   onPrevDay?: () => void;
   onNextDay?: () => void;
