@@ -4,7 +4,7 @@
 // wiring are final — only className/visual treatment changes.
 
 import { useCallback, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { DailyPanchangView } from "@pandit/api-client-ts";
 import { useTimeFormat, useBookmark, useTodayPanchang } from "./hooks";
 import { TodayHeader } from "./TodayHeader";
@@ -36,6 +36,7 @@ export function TodayScreen({
   ssrData = null,
 }: TodayScreenProps): React.JSX.Element {
   const today = todayISODate();
+  const minDate = minNavigableDate();
   const [date, setDate] = useState(initialDate ?? today);
 
   const { data, loadState, fromCache, error, refresh } = useTodayPanchang({
@@ -45,8 +46,11 @@ export function TodayScreen({
     timezone,
   });
 
-  // Use SSR data before the client fetch resolves
-  const payload: DailyPanchangView | null = data ?? ssrData;
+  // Show SSR data only while the client fetch is still in flight (idle/loading).
+  // Once the fetch settles, use its result exclusively so the error state is
+  // reachable even when ssrData was provided.
+  const payload: DailyPanchangView | null =
+    loadState === "idle" || loadState === "loading" ? (data ?? ssrData) : data;
 
   const [timeFormat, setTimeFormat] = useTimeFormat();
   const [bookmarked, toggleBookmark] = useBookmark(date);
@@ -69,14 +73,18 @@ export function TodayScreen({
 
   return (
     <main aria-label="Today's Panchang" className="flex flex-col min-h-screen bg-background">
-      {/* Offline / cache notice */}
+      {/* Offline / stale-cache notice — shown whenever cached data is used,
+          including the case where the server returned an error and a stale
+          cache entry was served as fallback. */}
       {fromCache && (
         <div
           role="status"
           aria-live="polite"
           className="text-xs text-muted-foreground text-center px-md py-xs border-b border-border"
         >
-          Showing cached Panchang — you may be offline
+          {error && error !== "offline"
+            ? "Showing cached Panchang — live data unavailable right now"
+            : "Showing cached Panchang — you may be offline"}
         </div>
       )}
 
@@ -89,7 +97,7 @@ export function TodayScreen({
             onLocationChange={handleLocationChange}
             onPrevDay={() => navigateDay(-1)}
             onNextDay={() => navigateDay(1)}
-            canGoBack={true}
+            canGoBack={date > minDate}
             canGoForward={date < today}
           />
 
@@ -168,4 +176,12 @@ function TodayError({ error, onRetry }: TodayErrorProps): React.JSX.Element {
 
 function todayISODate(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+// Computed per render (not at module load) so it stays correct on long-running
+// SSR processes that would otherwise hold a stale date from server start.
+function minNavigableDate(): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 1);
+  return d.toISOString().slice(0, 10);
 }
