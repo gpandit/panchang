@@ -4,6 +4,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.settings import get_settings
+from api.content.db import make_session_factory as make_content_session_factory
+from api.content.router import get_content_service, router as content_router
+from api.content.service import ContentService
 from api.users.db import make_session_factory
 from api.users.encryption import VaultCipher
 from api.users.oauth import AppleVerifier, GoogleVerifier
@@ -21,6 +24,8 @@ _oauth_verifiers = {
     AuthProvider.APPLE: AppleVerifier(settings.apple_oauth_client_id),
 }
 
+_content_session_factory = make_content_session_factory(settings.database_url)
+
 
 async def _provide_user_service() -> UserService:
     async with _session_factory() as session:
@@ -30,6 +35,12 @@ async def _provide_user_service() -> UserService:
             vault=_vault,
             oauth_verifiers=_oauth_verifiers,
         )
+        await session.commit()
+
+
+async def _provide_content_service() -> ContentService:
+    async with _content_session_factory() as session:
+        yield ContentService(session)
         await session.commit()
 
 
@@ -50,7 +61,9 @@ app = FastAPI(
 
 app.dependency_overrides[get_user_service] = _provide_user_service
 app.dependency_overrides[get_secret_key] = _provide_secret_key
+app.dependency_overrides[get_content_service] = _provide_content_service
 app.include_router(users_router)
+app.include_router(content_router)
 
 app.add_middleware(
     CORSMiddleware,
