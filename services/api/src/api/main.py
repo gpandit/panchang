@@ -13,6 +13,9 @@ from fastapi.responses import JSONResponse
 
 from api.middleware.rate_limit import SlidingWindowRateLimiter
 from api.models.common import ApiError, ApiErrorResponse
+from api.routers.admin import content as admin_content
+from api.routers.admin import flags as admin_flags
+from api.routers.admin import reporting as admin_reporting
 from api.routers.v1 import festivals, notes, panchang, pdf, profile, reminders, subscriptions
 from api.settings import get_settings
 
@@ -61,6 +64,13 @@ app.include_router(reminders.router, prefix=V1)
 app.include_router(profile.router, prefix=V1)
 app.include_router(subscriptions.router, prefix=V1)
 app.include_router(pdf.router, prefix=V1)
+
+# ── Admin routers ─────────────────────────────────────────────────────────────
+ADMIN = "/admin/v1"
+
+app.include_router(admin_content.router, prefix=ADMIN)
+app.include_router(admin_flags.router, prefix=ADMIN)
+app.include_router(admin_reporting.router, prefix=ADMIN)
 
 
 # ── Global exception handlers ─────────────────────────────────────────────────
