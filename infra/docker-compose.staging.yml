@@ -231,9 +231,9 @@ services:
     command:
       - >
         if [ -n "$$SLACK_WEBHOOK_URL" ]; then
-          sed -e "s#\${SLACK_WEBHOOK_URL}#$$SLACK_WEBHOOK_URL#g" -e "s#\${ALERTMANAGER_DEFAULT_RECEIVER}#slack-staging#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
+          sed -e "s#$${SLACK_WEBHOOK_URL}#$$SLACK_WEBHOOK_URL#g" -e "s#$${ALERTMANAGER_DEFAULT_RECEIVER}#slack-staging#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
         else
-          sed -e "/# SLACK_RECEIVER_START/,/# SLACK_RECEIVER_END/d" -e "s#\${ALERTMANAGER_DEFAULT_RECEIVER}#null#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
+          sed -e "/# SLACK_RECEIVER_START/,/# SLACK_RECEIVER_END/d" -e "s#$${ALERTMANAGER_DEFAULT_RECEIVER}#null#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
         fi &&
         exec /bin/alertmanager --config.file=/tmp/config.yml --storage.path=/alertmanager
     volumes:
