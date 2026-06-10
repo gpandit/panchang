@@ -8,7 +8,10 @@ RUN pip install --no-cache-dir uv==0.5.26
 COPY pyproject.toml uv.lock ./
 COPY services/panchang/pyproject.toml ./services/panchang/
 
-RUN uv sync --package the-pandit-panchang --no-dev --no-cache
+# --no-install-workspace: install only third-party deps here; the local
+# panchang package runs from PYTHONPATH at runtime and its src/ is copied
+# below — so it must NOT be built at this step (source absent yet).
+RUN uv sync --package the-pandit-panchang --no-dev --no-cache --no-install-workspace
 
 COPY services/panchang/src ./services/panchang/src
 
