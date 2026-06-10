@@ -20,7 +20,7 @@ WORKDIR /repo
 COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/packages ./packages
 
-COPY pnpm-workspace.yaml package.json turbo.json tsconfig.base.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json turbo.json tsconfig.base.json ./
 COPY apps/web ./apps/web
 COPY packages ./packages
 
