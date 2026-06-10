@@ -255,24 +255,72 @@ PANCHANG_EPHEMERIS_LICENSE=commercial
 Until the licence arrives, **leave these as `staging` / `agpl`** and keep the site
 private (don't advertise it). This keeps you legal.
 
-### 5.8 HTTPS certificates (the padlock)
-The provided nginx config expects certificate files. The simplest path for a
-non-technical owner is to let **Cloudflare** sit in front (free): point your domain's
-nameservers to Cloudflare, enable "Full" SSL, and Cloudflare handles HTTPS for you with
-no certificate files to manage. *(Alternative for the technically inclined: run
-Certbot/Let's Encrypt on the server — ask a contractor to wire it into the nginx
-service.)*
+> The compose stack reads `PANCHANG_BUILD_PROFILE` and `PANCHANG_EPHEMERIS_LICENSE` from
+> your `.env.prod` (defaulting to the safe `staging` / `agpl` build if unset), so editing
+> the env file is all that's needed — you don't touch the compose file.
 
-### 5.9 Start everything
+### 5.8 HTTPS certificates (the padlock)
+nginx listens on `:443` and **will not start** until two certificate files exist:
+`infra/nginx/certs/staging.crt` and `infra/nginx/certs/staging.key`. You must create
+them **before** the next step, even when Cloudflare is in front (Cloudflare still needs a
+certificate on your server — its "Full" mode talks HTTPS to the origin).
+
+**Recommended (Cloudflare + a free Cloudflare Origin Certificate):**
+1. Point your domain's nameservers to **Cloudflare** and set SSL mode to **Full**.
+2. In Cloudflare → **SSL/TLS → Origin Server → Create Certificate**. Copy the
+   certificate and private key it shows you.
+3. On the server, save them with the exact names nginx expects:
+   ```bash
+   cd /opt/pandit-prod
+   nano infra/nginx/certs/staging.crt   # paste the certificate, save (Ctrl+O, Enter, Ctrl+X)
+   nano infra/nginx/certs/staging.key   # paste the private key, save
+   ```
+
+**Quick alternative (self-signed, to get the stack up now)** — fine behind Cloudflare
+"Full"; replace with a real cert before launch:
 ```bash
 cd /opt/pandit-prod
-# Log in to the image registry so Docker can pull your app images
+openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
+  -keyout infra/nginx/certs/staging.key \
+  -out infra/nginx/certs/staging.crt \
+  -subj "/CN=thepandit.app"
+```
+*(Production-grade alternative for the technically inclined: run Certbot/Let's Encrypt and
+have it write into `infra/nginx/certs/` — ask a contractor to wire it in.)*
+
+### 5.9 Start everything
+
+You have two ways to get the app images. **Option A** pulls images that CI already
+built; **Option B** builds them on the server (use this for a first deploy, or if CI
+hasn't published images yet).
+
+**Important — image tag:** CI publishes each image as the commit SHA and as
+`staging-latest`. It does **not** publish a `latest` tag. So `.env.prod` ships with
+`IMAGE_TAG=staging-latest`; leave it as that (or pin a specific commit SHA). If you set
+`IMAGE_TAG=latest`, the pull will fail with `not found`.
+
+**Option A — pull pre-built images (when CI has published them):**
+```bash
+cd /opt/pandit-prod
+# Create a GitHub token with the read:packages scope first (see note below), then:
 echo "YOUR_GITHUB_TOKEN" | docker login ghcr.io -u gpandit --password-stdin
 
-# Pull the pre-built images and start the whole stack
 docker compose --env-file .env.prod -f infra/docker-compose.staging.yml pull
 docker compose --env-file .env.prod -f infra/docker-compose.staging.yml up -d
 ```
+> The GitHub token must be a real **Personal Access Token** with the **`read:packages`**
+> scope (GitHub → Settings → Developer settings → Tokens). Without it you'll get `denied`.
+
+**Option B — build images on the server (first deploy / no published images):**
+```bash
+cd /opt/pandit-prod
+docker compose --env-file .env.prod -f infra/docker-compose.staging.yml build
+docker compose --env-file .env.prod -f infra/docker-compose.staging.yml up -d
+```
+> The Panchang image compiles `pyswisseph`, and the web image (Next.js) is memory-hungry.
+> If a build is `Killed` for out-of-memory on an 8 GB server, add swap once and re-run
+> `build`: `fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile`
+
 > Note: the file is named `...staging.yml` but it *is* your full production stack. When
 > you're ready, copy it to `docker-compose.production.yml` and swap the staging domain
 > names for production ones — but it works as-is to get live.

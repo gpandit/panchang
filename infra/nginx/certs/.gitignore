@@ -1,0 +1,6 @@
+# Origin TLS material lives here (bind-mounted into the nginx container).
+# Never commit real certificates or keys — only this placeholder keeps the dir.
+*.crt
+*.key
+*.pem
+!.gitignore
