@@ -45,5 +45,7 @@ EOF
 
 EXPOSE 80
 
+# Use 127.0.0.1, not localhost: Alpine resolves localhost to ::1 first, but
+# nginx's `listen 80;` only binds IPv4, so an IPv6 connection to ::1 is refused.
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost/healthz || exit 1
+    CMD wget -qO- http://127.0.0.1/healthz || exit 1
