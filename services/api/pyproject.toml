@@ -12,6 +12,8 @@ dependencies = [
     "httpx>=0.28",
     "PyJWT>=2.9",
     "fpdf2>=2.7",
+    "redis>=5.0",
+    "rq>=1.16",
 ]
 
 [project.optional-dependencies]
