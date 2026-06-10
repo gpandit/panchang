@@ -220,10 +220,19 @@ services:
   alertmanager:
     image: prom/alertmanager:v0.27.0
     restart: unless-stopped
+    environment:
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+    # Alertmanager's config file does not support ${VAR} substitution natively,
+    # so the mounted file is a template with ${SLACK_WEBHOOK_URL} placeholders.
+    # Substitute it into a writable path before launching alertmanager.
+    entrypoint: ["sh", "-c"]
     command:
-      - "--config.file=/etc/alertmanager/config.yml"
+      - >
+        sed "s#\${SLACK_WEBHOOK_URL}#$$SLACK_WEBHOOK_URL#g"
+        /etc/alertmanager/config.yml.tpl > /tmp/config.yml &&
+        exec /bin/alertmanager --config.file=/tmp/config.yml --storage.path=/alertmanager
     volumes:
-      - ./observability/alertmanager.yml:/etc/alertmanager/config.yml:ro
+      - ./observability/alertmanager.yml.tpl:/etc/alertmanager/config.yml.tpl:ro
     logging: *default-logging
 
 volumes:
