@@ -38,7 +38,7 @@ exporters:
     endpoint: http://prometheus:9090/api/v1/write
 
   # Structured logs to stdout so docker logs captures them
-  logging:
+  debug:
     verbosity: normal
 
 service:
@@ -52,14 +52,14 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch, resource, filter/drop_health]
-      exporters: [otlp/tempo, logging]
+      exporters: [otlp/tempo, debug]
 
     metrics:
       receivers: [otlp]
       processors: [batch, resource]
-      exporters: [prometheusremotewrite, logging]
+      exporters: [prometheusremotewrite, debug]
 
     logs:
       receivers: [otlp]
       processors: [batch, resource]
-      exporters: [logging]
+      exporters: [debug]
