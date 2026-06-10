@@ -22,7 +22,7 @@ x-api-env: &api-env
   API_ENVIRONMENT: staging
   API_DEBUG: "false"
   API_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-  API_REDIS_URL: redis://redis:6379/0
+  API_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
   API_S3_ENDPOINT_URL: ${S3_ENDPOINT_URL}
   API_S3_ACCESS_KEY: ${S3_ACCESS_KEY}
   API_S3_SECRET_KEY: ${S3_SECRET_KEY}
@@ -223,17 +223,21 @@ services:
     environment:
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     # Alertmanager's config file does not support ${VAR} substitution natively,
-    # so the mounted file is a template with placeholders. If SLACK_WEBHOOK_URL
-    # isn't set, drop the slack-staging receiver entirely (an empty api_url is
-    # an invalid URL and fails config validation even if unused) and route
-    # alerts to the no-op "null" receiver instead.
+    # so the mounted file is a template with __TOKEN__-style placeholders (not
+    # ${VAR}-style: those would additionally get expanded by *this* shell
+    # itself inside the double-quoted sed -e strings, e.g. an unset
+    # ${ALERTMANAGER_DEFAULT_RECEIVER} collapses "s#${...}#x#g" to the broken
+    # "s##x#g", which silently no-ops). If SLACK_WEBHOOK_URL isn't set, drop
+    # the slack-staging receiver entirely (an empty api_url is an invalid URL
+    # and fails config validation even if unused) and route alerts to the
+    # no-op "null" receiver instead.
     entrypoint: ["sh", "-c"]
     command:
       - >
         if [ -n "$$SLACK_WEBHOOK_URL" ]; then
-          sed -e "s#$${SLACK_WEBHOOK_URL}#$$SLACK_WEBHOOK_URL#g" -e "s#$${ALERTMANAGER_DEFAULT_RECEIVER}#slack-staging#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
+          sed -e "s#__SLACK_WEBHOOK_URL__#$$SLACK_WEBHOOK_URL#g" -e "s#__DEFAULT_RECEIVER__#slack-staging#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
         else
-          sed -e "/# SLACK_RECEIVER_START/,/# SLACK_RECEIVER_END/d" -e "s#$${ALERTMANAGER_DEFAULT_RECEIVER}#null#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
+          sed -e "/# SLACK_RECEIVER_START/,/# SLACK_RECEIVER_END/d" -e "s#__DEFAULT_RECEIVER__#\"null\"#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
         fi &&
         exec /bin/alertmanager --config.file=/tmp/config.yml --storage.path=/alertmanager
     volumes:
