@@ -1,9 +1,6 @@
 "use client";
 
 import type { JSX } from "react";
-// TODO(design): skin via Aqualeo design system. Structure, a11y, and token
-// wiring are final — only className/visual treatment changes.
-
 import type { TimeFormat } from "@pandit/api-client-ts";
 
 const OPTIONS: { value: TimeFormat; label: string; ariaLabel: string }[] = [
@@ -22,7 +19,8 @@ export function TimeFormatToggle({ value, onChange }: TimeFormatToggleProps): JS
     <div
       role="group"
       aria-label="Time display format"
-      className="flex rounded-md border border-border overflow-hidden"
+      className="flex rounded-full overflow-hidden p-0.5"
+      style={{ background: "#FFEFD9", border: "1px solid rgba(124,29,43,0.16)" }}
     >
       {OPTIONS.map((opt) => {
         const isSelected = opt.value === value;
@@ -34,10 +32,12 @@ export function TimeFormatToggle({ value, onChange }: TimeFormatToggleProps): JS
             aria-checked={isSelected}
             aria-label={opt.ariaLabel}
             onClick={() => onChange(opt.value)}
-            className={[
-              "px-sm py-xs text-sm flex-1",
-              isSelected ? "bg-primary text-primary-foreground" : "bg-background text-foreground",
-            ].join(" ")}
+            className="px-3 py-1.5 text-xs font-semibold rounded-full transition-all"
+            style={{
+              background: isSelected ? "#7C1D2B" : "transparent",
+              color: isSelected ? "#FFF6EA" : "#6A4231",
+              letterSpacing: "0.02em",
+            }}
           >
             {opt.label}
           </button>

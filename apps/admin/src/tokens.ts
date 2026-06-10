@@ -1,66 +1,88 @@
 /**
- * Design token references — all visual values flow through here.
- * TODO(design): Replace placeholder values with the Aqualeo design system tokens.
+ * Aqualeo design system tokens — dark canvas, single aqua accent.
+ * Per spec §10.2: admin console uses Aqualeo (dark/aqua) while the
+ * consumer app uses the Festival direction (saffron/maroon/gold).
  *
- * Components must consume these constants, never hard-code colour/spacing/font values.
+ * All colour values are direct from the Aqualeo admin design prototype.
+ * Components consume these; never hardcode colour/spacing/font values.
  */
 
 export const tokens = {
   // ── Colour ─────────────────────────────────────────────────────────────────
   color: {
-    surface: "var(--color-surface,        #ffffff)", // TODO(design)
-    surfaceAlt: "var(--color-surface-alt,     #f5f5f5)", // TODO(design)
-    border: "var(--color-border,          #e0e0e0)", // TODO(design)
-    text: "var(--color-text,            #1a1a1a)", // TODO(design)
-    textMuted: "var(--color-text-muted,      #6b6b6b)", // TODO(design)
-    primary: "var(--color-primary,         #4f46e5)", // TODO(design)
-    primaryText: "var(--color-primary-text,    #ffffff)", // TODO(design)
-    danger: "var(--color-danger,          #dc2626)", // TODO(design)
-    warning: "var(--color-warning,         #d97706)", // TODO(design)
-    success: "var(--color-success,         #16a34a)", // TODO(design)
-    info: "var(--color-info,            #0284c7)", // TODO(design)
-    // Status badge colours
-    statusDraft: "var(--color-status-draft,    #6b7280)", // TODO(design)
-    statusReview: "var(--color-status-review,   #d97706)", // TODO(design)
-    statusPublished: "var(--color-status-published,#16a34a)", // TODO(design)
-    statusRejected: "var(--color-status-rejected, #dc2626)", // TODO(design)
-    // Flag status
-    flagOpen: "var(--color-flag-open,       #dc2626)", // TODO(design)
-    flagResolved: "var(--color-flag-resolved,   #16a34a)", // TODO(design)
-    flagDismissed: "var(--color-flag-dismissed,  #6b7280)", // TODO(design)
+    // Surfaces — dark canvas hierarchy
+    surface: "#141A1F",       // panel background
+    surfaceAlt: "#0D1115",    // page/canvas background
+    surfaceRaised: "#1C252C", // elevated card / popover
+    surfaceCard: "#161D23",   // card background
+
+    // Borders
+    border: "rgba(255,255,255,0.08)",
+    borderHi: "rgba(255,255,255,0.14)",
+
+    // Text
+    text: "#E7EEF1",          // primary text
+    textBody: "#A7B5BE",      // body / secondary text
+    textMuted: "#7C8B95",     // muted text
+    textFaint: "#56646D",     // placeholder / disabled
+
+    // Accent — single aqua
+    primary: "#33D6C2",
+    primaryText: "#0D1115",   // dark text on aqua background
+    primaryDim: "rgba(51,214,194,0.14)",
+    primaryLine: "rgba(51,214,194,0.40)",
+
+    // Semantic
+    danger: "#E05C5C",
+    warning: "#E0B341",
+    success: "#33D6C2",       // aqua doubles as success
+    info: "#2A91B8",
+
+    // Content lifecycle status badges
+    statusDraft: "#8A99A3",
+    statusReview: "#E0B341",
+    statusPublished: "#33D6C2",
+    statusRejected: "#E05C5C",
+
+    // Flag queue status
+    flagOpen: "#E05C5C",
+    flagResolved: "#33D6C2",
+    flagDismissed: "#56646D",
   },
 
   // ── Typography ─────────────────────────────────────────────────────────────
   font: {
-    family: "var(--font-family,   system-ui, sans-serif)", // TODO(design)
-    sizeBase: "var(--font-size-base, 0.875rem)", // TODO(design)
-    sizeSm: "var(--font-size-sm,   0.75rem)", // TODO(design)
-    sizeLg: "var(--font-size-lg,   1rem)", // TODO(design)
-    sizeXl: "var(--font-size-xl,   1.25rem)", // TODO(design)
-    weightNormal: "var(--font-weight-normal, 400)", // TODO(design)
-    weightMedium: "var(--font-weight-medium, 500)", // TODO(design)
-    weightBold: "var(--font-weight-bold,   700)", // TODO(design)
+    family: "'Hanken Grotesk', system-ui, sans-serif",
+    mono: "'Jost', ui-monospace, monospace",
+    sizeBase: "0.875rem",
+    sizeSm: "0.75rem",
+    sizeLg: "1rem",
+    sizeXl: "1.25rem",
+    size2xl: "1.5rem",
+    weightNormal: "400",
+    weightMedium: "500",
+    weightBold: "700",
   },
 
   // ── Spacing ────────────────────────────────────────────────────────────────
   space: {
-    xs: "var(--space-xs,  0.25rem)", // TODO(design)
-    sm: "var(--space-sm,  0.5rem)", // TODO(design)
-    md: "var(--space-md,  1rem)", // TODO(design)
-    lg: "var(--space-lg,  1.5rem)", // TODO(design)
-    xl: "var(--space-xl,  2rem)", // TODO(design)
+    xs: "0.25rem",
+    sm: "0.5rem",
+    md: "1rem",
+    lg: "1.5rem",
+    xl: "2rem",
   },
 
   // ── Radius ─────────────────────────────────────────────────────────────────
   radius: {
-    sm: "var(--radius-sm,  0.25rem)", // TODO(design)
-    md: "var(--radius-md,  0.5rem)", // TODO(design)
-    lg: "var(--radius-lg,  0.75rem)", // TODO(design)
+    sm: "0.5rem",
+    md: "0.625rem",
+    lg: "0.875rem",
   },
 
   // ── Shadow ─────────────────────────────────────────────────────────────────
   shadow: {
-    sm: "var(--shadow-sm,  0 1px 2px rgba(0,0,0,0.05))", // TODO(design)
-    md: "var(--shadow-md,  0 4px 6px rgba(0,0,0,0.07))", // TODO(design)
+    sm: "0 1px 3px rgba(0,0,0,0.3)",
+    md: "0 4px 12px rgba(0,0,0,0.4)",
   },
 } as const;

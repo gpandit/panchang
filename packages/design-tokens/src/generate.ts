@@ -72,7 +72,13 @@ export const tokenPreset = {
       slow: "var(--motion-duration-slow)",
     },
     zIndex: ${obj("zIndex")},
-    screens: ${obj("breakpoint")},
+    // Breakpoints use static pixel values (not CSS vars) — Tailwind's JIT
+    // resolves media query breakpoints at build time and cannot use var().
+    screens: {
+${(byGroup.get("breakpoint") ?? [])
+  .map((e) => `      "${e.name.split(".").slice(1).join("-")}": "${e.value}",`)
+  .join("\n")}
+    },
   },
 };
 `;
