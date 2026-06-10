@@ -19,12 +19,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from panchang.cache import PanchangCache
-from panchang.compute import compute_day
+from panchang.compute import compute_panchang
 from panchang.models import Ayanamsa, MonthScheme, PanchangRequest
 from panchang.settings import get_settings
 
 settings = get_settings()
-cache = PanchangCache()
+cache = PanchangCache(compute=compute_panchang)
 
 app = FastAPI(
     title="Panchang Computation Service",
@@ -61,12 +61,15 @@ async def health() -> dict[str, str]:
 
 @app.post("/compute")
 async def compute_single(req: ComputeRequest) -> JSONResponse:
-    preq = PanchangRequest(date=req.date, lat=req.lat, lon=req.lon, tz=req.tz)
-    cached = await cache.get(preq)
-    if cached is not None:
-        return JSONResponse(cached.model_dump(mode="json"))
-    result = compute_day(preq)
-    await cache.set(preq, result)
+    preq = PanchangRequest(
+        date=req.date,
+        lat=req.lat,
+        lon=req.lon,
+        tz=req.tz,
+        ayanamsa=req.ayanamsa,
+        month_scheme=req.month_scheme,
+    )
+    result = cache.get(preq)
     return JSONResponse(result.model_dump(mode="json"))
 
 
@@ -79,13 +82,15 @@ async def compute_month(req: MonthRequest) -> JSONResponse:
     results = []
     for day in range(1, days_in_month + 1):
         d = _date(req.year, req.month, day)
-        preq = PanchangRequest(date=d, lat=req.lat, lon=req.lon, tz=req.tz)
-        cached = await cache.get(preq)
-        if cached is not None:
-            results.append(cached.model_dump(mode="json"))
-        else:
-            result = compute_day(preq)
-            await cache.set(preq, result)
-            results.append(result.model_dump(mode="json"))
+        preq = PanchangRequest(
+            date=d,
+            lat=req.lat,
+            lon=req.lon,
+            tz=req.tz,
+            ayanamsa=req.ayanamsa,
+            month_scheme=req.month_scheme,
+        )
+        result = cache.get(preq)
+        results.append(result.model_dump(mode="json"))
 
     return JSONResponse({"days": results})

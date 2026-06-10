@@ -24,14 +24,16 @@ def main() -> None:
 
     try:
         # Prefer arq if available, fall back to rq
-        from arq import run_worker  # type: ignore[import]
+        from arq import run_worker  # type: ignore[import-not-found]
+
         from api.pdf.worker import WorkerSettings  # type: ignore[attr-defined]
 
         run_worker(WorkerSettings)
     except ImportError:
         try:
-            from rq import Queue, Worker  # type: ignore[import]
-            from redis import Redis  # type: ignore[import]
+            from redis import Redis  # type: ignore[import-not-found]
+            from rq import Queue, Worker  # type: ignore[import-not-found]
+
             from api.settings import get_settings
 
             settings = get_settings()

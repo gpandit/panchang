@@ -2,6 +2,9 @@ import type { JSX } from "react";
 import type { MuhuratWindow, TimeFormat } from "@pandit/api-client-ts";
 import { formatTimeRange } from "./time";
 
+// TODO(design): skin via Aqualeo design system. Structure, a11y, and token
+// wiring are final — only className/visual treatment changes.
+
 interface MuhuratSectionProps {
   muhurats: MuhuratWindow[];
   timeFormat: TimeFormat;
@@ -10,14 +13,15 @@ interface MuhuratSectionProps {
 export function MuhuratSection({ muhurats, timeFormat }: MuhuratSectionProps): JSX.Element | null {
   if (muhurats.length === 0) return null;
 
-  const auspicious = muhurats.filter((m) => m.type === "auspicious");
-  const inauspicious = muhurats.filter((m) => m.type !== "auspicious");
+  const indexed = muhurats.map((m, i) => ({ muhurat: m, index: i }));
+  const auspicious = indexed.filter(({ muhurat: m }) => m.type === "auspicious");
+  const inauspicious = indexed.filter(({ muhurat: m }) => m.type !== "auspicious");
 
   return (
     <section aria-label="Muhurat windows" className="px-4 py-3">
       <h3
         className="text-xs font-bold uppercase mb-3"
-        style={{ color: "#C4912F", letterSpacing: "0.12em" }}
+        style={{ color: "var(--color-secondary)", letterSpacing: "0.12em" }}
       >
         Muhurat Windows
       </h3>
@@ -26,18 +30,18 @@ export function MuhuratSection({ muhurats, timeFormat }: MuhuratSectionProps): J
         <div
           className="rounded-2xl p-3"
           style={{
-            background: "rgba(92,107,54,0.08)",
-            border: "1px solid rgba(92,107,54,0.22)",
+            background: "var(--color-auspicious-bg-soft)",
+            border: "1px solid var(--color-auspicious-border)",
           }}
         >
           <p
             className="text-xs font-bold uppercase mb-2"
-            style={{ color: "#5C6B36", letterSpacing: "0.08em" }}
+            style={{ color: "var(--color-auspicious)", letterSpacing: "0.08em" }}
           >
             Auspicious
           </p>
           <ul className="flex flex-col gap-2">
-            {auspicious.map((m, i) => (
+            {auspicious.map(({ muhurat: m, index: i }) => (
               <MuhuratItem key={i} muhurat={m} timeFormat={timeFormat} type="auspicious" />
             ))}
           </ul>
@@ -47,18 +51,18 @@ export function MuhuratSection({ muhurats, timeFormat }: MuhuratSectionProps): J
         <div
           className="rounded-2xl p-3"
           style={{
-            background: "rgba(178,58,30,0.06)",
-            border: "1px solid rgba(178,58,30,0.20)",
+            background: "var(--color-inauspicious-bg-soft)",
+            border: "1px solid var(--color-inauspicious-border)",
           }}
         >
           <p
             className="text-xs font-bold uppercase mb-2"
-            style={{ color: "#B23A1E", letterSpacing: "0.08em" }}
+            style={{ color: "var(--color-inauspicious)", letterSpacing: "0.08em" }}
           >
             Avoid
           </p>
           <ul className="flex flex-col gap-2">
-            {inauspicious.map((m, i) => (
+            {inauspicious.map(({ muhurat: m, index: i }) => (
               <MuhuratItem key={i} muhurat={m} timeFormat={timeFormat} type="inauspicious" />
             ))}
           </ul>
@@ -78,8 +82,8 @@ function MuhuratItem({
   type: "auspicious" | "inauspicious";
 }): JSX.Element {
   const range = formatTimeRange(m.startTime, m.endTime, timeFormat);
-  const nameColor = type === "auspicious" ? "#3A1A11" : "#3A1A11";
-  const timeColor = type === "auspicious" ? "#5C6B36" : "#9E7A63";
+  const nameColor = "var(--color-ink)";
+  const timeColor = type === "auspicious" ? "var(--color-auspicious)" : "var(--color-mute)";
 
   return (
     <li aria-label={`${m.name} — ${m.type}`}>
@@ -87,11 +91,7 @@ function MuhuratItem({
         {m.name}
       </p>
       {range ? (
-        <time
-          className="text-xs tabular"
-          dateTime={m.startTime}
-          style={{ color: timeColor }}
-        >
+        <time className="text-xs tabular" dateTime={m.startTime} style={{ color: timeColor }}>
           {range}
         </time>
       ) : null}

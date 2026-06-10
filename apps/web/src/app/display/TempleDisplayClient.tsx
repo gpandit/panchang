@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { JSX } from "react";
 
 // ── Palette (Festival direction, scaled for large signage) ───────────────────
@@ -193,8 +193,7 @@ const MANTRA = {
     bn: "বিঘ্নহর্তা শ্রী গণেশকে নমস্কার।",
     ml: "വിഘ്നങ്ങള്‍ നീക്കുന്ന ശ്രീ ഗണേശന് നമസ്കാരം.",
   } as Record<string, string>,
-  shlokaDev:
-    "वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।\nनिर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥",
+  shlokaDev: "वक्रतुण्ड महाकाय सूर्यकोटि समप्रभ।\nनिर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा॥",
   shlokaTr:
     "Vakratuṇḍa mahākāya sūryakoṭi samaprabha · nirvighnaṃ kuru me deva sarvakāryeṣu sarvadā",
 };
@@ -213,29 +212,25 @@ function toMins(hhmm: string): number {
   return (h ?? 0) * 60 + (m ?? 0);
 }
 
-function nowMins(): number {
-  const d = new Date();
-  return d.getHours() * 60 + d.getMinutes();
-}
-
-function isActive(time: [string, string]): boolean {
-  const now = nowMins();
+function isActive(time: [string, string], now: number): boolean {
   return now >= toMins(time[0]) && now < toMins(time[1]);
 }
 
 function nextAarti(
   schedule: typeof AARTI.schedule,
+  now: number,
 ): (typeof AARTI.schedule)[0] | null {
-  const now = nowMins();
   return schedule.find((a) => toMins(a.time) > now) ?? null;
 }
 
-function darshantStatus(darshan: typeof AARTI.darshan): {
+function darshantStatus(
+  darshan: typeof AARTI.darshan,
+  now: number,
+): {
   open: boolean;
   label: string;
   session: string;
 } {
-  const now = nowMins();
   const ms = toMins(darshan.morning[0]!);
   const me = toMins(darshan.morning[1]!);
   const es = toMins(darshan.evening[0]!);
@@ -258,12 +253,16 @@ const BOARDS: { id: Board; label: string }[] = [
 export function TempleDisplayClient(): JSX.Element {
   const [board, setBoard] = useState<Board>("panchang");
   const [langIdx, setLangIdx] = useState(0);
-  const [clock, setClock] = useState(new Date());
+  // `clock` starts as null so the server-rendered markup (which has no
+  // notion of "now") matches the client's first render. The real time is
+  // filled in after mount, avoiding a hydration mismatch.
+  const [clock, setClock] = useState<Date | null>(null);
   const [visible, setVisible] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   // Live clock
   useEffect(() => {
+    setClock(new Date());
     const id = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
@@ -284,15 +283,17 @@ export function TempleDisplayClient(): JSX.Element {
   }, []);
 
   const lang = LANGS[langIdx]!;
-  const timeStr = clock.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  // Before mount, nowM is -1 so no muhurat/ārati is shown as "active" or
+  // "next" — both server and pre-hydration client renders agree.
+  const nowM = clock ? clock.getHours() * 60 + clock.getMinutes() : -1;
+  const timeStr = clock
+    ? clock.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+    : "--:--";
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ background: D.cream, fontFamily: D.sans }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ background: D.cream, fontFamily: D.sans }}>
       {/* Masthead */}
-      <Masthead lang={lang} timeStr={timeStr} visible={visible} />
+      <Masthead timeStr={timeStr} visible={visible} />
 
       {/* Board selector tabs */}
       <div
@@ -329,10 +330,8 @@ export function TempleDisplayClient(): JSX.Element {
 
       {/* Board content */}
       <div className="flex-1 overflow-auto p-6 lg:p-10">
-        {board === "panchang" && (
-          <PanchangBoard lang={lang} visible={visible} clock={clock} />
-        )}
-        {board === "aarti" && <AartiBoard lang={lang} visible={visible} clock={clock} />}
+        {board === "panchang" && <PanchangBoard lang={lang} visible={visible} nowM={nowM} />}
+        {board === "aarti" && <AartiBoard lang={lang} visible={visible} nowM={nowM} />}
         {board === "mantra" && <MantraBoard lang={lang} visible={visible} />}
       </div>
 
@@ -343,15 +342,7 @@ export function TempleDisplayClient(): JSX.Element {
 }
 
 // ── Masthead ──────────────────────────────────────────────────────────────────
-function Masthead({
-  lang,
-  timeStr,
-  visible,
-}: {
-  lang: (typeof LANGS)[0];
-  timeStr: string;
-  visible: boolean;
-}): JSX.Element {
+function Masthead({ timeStr, visible }: { timeStr: string; visible: boolean }): JSX.Element {
   return (
     <header
       className="arch-motif flex items-center justify-between px-8 py-4"
@@ -360,7 +351,10 @@ function Masthead({
       <div className="flex items-center gap-4">
         <div
           className="flex h-14 w-14 items-center justify-center rounded-2xl"
-          style={{ background: "rgba(255,255,255,0.12)", border: `1px solid rgba(231,184,78,0.35)` }}
+          style={{
+            background: "rgba(255,255,255,0.12)",
+            border: `1px solid rgba(231,184,78,0.35)`,
+          }}
         >
           <span style={{ fontSize: "2rem", lineHeight: 1 }} aria-hidden="true">
             ॐ
@@ -415,14 +409,12 @@ function Masthead({
 function PanchangBoard({
   lang,
   visible,
-  clock,
+  nowM,
 }: {
   lang: (typeof LANGS)[0];
   visible: boolean;
-  clock: Date;
+  nowM: number;
 }): JSX.Element {
-  const nowM = clock.getHours() * 60 + clock.getMinutes();
-
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto">
       {/* Festival hero */}
@@ -435,14 +427,20 @@ function PanchangBoard({
       >
         <div
           className="flex h-20 w-20 items-center justify-center rounded-2xl flex-none"
-          style={{ background: "rgba(255,255,255,0.18)", border: "1.5px solid rgba(255,246,234,0.5)" }}
+          style={{
+            background: "rgba(255,255,255,0.18)",
+            border: "1.5px solid rgba(255,246,234,0.5)",
+          }}
         >
           <span style={{ fontSize: "3rem", lineHeight: 1 }} aria-hidden="true">
             ॐ
           </span>
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,246,234,0.85)" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-widest"
+            style={{ color: "rgba(255,246,234,0.85)" }}
+          >
             Today's Vrat
           </p>
           <p style={{ fontFamily: D.disp, fontSize: "2.2rem", color: "#fff", lineHeight: 1.05 }}>
@@ -459,7 +457,10 @@ function PanchangBoard({
           </Fade>
         </div>
         <div className="ml-auto text-right">
-          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,246,234,0.7)" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-widest"
+            style={{ color: "rgba(255,246,234,0.7)" }}
+          >
             Moonrise
           </p>
           <p style={{ fontFamily: D.disp, fontSize: "2rem", color: D.goldHi }} className="tabular">
@@ -471,21 +472,49 @@ function PanchangBoard({
       {/* Angas grid */}
       <div className="grid grid-cols-5 gap-4">
         {[
-          { label: "Tithi", name: PANDIT.angas.tithi.name, sub: `until ${fmt12(PANDIT.angas.tithi.upto)}` },
-          { label: "Nakshatra", name: "U. Ashadha", sub: `until ${fmt12(PANDIT.angas.nakshatra.upto)}` },
-          { label: "Yoga", name: PANDIT.angas.yoga.name, sub: `until ${fmt12(PANDIT.angas.yoga.upto)}` },
-          { label: "Karana", name: PANDIT.angas.karana.name, sub: `until ${fmt12(PANDIT.angas.karana.upto)}` },
+          {
+            label: "Tithi",
+            name: PANDIT.angas.tithi.name,
+            sub: `until ${fmt12(PANDIT.angas.tithi.upto)}`,
+          },
+          {
+            label: "Nakshatra",
+            name: "U. Ashadha",
+            sub: `until ${fmt12(PANDIT.angas.nakshatra.upto)}`,
+          },
+          {
+            label: "Yoga",
+            name: PANDIT.angas.yoga.name,
+            sub: `until ${fmt12(PANDIT.angas.yoga.upto)}`,
+          },
+          {
+            label: "Karana",
+            name: PANDIT.angas.karana.name,
+            sub: `until ${fmt12(PANDIT.angas.karana.upto)}`,
+          },
           { label: "Moonsign", name: "Makara", sub: "Rashi" },
         ].map((a) => (
           <div
             key={a.label}
             className="rounded-2xl p-4"
-            style={{ background: D.paper, border: `1px solid ${D.line}`, boxShadow: "0 6px 20px -14px rgba(124,29,43,0.4)" }}
+            style={{
+              background: D.paper,
+              border: `1px solid ${D.line}`,
+              boxShadow: "0 6px 20px -14px rgba(124,29,43,0.4)",
+            }}
           >
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: D.gold }}>
               {a.label}
             </p>
-            <p style={{ fontFamily: D.disp, fontSize: "1.4rem", color: D.ink, lineHeight: 1.05, marginTop: 4 }}>
+            <p
+              style={{
+                fontFamily: D.disp,
+                fontSize: "1.4rem",
+                color: D.ink,
+                lineHeight: 1.05,
+                marginTop: 4,
+              }}
+            >
               {a.name}
             </p>
             <p className="text-sm mt-1 tabular" style={{ color: D.mute }}>
@@ -511,7 +540,10 @@ function PanchangBoard({
             <p className="text-2xl" aria-hidden="true">
               {s.icon}
             </p>
-            <p className="text-xs font-bold uppercase tracking-wider mt-2" style={{ color: D.gold }}>
+            <p
+              className="text-xs font-bold uppercase tracking-wider mt-2"
+              style={{ color: D.gold }}
+            >
               {s.label}
             </p>
             <p style={{ fontFamily: D.disp, fontSize: "1.4rem", color: D.ink }} className="tabular">
@@ -523,12 +555,7 @@ function PanchangBoard({
 
       {/* Auspicious / Inauspicious */}
       <div className="grid grid-cols-2 gap-6">
-        <MuhuratCol
-          heading="Auspicious Windows"
-          items={PANDIT.good}
-          tone="good"
-          nowMins={nowM}
-        />
+        <MuhuratCol heading="Auspicious Windows" items={PANDIT.good} tone="good" nowMins={nowM} />
         <MuhuratCol heading="Avoid" items={PANDIT.avoid} tone="bad" nowMins={nowM} />
       </div>
     </div>
@@ -539,7 +566,7 @@ function MuhuratCol({
   heading,
   items,
   tone,
-  nowMins: nowM,
+  nowMins,
 }: {
   heading: string;
   items: { name: string; time: string[] }[];
@@ -559,7 +586,9 @@ function MuhuratCol({
       <div className="flex flex-col gap-3">
         {items.map((item) => {
           const active =
-            item.time[0] && item.time[1] ? isActive([item.time[0], item.time[1]] as [string, string]) : false;
+            item.time[0] && item.time[1]
+              ? isActive([item.time[0], item.time[1]] as [string, string], nowMins)
+              : false;
           return (
             <div
               key={item.name}
@@ -570,9 +599,7 @@ function MuhuratCol({
               }}
             >
               <div>
-                <p style={{ fontFamily: D.disp, fontSize: "1.1rem", color: D.ink }}>
-                  {item.name}
-                </p>
+                <p style={{ fontFamily: D.disp, fontSize: "1.1rem", color: D.ink }}>{item.name}</p>
                 {active && (
                   <p className="text-xs font-bold uppercase" style={{ color: c }}>
                     ● Now active
@@ -596,15 +623,14 @@ function MuhuratCol({
 function AartiBoard({
   lang,
   visible,
-  clock,
+  nowM,
 }: {
   lang: (typeof LANGS)[0];
   visible: boolean;
-  clock: Date;
+  nowM: number;
 }): JSX.Element {
-  const status = darshantStatus(AARTI.darshan);
-  const next = nextAarti(AARTI.schedule);
-  const nowM = clock.getHours() * 60 + clock.getMinutes();
+  const status = darshantStatus(AARTI.darshan, nowM);
+  const next = nextAarti(AARTI.schedule, nowM);
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
@@ -612,9 +638,7 @@ function AartiBoard({
       <div
         className="rounded-3xl px-8 py-5 flex items-center justify-between"
         style={{
-          background: status.open
-            ? "rgba(92,107,54,0.12)"
-            : "rgba(178,58,30,0.08)",
+          background: status.open ? "rgba(92,107,54,0.12)" : "rgba(178,58,30,0.08)",
           border: `1.5px solid ${status.open ? D.good : D.bad}`,
         }}
       >
@@ -657,9 +681,7 @@ function AartiBoard({
       {/* Aarti schedule */}
       <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${D.line}` }}>
         <div className="px-6 py-4" style={{ background: D.maroon }}>
-          <p style={{ fontFamily: D.disp, fontSize: "1.3rem", color: "#FFF6EA" }}>
-            Ārati Schedule
-          </p>
+          <p style={{ fontFamily: D.disp, fontSize: "1.3rem", color: "#FFF6EA" }}>Ārati Schedule</p>
         </div>
         <div style={{ background: D.paper }}>
           {AARTI.schedule.map((a) => {
@@ -765,7 +787,10 @@ function MantraBoard({
         </p>
         <div
           className="mt-6 rounded-2xl px-6 py-4"
-          style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(231,184,78,0.25)" }}
+          style={{
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(231,184,78,0.25)",
+          }}
         >
           <Fade visible={visible}>
             <p className="text-base leading-relaxed" style={{ color: "#FFF6EA" }}>
@@ -776,7 +801,10 @@ function MantraBoard({
             {MANTRA.meaning["en"]}
           </p>
         </div>
-        <p className="mt-6 text-sm font-bold uppercase tracking-widest" style={{ color: "rgba(255,246,234,0.5)" }}>
+        <p
+          className="mt-6 text-sm font-bold uppercase tracking-widest"
+          style={{ color: "rgba(255,246,234,0.5)" }}
+        >
           Japa count: {MANTRA.count}
         </p>
       </div>

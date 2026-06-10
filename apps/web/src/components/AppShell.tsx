@@ -3,16 +3,7 @@
 import type { JSX, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import {
-  Sun,
-  Calendar,
-  Star,
-  Sparkles,
-  Printer,
-  MessageCircle,
-  User,
-  Monitor,
-} from "lucide-react";
+import { Sun, Calendar, Star, Sparkles, Printer, MessageCircle, User, Monitor } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/today", label: "Today", Icon: Sun },

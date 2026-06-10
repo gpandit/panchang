@@ -2,6 +2,9 @@ import type { JSX } from "react";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import type { Advisory } from "@pandit/api-client-ts";
 
+// TODO(design): skin via Aqualeo design system. Structure, a11y, and token
+// wiring are final — only className/visual treatment changes.
+
 interface AdvisorySectionProps {
   advisories: Advisory[];
 }
@@ -31,9 +34,9 @@ function AdvisoryGroup({
 }): JSX.Element {
   const isGood = type === "good";
   const Icon = isGood ? CheckCircle2 : AlertTriangle;
-  const color = isGood ? "#5C6B36" : "#B23A1E";
-  const bg = isGood ? "rgba(92,107,54,0.08)" : "rgba(178,58,30,0.06)";
-  const border = isGood ? "rgba(92,107,54,0.22)" : "rgba(178,58,30,0.20)";
+  const color = isGood ? "var(--color-auspicious)" : "var(--color-inauspicious)";
+  const bg = isGood ? "var(--color-auspicious-bg-soft)" : "var(--color-inauspicious-bg-soft)";
+  const border = isGood ? "var(--color-auspicious-border)" : "var(--color-inauspicious-border)";
 
   return (
     <div className="rounded-2xl p-3" style={{ background: bg, border: `1px solid ${border}` }}>
@@ -46,11 +49,11 @@ function AdvisoryGroup({
       <ul className="flex flex-col gap-1.5">
         {items.map((a, i) => (
           <li key={i}>
-            <p className="text-sm font-semibold" style={{ color: "#3A1A11" }}>
+            <p className="text-sm font-semibold" style={{ color: "var(--color-ink)" }}>
               {a.label}
             </p>
             {a.detail ? (
-              <p className="text-xs" style={{ color: "#9E7A63" }}>
+              <p className="text-xs" style={{ color: "var(--color-mute)" }}>
                 {a.detail}
               </p>
             ) : null}
