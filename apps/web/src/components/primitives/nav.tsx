@@ -1,6 +1,9 @@
 import type { JSX } from "react";
 import type { ReactNode } from "react";
 
+// TODO(design): skin via Aqualeo design system. Structure, a11y, and token
+// wiring are final — only className/visual treatment changes.
+
 export interface NavItem {
   href: string;
   label: ReactNode;
@@ -43,14 +46,14 @@ export function Nav({
                 style={
                   isActive
                     ? {
-                        background: "rgba(255,246,234,0.14)",
-                        border: "1px solid rgba(224,169,62,0.35)",
-                        color: "#FFF6EA",
+                        background: "var(--color-nav-active-bg)",
+                        border: "1px solid var(--color-nav-active-border)",
+                        color: "var(--color-primary-foreground)",
                         fontWeight: 700,
                       }
                     : {
                         border: "1px solid transparent",
-                        color: "rgba(255,241,224,0.82)",
+                        color: "var(--color-nav-inactive-fg)",
                       }
                 }
               >

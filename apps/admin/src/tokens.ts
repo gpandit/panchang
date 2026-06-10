@@ -11,31 +11,31 @@ export const tokens = {
   // ── Colour ─────────────────────────────────────────────────────────────────
   color: {
     // Surfaces — dark canvas hierarchy
-    surface: "#141A1F",       // panel background
-    surfaceAlt: "#0D1115",    // page/canvas background
+    surface: "#141A1F", // panel background
+    surfaceAlt: "#0D1115", // page/canvas background
     surfaceRaised: "#1C252C", // elevated card / popover
-    surfaceCard: "#161D23",   // card background
+    surfaceCard: "#161D23", // card background
 
     // Borders
     border: "rgba(255,255,255,0.08)",
     borderHi: "rgba(255,255,255,0.14)",
 
     // Text
-    text: "#E7EEF1",          // primary text
-    textBody: "#A7B5BE",      // body / secondary text
-    textMuted: "#7C8B95",     // muted text
-    textFaint: "#56646D",     // placeholder / disabled
+    text: "#E7EEF1", // primary text
+    textBody: "#A7B5BE", // body / secondary text
+    textMuted: "#7C8B95", // muted text
+    textFaint: "#56646D", // placeholder / disabled
 
     // Accent — single aqua
     primary: "#33D6C2",
-    primaryText: "#0D1115",   // dark text on aqua background
+    primaryText: "#0D1115", // dark text on aqua background
     primaryDim: "rgba(51,214,194,0.14)",
     primaryLine: "rgba(51,214,194,0.40)",
 
     // Semantic
     danger: "#E05C5C",
     warning: "#E0B341",
-    success: "#33D6C2",       // aqua doubles as success
+    success: "#33D6C2", // aqua doubles as success
     info: "#2A91B8",
 
     // Content lifecycle status badges

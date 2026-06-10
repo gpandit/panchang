@@ -3,6 +3,9 @@ import { Sunrise, Sunset } from "lucide-react";
 import type { DailyPanchangView, TimeFormat } from "@pandit/api-client-ts";
 import { formatTime } from "./time";
 
+// TODO(design): skin via Aqualeo design system. Structure, a11y, and token
+// wiring are final — only className/visual treatment changes.
+
 interface SummaryCardProps {
   data: DailyPanchangView;
   timeFormat: TimeFormat;
@@ -17,9 +20,9 @@ export function SummaryCard({ data, timeFormat }: SummaryCardProps): JSX.Element
       <div
         className="rounded-2xl p-4 flex flex-col gap-3"
         style={{
-          background: "#FFFFFF",
-          border: "1px solid rgba(124,29,43,0.14)",
-          boxShadow: "0 14px 34px -18px rgba(90,19,32,0.5)",
+          background: "var(--color-paper)",
+          border: "1px solid var(--color-card-border)",
+          boxShadow: "var(--shadow-card)",
         }}
       >
         {/* Leap month badge */}
@@ -27,8 +30,8 @@ export function SummaryCard({ data, timeFormat }: SummaryCardProps): JSX.Element
           <span
             className="self-start rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider"
             style={{
-              background: "rgba(196,145,47,0.15)",
-              color: "#C4912F",
+              background: "var(--color-secondary-bg)",
+              color: "var(--color-secondary)",
               letterSpacing: "0.08em",
             }}
             aria-label={
@@ -43,14 +46,14 @@ export function SummaryCard({ data, timeFormat }: SummaryCardProps): JSX.Element
           id="summary-title"
           className="leading-tight"
           style={{
-            fontFamily: "'Marcellus', Georgia, serif",
+            fontFamily: "var(--typography-font-family-display)",
             fontSize: "1.35rem",
-            color: "#3A1A11",
+            color: "var(--color-ink)",
           }}
         >
           {data.summaryTitle}
         </h2>
-        <p className="text-sm" style={{ color: "#9E7A63" }}>
+        <p className="text-sm" style={{ color: "var(--color-mute)" }}>
           {data.panchangHindiDate}
         </p>
 
@@ -58,20 +61,20 @@ export function SummaryCard({ data, timeFormat }: SummaryCardProps): JSX.Element
         {sunrise || sunset ? (
           <dl
             className="flex gap-5 mt-1 pt-3"
-            style={{ borderTop: "1px solid rgba(124,29,43,0.08)" }}
+            style={{ borderTop: "1px solid var(--color-line-soft)" }}
             aria-label="Solar events"
           >
             {sunrise ? (
               <div className="flex items-center gap-1.5">
-                <Sunrise size={16} style={{ color: "#DC5F1B" }} aria-hidden="true" />
-                <dt className="text-xs" style={{ color: "#9E7A63" }}>
+                <Sunrise size={16} style={{ color: "var(--color-accent)" }} aria-hidden="true" />
+                <dt className="text-xs" style={{ color: "var(--color-mute)" }}>
                   Sunrise
                 </dt>
                 <dd>
                   <time
                     dateTime={data.sunrise ?? ""}
                     className="text-sm font-semibold tabular"
-                    style={{ color: "#3A1A11" }}
+                    style={{ color: "var(--color-ink)" }}
                   >
                     {sunrise}
                   </time>
@@ -80,15 +83,15 @@ export function SummaryCard({ data, timeFormat }: SummaryCardProps): JSX.Element
             ) : null}
             {sunset ? (
               <div className="flex items-center gap-1.5">
-                <Sunset size={16} style={{ color: "#DC5F1B" }} aria-hidden="true" />
-                <dt className="text-xs" style={{ color: "#9E7A63" }}>
+                <Sunset size={16} style={{ color: "var(--color-accent)" }} aria-hidden="true" />
+                <dt className="text-xs" style={{ color: "var(--color-mute)" }}>
                   Sunset
                 </dt>
                 <dd>
                   <time
                     dateTime={data.sunset ?? ""}
                     className="text-sm font-semibold tabular"
-                    style={{ color: "#3A1A11" }}
+                    style={{ color: "var(--color-ink)" }}
                   >
                     {sunset}
                   </time>

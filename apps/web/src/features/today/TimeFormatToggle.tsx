@@ -3,6 +3,9 @@
 import type { JSX } from "react";
 import type { TimeFormat } from "@pandit/api-client-ts";
 
+// TODO(design): skin via Aqualeo design system. Structure, a11y, and token
+// wiring are final — only className/visual treatment changes.
+
 const OPTIONS: { value: TimeFormat; label: string; ariaLabel: string }[] = [
   { value: "12h", label: "12h", ariaLabel: "12-hour clock" },
   { value: "24h", label: "24h", ariaLabel: "24-hour clock" },
@@ -20,7 +23,7 @@ export function TimeFormatToggle({ value, onChange }: TimeFormatToggleProps): JS
       role="group"
       aria-label="Time display format"
       className="flex rounded-full overflow-hidden p-0.5"
-      style={{ background: "#FFEFD9", border: "1px solid rgba(124,29,43,0.16)" }}
+      style={{ background: "var(--color-warm)", border: "1px solid var(--color-border)" }}
     >
       {OPTIONS.map((opt) => {
         const isSelected = opt.value === value;
@@ -34,8 +37,8 @@ export function TimeFormatToggle({ value, onChange }: TimeFormatToggleProps): JS
             onClick={() => onChange(opt.value)}
             className="px-3 py-1.5 text-xs font-semibold rounded-full transition-all"
             style={{
-              background: isSelected ? "#7C1D2B" : "transparent",
-              color: isSelected ? "#FFF6EA" : "#6A4231",
+              background: isSelected ? "var(--color-primary)" : "transparent",
+              color: isSelected ? "var(--color-primary-foreground)" : "var(--color-body)",
               letterSpacing: "0.02em",
             }}
           >

@@ -7,6 +7,9 @@ import type { PanchangElement, TimeFormat } from "@pandit/api-client-ts";
 import { formatTime } from "./time";
 import { ExplainModal } from "./ExplainModal";
 
+// TODO(design): skin via Aqualeo design system. Structure, a11y, and token
+// wiring are final — only className/visual treatment changes.
+
 const GROUP_LABELS: Record<PanchangElement["group"], string> = {
   core: "Core Angas",
   solar: "Solar & Lunar",
@@ -36,13 +39,13 @@ export function PanchangDetailList({ elements, timeFormat }: PanchangDetailListP
         <div key={group}>
           <h3
             className="text-xs font-bold uppercase mb-2"
-            style={{ color: "#C4912F", letterSpacing: "0.12em" }}
+            style={{ color: "var(--color-secondary)", letterSpacing: "0.12em" }}
           >
             {label}
           </h3>
           <ul
             className="rounded-2xl overflow-hidden"
-            style={{ border: "1px solid rgba(124,29,43,0.14)" }}
+            style={{ border: "1px solid var(--color-card-border)" }}
           >
             {items.map((el) => (
               <PanchangRow
@@ -73,37 +76,37 @@ function PanchangRow({ element, timeFormat, onTap }: PanchangRowProps): JSX.Elem
     : null;
 
   return (
-    <li style={{ borderBottom: "1px solid rgba(124,29,43,0.08)" }} className="last:border-b-0">
+    <li style={{ borderBottom: "1px solid var(--color-line-soft)" }} className="last:border-b-0">
       <button
         type="button"
-        className="flex items-center justify-between w-full px-4 py-3 text-left gap-4 bg-white transition-colors hover:bg-[#FFEFD9]"
+        className="flex items-center justify-between w-full px-4 py-3 text-left gap-4 bg-white transition-colors hover:bg-[var(--color-warm)]"
         onClick={onTap}
         aria-label={`${element.label}: ${element.value}${secondary ? `, ${secondary}` : ""}. Tap for explanation.`}
       >
         <div className="flex flex-col gap-0.5 flex-1">
           <span
             className="text-xs font-bold uppercase tracking-wider"
-            style={{ color: "#C4912F" }}
+            style={{ color: "var(--color-secondary)" }}
           >
             {element.label}
           </span>
           <span
             className="leading-tight"
             style={{
-              fontFamily: "'Marcellus', Georgia, serif",
+              fontFamily: "var(--typography-font-family-display)",
               fontSize: "1.1rem",
-              color: "#3A1A11",
+              color: "var(--color-ink)",
             }}
           >
             {element.value}
           </span>
           {secondary ? (
-            <span className="text-xs" style={{ color: "#9E7A63" }}>
+            <span className="text-xs" style={{ color: "var(--color-mute)" }}>
               {secondary}
             </span>
           ) : null}
         </div>
-        <ChevronRight size={16} style={{ color: "#C2A488" }} aria-hidden="true" />
+        <ChevronRight size={16} style={{ color: "var(--color-faint)" }} aria-hidden="true" />
       </button>
     </li>
   );

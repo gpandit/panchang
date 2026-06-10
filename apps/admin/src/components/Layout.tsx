@@ -75,9 +75,7 @@ export function Layout() {
             width: 240,
           }}
         >
-          <span style={{ fontSize: 13, color: t.color.textFaint }}>
-            Search festivals, content…
-          </span>
+          <span style={{ fontSize: 13, color: t.color.textFaint }}>Search festivals, content…</span>
         </div>
 
         {/* Avatar */}
