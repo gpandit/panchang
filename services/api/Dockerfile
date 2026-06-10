@@ -1,7 +1,10 @@
 # ── Build stage ───────────────────────────────────────────────────────────────
 FROM python:3.12-slim AS builder
 
-WORKDIR /build
+# uv bakes the absolute path of this WORKDIR into the venv's script shebangs
+# (e.g. .venv/bin/uvicorn -> #!/app/.venv/bin/python). It must match the
+# runtime stage's WORKDIR so the venv works after being copied over.
+WORKDIR /app
 
 RUN pip install --no-cache-dir uv==0.5.26
 
@@ -35,11 +38,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy the virtualenv from builder
-COPY --from=builder /build/.venv /app/.venv
+COPY --from=builder /app/.venv /app/.venv
 
 # Copy application source
-COPY --from=builder /build/services/api/src /app/services/api/src
-COPY --from=builder /build/services/panchang/src /app/services/panchang/src
+COPY --from=builder /app/services/api/src /app/services/api/src
+COPY --from=builder /app/services/panchang/src /app/services/panchang/src
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/services/api/src:/app/services/panchang/src"
