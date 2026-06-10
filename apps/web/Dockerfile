@@ -17,6 +17,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /repo
 
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
 COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/packages ./packages
 
@@ -24,19 +26,19 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json turbo.json tsconfig.base.js
 COPY apps/web ./apps/web
 COPY packages ./packages
 
+# pnpm installs each workspace package's binaries into its own node_modules
+# (e.g. apps/web/node_modules/.bin/next) as symlinks into the root .pnpm store.
+# Copy that directory from deps so the symlinks resolve without re-running
+# install (which would wipe and rebuild node_modules from scratch).
+COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
+
 # Next.js needs the API base URL baked in at build time for static analysis;
 # the runtime NEXT_PUBLIC_API_URL can override it at container start.
 ARG NEXT_PUBLIC_API_URL=https://api-staging.thepandit.app/v1
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NODE_ENV=production
 
-# Re-link node_modules in this stage: pnpm installs binaries into each package's
-# own node_modules (e.g. apps/web/node_modules/.bin/next), which the cross-stage
-# COPY of the root node_modules does not carry. The .pnpm store copied from deps
-# makes this near-instant.
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate && \
-    pnpm install --frozen-lockfile && \
-    pnpm --filter @pandit/web run build
+RUN pnpm --filter @pandit/web run build
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
