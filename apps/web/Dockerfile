@@ -47,11 +47,18 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+# The Next.js standalone server.js binds to `process.env.HOSTNAME || "0.0.0.0"`.
+# Docker sets HOSTNAME to the container ID by default, which causes the server
+# to bind to that hostname instead of all interfaces, making `localhost`
+# (used by HEALTHCHECK and any in-container probes) refuse connections.
+ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
+# Next.js standalone output for a monorepo mirrors the workspace path
+# (e.g. apps/web/server.js, apps/web/.next/static), not a flat layout.
 COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/static ./apps/web/.next/static
 
 USER nextjs
 EXPOSE 3000
@@ -59,4 +66,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
     CMD wget -qO- http://localhost:3000/api/healthz || exit 1
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/web/server.js"]
