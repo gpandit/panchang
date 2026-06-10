@@ -38,7 +38,7 @@ ARG NEXT_PUBLIC_API_URL=https://api-staging.thepandit.app/v1
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NODE_ENV=production
 
-RUN pnpm --filter @pandit/web run build
+RUN pnpm exec turbo run build --filter=@pandit/web
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
