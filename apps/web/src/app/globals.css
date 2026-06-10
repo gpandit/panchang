@@ -1,6 +1,3 @@
-/* TODO(design): tokens.css is generated from packages/design-tokens/src/schema.ts.
-   Every visual value here is a neutral placeholder — do not override with real
-   design values; replace the schema and regenerate instead. */
 @import "@pandit/design-tokens/css";
 
 @tailwind base;
@@ -12,4 +9,23 @@
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  time,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Festival direction: temple-arch repeating motif for maroon header/rail surfaces */
+.arch-motif {
+  background-image:
+    radial-gradient(circle at 12px 0, rgba(255, 255, 255, 0.06) 0 6px, transparent 7px),
+    radial-gradient(circle at 0 0, rgba(196, 145, 47, 0.12), transparent 60%);
+  background-size:
+    24px 24px,
+    cover;
 }

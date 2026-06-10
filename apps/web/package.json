@@ -17,6 +17,7 @@
   "dependencies": {
     "@pandit/api-client-ts": "workspace:*",
     "@pandit/design-tokens": "workspace:*",
+    "lucide-react": "^1.17.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

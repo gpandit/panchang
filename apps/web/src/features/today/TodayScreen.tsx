@@ -95,6 +95,7 @@ export function TodayScreen({
             locationLabel={payload.locationLabel}
             date={date}
             panchangHindiDate={payload.panchangHindiDate}
+            weekday={formatWeekday(date)}
             onLocationChange={handleLocationChange}
             onPrevDay={() => navigateDay(-1)}
             onNextDay={() => navigateDay(1)}
@@ -177,6 +178,14 @@ function TodayError({ error, onRetry }: TodayErrorProps): JSX.Element {
 
 function todayISODate(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function formatWeekday(iso: string): string {
+  try {
+    return new Date(`${iso}T12:00:00`).toLocaleDateString("en-IN", { weekday: "long" });
+  } catch {
+    return "";
+  }
 }
 
 // Computed per render (not at module load) so it stays correct on long-running
