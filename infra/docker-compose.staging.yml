@@ -223,13 +223,18 @@ services:
     environment:
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     # Alertmanager's config file does not support ${VAR} substitution natively,
-    # so the mounted file is a template with ${SLACK_WEBHOOK_URL} placeholders.
-    # Substitute it into a writable path before launching alertmanager.
+    # so the mounted file is a template with placeholders. If SLACK_WEBHOOK_URL
+    # isn't set, drop the slack-staging receiver entirely (an empty api_url is
+    # an invalid URL and fails config validation even if unused) and route
+    # alerts to the no-op "null" receiver instead.
     entrypoint: ["sh", "-c"]
     command:
       - >
-        sed "s#\${SLACK_WEBHOOK_URL}#$$SLACK_WEBHOOK_URL#g"
-        /etc/alertmanager/config.yml.tpl > /tmp/config.yml &&
+        if [ -n "$$SLACK_WEBHOOK_URL" ]; then
+          sed -e "s#\${SLACK_WEBHOOK_URL}#$$SLACK_WEBHOOK_URL#g" -e "s#\${ALERTMANAGER_DEFAULT_RECEIVER}#slack-staging#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
+        else
+          sed -e "/# SLACK_RECEIVER_START/,/# SLACK_RECEIVER_END/d" -e "s#\${ALERTMANAGER_DEFAULT_RECEIVER}#null#g" /etc/alertmanager/config.yml.tpl > /tmp/config.yml;
+        fi &&
         exec /bin/alertmanager --config.file=/tmp/config.yml --storage.path=/alertmanager
     volumes:
       - ./observability/alertmanager.yml.tpl:/etc/alertmanager/config.yml.tpl:ro
