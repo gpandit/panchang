@@ -47,6 +47,11 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+# The Next.js standalone server.js binds to `process.env.HOSTNAME || "0.0.0.0"`.
+# Docker sets HOSTNAME to the container ID by default, which causes the server
+# to bind to that hostname instead of all interfaces, making `localhost`
+# (used by HEALTHCHECK and any in-container probes) refuse connections.
+ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
