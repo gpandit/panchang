@@ -1,7 +1,10 @@
 # ── Build stage ───────────────────────────────────────────────────────────────
 FROM python:3.12-slim AS builder
 
-WORKDIR /build
+# uv bakes the absolute path of this WORKDIR into the venv's script shebangs
+# (e.g. .venv/bin/uvicorn -> #!/app/.venv/bin/python). It must match the
+# runtime stage's WORKDIR so the venv works after being copied over.
+WORKDIR /app
 
 # pyswisseph has no prebuilt wheel for every platform; when it falls back to an
 # sdist it needs a C toolchain to compile the Swiss Ephemeris extension.
@@ -31,8 +34,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-COPY --from=builder /build/.venv /app/.venv
-COPY --from=builder /build/services/panchang/src /app/src
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/services/panchang/src /app/src
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/src"
