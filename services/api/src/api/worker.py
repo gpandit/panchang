@@ -31,8 +31,8 @@ def main() -> None:
         run_worker(WorkerSettings)
     except ImportError:
         try:
-            from redis import Redis  # type: ignore[import-not-found]
-            from rq import Queue, Worker  # type: ignore[import-not-found]
+            from redis import Redis
+            from rq import Queue, Worker
 
             from api.settings import get_settings
 
