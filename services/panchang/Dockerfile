@@ -3,12 +3,21 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
+# pyswisseph has no prebuilt wheel for every platform; when it falls back to an
+# sdist it needs a C toolchain to compile the Swiss Ephemeris extension.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir uv==0.5.26
 
 COPY pyproject.toml uv.lock ./
 COPY services/panchang/pyproject.toml ./services/panchang/
 
-RUN uv sync --package the-pandit-panchang --no-dev --no-cache
+# --no-install-workspace: install only third-party deps here; the local
+# panchang package runs from PYTHONPATH at runtime and its src/ is copied
+# below — so it must NOT be built at this step (source absent yet).
+RUN uv sync --package the-pandit-panchang --no-dev --no-cache --no-install-workspace
 
 COPY services/panchang/src ./services/panchang/src
 

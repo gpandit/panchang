@@ -11,7 +11,10 @@ COPY services/api/pyproject.toml ./services/api/
 COPY services/panchang/pyproject.toml ./services/panchang/
 
 # Install runtime deps for the api package into a prefix
-RUN uv sync --package the-pandit-api --no-dev --no-cache
+# --no-install-workspace: install only third-party deps here; the local
+# packages (api, panchang) run from PYTHONPATH at runtime, and their src/
+# is copied below — so they must NOT be built at this step (source absent yet).
+RUN uv sync --package the-pandit-api --no-dev --no-cache --no-install-workspace
 
 # Copy source
 COPY services/api/src ./services/api/src

@@ -3,7 +3,7 @@ FROM node:20-alpine AS deps
 
 WORKDIR /repo
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Workspace manifests for cache efficiency
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
@@ -30,7 +30,12 @@ ARG NEXT_PUBLIC_API_URL=https://api-staging.thepandit.app/v1
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NODE_ENV=production
 
-RUN corepack enable && corepack prepare pnpm@latest --activate && \
+# Re-link node_modules in this stage: pnpm installs binaries into each package's
+# own node_modules (e.g. apps/web/node_modules/.bin/next), which the cross-stage
+# COPY of the root node_modules does not carry. The .pnpm store copied from deps
+# makes this near-instant.
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate && \
+    pnpm install --frozen-lockfile && \
     pnpm --filter @pandit/web run build
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
