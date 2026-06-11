@@ -2,7 +2,7 @@ global:
   resolve_timeout: 5m
 
 route:
-  receiver: ${ALERTMANAGER_DEFAULT_RECEIVER}
+  receiver: __DEFAULT_RECEIVER__
   group_by: [alertname, severity]
   group_wait: 30s
   group_interval: 5m
@@ -11,7 +11,7 @@ route:
   routes:
     - match:
         severity: critical
-      receiver: ${ALERTMANAGER_DEFAULT_RECEIVER}
+      receiver: __DEFAULT_RECEIVER__
       repeat_interval: 1h
 
 receivers:
@@ -21,7 +21,7 @@ receivers:
   # SLACK_RECEIVER_START
   - name: slack-staging
     slack_configs:
-      - api_url: ${SLACK_WEBHOOK_URL}
+      - api_url: __SLACK_WEBHOOK_URL__
         channel: "#pandit-staging-alerts"
         title: "{{ .GroupLabels.alertname }} [{{ .Status | toUpper }}]"
         text: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ end }}"
