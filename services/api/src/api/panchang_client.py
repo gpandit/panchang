@@ -37,8 +37,8 @@ async def fetch_daily_panchang(
         return result
 
     settings = get_settings()
-    url = f"{settings.panchang_service_url}/panchang/compute"
-    params: dict[str, str | float] = {
+    url = f"{settings.panchang_service_url}/compute"
+    body: dict[str, str | float] = {
         "date": date,
         "lat": lat,
         "lon": lon,
@@ -47,12 +47,14 @@ async def fetch_daily_panchang(
         "month_scheme": month_scheme,
     }
     async with httpx.AsyncClient(timeout=settings.panchang_service_timeout) as client:
-        resp = client.get(url, params=params) if False else await client.get(url, params=params)
+        resp = await client.post(url, json=body)
         resp.raise_for_status()
         payload = resp.json()
 
-    result = DailyPanchangOut.model_validate(payload)
-    result.cached = False
+    # The panchang service nests the echoed request fields under "request";
+    # DailyPanchangOut expects them flattened alongside the computed result.
+    request_fields = payload.pop("request")
+    result = DailyPanchangOut.model_validate({**request_fields, **payload, "cached": False})
     # Store the dict so it's JSON-serialisable in the cache
     cache.set(key, result.model_dump())
     return result
