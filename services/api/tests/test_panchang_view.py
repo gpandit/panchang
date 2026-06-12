@@ -29,6 +29,9 @@ _DEFAULT_MOONSET = _time("20:00:00+05:30")
 _DEFAULT_TITHI_END = _time("14:32:00+05:30")
 
 
+_DEFAULT_MUHURAT = [PeriodOut(name="Brahma Muhurta", start=_time("05:30"), end=_time("06:15"))]
+
+
 def _sample(
     *,
     moonrise: TimeValueOut | None = _DEFAULT_MOONRISE,
@@ -36,6 +39,7 @@ def _sample(
     tithi_end: TimeValueOut | None = _DEFAULT_TITHI_END,
     is_adhika_month: bool = False,
     is_kshaya_month: bool = False,
+    muhurat: list[PeriodOut] | None = None,
 ) -> DailyPanchangOut:
     return DailyPanchangOut(
         date="2025-01-14",
@@ -58,7 +62,7 @@ def _sample(
             moonrise=moonrise,
             moonset=moonset,
         ),
-        muhurat=[PeriodOut(name="Brahma Muhurta", start=_time("05:30"), end=_time("06:15"))],
+        muhurat=muhurat if muhurat is not None else _DEFAULT_MUHURAT,
         choghadiya=[
             ChoghadiyaOut(name="Udveg", start=_time("07:15"), end=_time("08:37"), is_day=True)
         ],
@@ -121,6 +125,28 @@ def test_muhurats_mapped_as_auspicious() -> None:
     assert m.start_time == "05:30"
     assert m.end_time == "06:15"
     assert m.type == "auspicious"
+
+
+def test_muhurats_classify_avoid_windows_as_inauspicious() -> None:
+    view = to_daily_panchang_view(
+        _sample(
+            muhurat=[
+                PeriodOut(name="Brahma Muhurta", start=_time("05:30"), end=_time("06:15")),
+                PeriodOut(name="Abhijit Muhurta", start=_time("11:48"), end=_time("12:36")),
+                PeriodOut(name="Rahu Kalam", start=_time("09:00"), end=_time("10:30")),
+                PeriodOut(name="Yamaganda", start=_time("12:00"), end=_time("13:30")),
+                PeriodOut(name="Gulika Kalam", start=_time("15:00"), end=_time("16:30")),
+                PeriodOut(name="Dur Muhurat", start=_time("08:00"), end=_time("08:45")),
+            ]
+        )
+    )
+    by_name = {m.name: m.type for m in view.muhurats}
+    assert by_name["Brahma Muhurta"] == "auspicious"
+    assert by_name["Abhijit Muhurta"] == "auspicious"
+    assert by_name["Rahu Kalam"] == "inauspicious"
+    assert by_name["Yamaganda"] == "inauspicious"
+    assert by_name["Gulika Kalam"] == "inauspicious"
+    assert by_name["Dur Muhurat"] == "inauspicious"
 
 
 def test_sun_and_moon_event_times() -> None:
