@@ -10,6 +10,7 @@ hide themselves when empty.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
 
 from api.models.panchang import (
     AngaSpanOut,
@@ -19,12 +20,32 @@ from api.models.panchang import (
     PanchangElementOut,
 )
 
+# Period names the downstream panchang service returns as inauspicious
+# "avoid" windows, matched case-insensitively against `PeriodOut.name`.
+_INAUSPICIOUS_MUHURAT_KEYWORDS = (
+    "rahu",
+    "yamaganda",
+    "yama gand",
+    "gulika",
+    "gulikai",
+    "dur muhurat",
+    "durmuhurtam",
+    "varjyam",
+)
+
+
+def _muhurat_type(name: str) -> Literal["auspicious", "inauspicious"]:
+    lowered = name.lower()
+    if any(keyword in lowered for keyword in _INAUSPICIOUS_MUHURAT_KEYWORDS):
+        return "inauspicious"
+    return "auspicious"
+
 
 def _anga_element(key: str, label: str, spans: list[AngaSpanOut]) -> PanchangElementOut:
     span = spans[0]
     secondary = f"ends:{span.end.iso}" if span.end else None
     return PanchangElementOut(
-        key=key, label=label, value=span.name, secondary_value=secondary, group="core"
+        key=key, label=label, value=span.name, secondaryValue=secondary, group="core"
     )
 
 
@@ -67,10 +88,13 @@ def to_daily_panchang_view(out: DailyPanchangOut) -> DailyPanchangViewOut:
     ]
 
     muhurats = [
-        MuhuratWindowOut(name=m.name, start_time=m.start.iso, end_time=m.end.iso, type="auspicious")
+        MuhuratWindowOut(
+            name=m.name, startTime=m.start.iso, endTime=m.end.iso, type=_muhurat_type(m.name)
+        )
         for m in out.muhurat
     ]
 
+    leap_month_flag: Literal["adhika", "kshaya"] | None
     if out.calendrical.is_adhika_month:
         leap_month_flag = "adhika"
     elif out.calendrical.is_kshaya_month:
@@ -83,9 +107,9 @@ def to_daily_panchang_view(out: DailyPanchangOut) -> DailyPanchangViewOut:
         lat=out.lat,
         lon=out.lon,
         tz=out.tz,
-        location_label=f"{out.lat:.2f}°, {out.lon:.2f}°",
-        summary_title=f"{out.vara.name} · {out.tithi[0].name}",
-        panchang_hindi_date=f"{out.calendrical.lunar_month} · {out.calendrical.paksha} Paksha",
+        locationLabel=f"{out.lat:.2f}°, {out.lon:.2f}°",
+        summaryTitle=f"{out.vara.name} · {out.tithi[0].name}",
+        panchangHindiDate=f"{out.calendrical.lunar_month} · {out.calendrical.paksha} Paksha",
         elements=elements,
         sunrise=out.day_events.sunrise.iso,
         sunset=out.day_events.sunset.iso,
@@ -95,7 +119,7 @@ def to_daily_panchang_view(out: DailyPanchangOut) -> DailyPanchangViewOut:
         festivals=[],
         advisories=[],
         highlights=[],
-        dharma_card=None,
-        leap_month_flag=leap_month_flag,
-        cached_at=datetime.now(UTC).isoformat(),
+        dharmaCard=None,
+        leapMonthFlag=leap_month_flag,
+        cachedAt=datetime.now(UTC).isoformat(),
     )
