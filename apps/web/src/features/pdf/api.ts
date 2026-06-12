@@ -5,7 +5,7 @@
 
 import type { PdfJobIn, PdfJobOut } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 function authHeaders(token: string): Record<string, string> {
   return { Authorization: `Bearer ${token}` };

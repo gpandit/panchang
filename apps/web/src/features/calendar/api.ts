@@ -20,7 +20,7 @@ import type {
   SyncOp,
 } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 // ─── Month calendar cache ─────────────────────────────────────────────────────
 

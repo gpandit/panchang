@@ -30,6 +30,8 @@ x-api-env: &api-env
   API_SECRET_KEY: ${API_SECRET_KEY}
   API_PANCHANG_SERVICE_URL: http://panchang:8001
   API_RATE_LIMIT_PER_MINUTE: "60"
+  # Browser origins allowed to call the API cross-origin (web + admin).
+  API_ALLOWED_ORIGINS: "https://pandit.xyz,https://www.pandit.xyz,https://admin.pandit.xyz"
   # Licence/profile come from the env file; default to the safe staging/AGPL build.
   # Set both to production/commercial in .env.prod once the commercial licence lands.
   PANCHANG_BUILD_PROFILE: ${PANCHANG_BUILD_PROFILE:-staging}
