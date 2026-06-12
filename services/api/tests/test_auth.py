@@ -1,4 +1,4 @@
-"""Tests: authentication is required on all v1 endpoints."""
+"""Tests: authentication is required on v1 endpoints (except the public daily Panchang)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ from httpx import AsyncClient
 @pytest.mark.parametrize(
     "path",
     [
-        "/v1/panchang/daily?date=2025-01-14&lat=28.6139&lon=77.2090&tz=Asia/Kolkata",
         "/v1/festivals",
         "/v1/notes",
         "/v1/profile",

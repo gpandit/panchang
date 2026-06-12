@@ -1,4 +1,4 @@
-"""GET /v1/panchang/daily  — daily Panchang (authenticated, location-keyed, cached).
+"""GET /v1/panchang/daily  — daily Panchang (public, location-keyed, cached).
 GET /v1/panchang/month   — calendar-month view (Silver+, burst-rate-limited).
 
 Edge caching:
@@ -17,7 +17,7 @@ from typing import Annotated
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
-from api.dependencies import require_auth, require_tier
+from api.dependencies import require_tier
 from api.models.auth import SubscriptionTier, TokenClaims
 from api.models.common import ApiResponse
 from api.models.panchang import DailyPanchangOut, MonthCalendarOut
@@ -43,7 +43,6 @@ async def daily_panchang(
     tz: Annotated[str, Query(description="IANA timezone, e.g. Asia/Kolkata")],
     ayanamsa: Annotated[str, Query(description="Ayanamsa (lahiri)")] = "lahiri",
     month_scheme: Annotated[str, Query(description="amanta or purnimanta")] = "amanta",
-    _claims: Annotated[TokenClaims, Depends(require_auth)] = ...,  # type: ignore[assignment]
 ) -> ApiResponse[DailyPanchangOut]:
     try:
         result = await fetch_daily_panchang(
