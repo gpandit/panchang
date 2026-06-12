@@ -7,8 +7,9 @@ PanchangResult produced by services/panchang.
 from __future__ import annotations
 
 from datetime import date
+from typing import Literal
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class DailyPanchangRequest(BaseModel):
@@ -129,3 +130,86 @@ class MonthCalendarOut(BaseModel):
     year: int
     month: int
     days: list[DailyPanchangOut]
+
+
+# ─── Today / Daily view model ────────────────────────────────────────────────
+# View-ready shapes for GET /v1/panchang/daily, matching
+# @pandit/api-client-ts's DailyPanchangView. Fields are derived by reformatting
+# the already-computed DailyPanchangOut — no Panchang values are recomputed.
+
+
+class PanchangElementOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    key: str
+    label: str
+    value: str
+    secondary_value: str | None = Field(default=None, alias="secondaryValue")
+    group: Literal["core", "solar", "lunar", "other"]
+    explanation: str | None = None
+
+
+class MuhuratWindowOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str
+    start_time: str = Field(alias="startTime")
+    end_time: str = Field(alias="endTime")
+    type: Literal["auspicious", "inauspicious"]
+    description: str | None = None
+
+
+class FestivalViewOut(BaseModel):
+    name: str
+    type: Literal["festival", "vrat", "ekadashi", "other"]
+    description: str | None = None
+    significance: str | None = None
+
+
+class AdvisoryOut(BaseModel):
+    category: Literal["good", "avoid"]
+    label: str
+    detail: str | None = None
+
+
+class DailyHighlightOut(BaseModel):
+    label: str
+    value: str
+    detail: str | None = None
+
+
+class DharmaCardOut(BaseModel):
+    title: str
+    body: str
+    attribution: str | None = None
+
+
+class DailyPanchangViewOut(BaseModel):
+    """View-ready daily Panchang payload for GET /v1/panchang/daily."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    date: str
+    lat: float
+    lon: float
+    tz: str
+    location_label: str = Field(alias="locationLabel")
+
+    summary_title: str = Field(alias="summaryTitle")
+    panchang_hindi_date: str = Field(alias="panchangHindiDate")
+
+    elements: list[PanchangElementOut]
+
+    sunrise: str | None
+    sunset: str | None
+    moonrise: str | None
+    moonset: str | None
+
+    muhurats: list[MuhuratWindowOut]
+    festivals: list[FestivalViewOut]
+    advisories: list[AdvisoryOut]
+    highlights: list[DailyHighlightOut]
+    dharma_card: DharmaCardOut | None = Field(default=None, alias="dharmaCard")
+
+    leap_month_flag: Literal["adhika", "kshaya"] | None = Field(default=None, alias="leapMonthFlag")
+    cached_at: str = Field(alias="cachedAt")
