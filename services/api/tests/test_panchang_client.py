@@ -126,7 +126,9 @@ async def test_fetch_daily_panchang_raises_on_downstream_error() -> None:
 
     with patch("api.panchang_client.httpx.AsyncClient", new=_mock_client_factory(handler)):
         try:
-            await fetch_daily_panchang(date="2025-01-14", lat=28.6139, lon=77.2090, tz="Asia/Kolkata")
+            await fetch_daily_panchang(
+                date="2025-01-14", lat=28.6139, lon=77.2090, tz="Asia/Kolkata"
+            )
         except httpx.HTTPStatusError as exc:
             assert exc.response.status_code == 500
         else:
