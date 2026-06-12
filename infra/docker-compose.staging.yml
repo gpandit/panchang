@@ -132,6 +132,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # The pandit-api image's HEALTHCHECK probes http://localhost:8000/health,
+    # but the worker process doesn't run an HTTP server, so it would always
+    # report unhealthy. Disable it; restart: unless-stopped already covers
+    # process-level crashes.
+    healthcheck:
+      disable: true
     logging: *default-logging
 
   web:
