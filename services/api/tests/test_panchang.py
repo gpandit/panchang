@@ -86,9 +86,12 @@ def _seed_cache() -> None:
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
 
-async def test_daily_requires_auth(client: AsyncClient) -> None:
+async def test_daily_accessible_without_auth(client: AsyncClient) -> None:
+    """The daily Panchang is the public landing view — no login required."""
+    _seed_cache()
     r = await client.get(DAILY_URL)
-    assert r.status_code == 401
+    assert r.status_code == 200
+    assert r.json()["data"]["date"] == "2025-01-14"
 
 
 async def test_daily_cache_hit_returns_200(client: AsyncClient, basic_token: str) -> None:
