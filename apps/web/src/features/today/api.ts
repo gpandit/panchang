@@ -10,7 +10,7 @@
 import type { DailyPanchangView } from "@pandit/api-client-ts";
 
 // Injected at build time; falls back to relative path for local dev.
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 const CACHE_KEY_PREFIX = "pandit:daily:";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 h

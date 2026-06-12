@@ -35,6 +35,15 @@ class Settings(BaseSettings):
     # Access token lifetime in seconds (15 min default)
     access_token_expire_seconds: int = 900
 
+    # ── CORS ──────────────────────────────────────────────────────────────────
+    # Comma-separated list of allowed browser origins for staging/prod (ignored
+    # when debug=True, which allows "*" for local development).
+    allowed_origins: str = ""
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+
     # ── Rate limiting ─────────────────────────────────────────────────────────
     # Requests per minute per authenticated user (or per IP for anonymous)
     rate_limit_per_minute: int = 60

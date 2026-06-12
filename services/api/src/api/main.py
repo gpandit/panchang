@@ -49,7 +49,7 @@ app = FastAPI(
 # Tightened to specific origins in staging/prod via the allowed_origins setting.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.debug else [],
+    allow_origins=["*"] if settings.debug else settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

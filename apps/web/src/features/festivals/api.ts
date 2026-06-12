@@ -11,7 +11,7 @@ import type {
 } from "@pandit/api-client-ts";
 import type { FestivalDetailResult, FestivalFilters, FestivalListResult } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 const LIST_CACHE_PREFIX = "pandit:festivals:";
 const LIST_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
