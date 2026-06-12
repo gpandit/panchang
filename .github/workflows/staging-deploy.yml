@@ -46,7 +46,7 @@ jobs:
           - name: pandit-web
             dockerfile: apps/web/Dockerfile
             build_args: |
-              NEXT_PUBLIC_API_URL=https://api-staging.thepandit.app/v1
+              NEXT_PUBLIC_API_URL=https://api-staging.thepandit.app
           - name: pandit-admin
             dockerfile: apps/admin/Dockerfile
             build_args: |
