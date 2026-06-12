@@ -20,19 +20,21 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from api.dependencies import require_tier
 from api.models.auth import SubscriptionTier, TokenClaims
 from api.models.common import ApiResponse
-from api.models.panchang import DailyPanchangOut, MonthCalendarOut
+from api.models.panchang import DailyPanchangOut, DailyPanchangViewOut, MonthCalendarOut
 from api.panchang_client import fetch_daily_panchang
+from api.panchang_view import to_daily_panchang_view
 
 router = APIRouter(prefix="/panchang", tags=["panchang"])
 
 
 @router.get(
     "/daily",
-    response_model=ApiResponse[DailyPanchangOut],
+    response_model=ApiResponse[DailyPanchangViewOut],
     summary="Daily Panchang",
     description=(
-        "Returns the full Panchang for the requested date and location. "
-        "Served from the edge/in-process cache — typical p99 < 50 ms on cache hit."
+        "Returns the view-ready Panchang for the requested date and location, "
+        "for the Today screen. Served from the edge/in-process cache — typical "
+        "p99 < 50 ms on cache hit."
     ),
 )
 async def daily_panchang(
@@ -43,7 +45,7 @@ async def daily_panchang(
     tz: Annotated[str, Query(description="IANA timezone, e.g. Asia/Kolkata")],
     ayanamsa: Annotated[str, Query(description="Ayanamsa (lahiri)")] = "lahiri",
     month_scheme: Annotated[str, Query(description="amanta or purnimanta")] = "amanta",
-) -> ApiResponse[DailyPanchangOut]:
+) -> ApiResponse[DailyPanchangViewOut]:
     try:
         result = await fetch_daily_panchang(
             date=date.isoformat(),
@@ -72,7 +74,7 @@ async def daily_panchang(
     else:
         response.headers["X-Cache"] = "MISS"
 
-    return ApiResponse(data=result)
+    return ApiResponse(data=to_daily_panchang_view(result))
 
 
 @router.get(

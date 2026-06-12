@@ -100,7 +100,6 @@ async def test_daily_cache_hit_returns_200(client: AsyncClient, basic_token: str
     assert r.status_code == 200
     body = r.json()
     assert body["data"]["date"] == "2025-01-14"
-    assert body["data"]["cached"] is True
     assert r.headers.get("X-Cache") == "HIT"
 
 
@@ -159,9 +158,10 @@ async def test_daily_response_envelope(client: AsyncClient, basic_token: str) ->
     r = await client.get(DAILY_URL, headers={"Authorization": f"Bearer {basic_token}"})
     body = r.json()
     assert "data" in body
-    assert "tithi" in body["data"]
-    assert "nakshatra" in body["data"]
-    assert "vara" in body["data"]
+    assert "elements" in body["data"]
+    assert "muhurats" in body["data"]
+    assert "summaryTitle" in body["data"]
+    assert "panchangHindiDate" in body["data"]
 
 
 async def test_cache_warmed_on_first_hit(client: AsyncClient, basic_token: str) -> None:
@@ -176,4 +176,3 @@ async def test_cache_warmed_on_first_hit(client: AsyncClient, basic_token: str) 
     r2 = await client.get(DAILY_URL, headers=headers)
     assert r2.status_code == 200
     assert r2.headers.get("X-Cache") == "HIT"
-    assert r2.json()["data"]["cached"] is True
