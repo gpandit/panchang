@@ -34,7 +34,7 @@ COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
 
 # Next.js needs the API base URL baked in at build time for static analysis;
 # the runtime NEXT_PUBLIC_API_URL can override it at container start.
-ARG NEXT_PUBLIC_API_URL=https://api-staging.thepandit.app/v1
+ARG NEXT_PUBLIC_API_URL=https://api-staging.thepandit.app
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NODE_ENV=production
 
