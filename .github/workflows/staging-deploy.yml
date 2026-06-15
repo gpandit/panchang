@@ -210,3 +210,46 @@ jobs:
           STAGING_WEB_URL: https://pandit.xyz
           STAGING_TEST_EMAIL: ${{ secrets.STAGING_TEST_EMAIL }}
           STAGING_TEST_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
+
+  # ── 5. Festival-spike load test ────────────────────────────────────────────
+  load-test:
+    name: Festival-spike load test
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Locust
+        run: pip install locust
+
+      - name: Run load test (headless)
+        run: |
+          locust \
+            -f tests/load/festival_spike.py \
+            --headless \
+            --users 200 \
+            --spawn-rate 20 \
+            --run-time 120s \
+            --host https://api.pandit.xyz \
+            --html tests/load/report.html \
+            --csv tests/load/results
+        env:
+          LOCUST_TARGET: https://api.pandit.xyz
+
+      - name: Assert SLO targets
+        run: python tests/load/assert_slos.py tests/load/results_stats.csv
+
+      - name: Upload load test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-test-report-${{ env.IMAGE_TAG }}
+          path: tests/load/
