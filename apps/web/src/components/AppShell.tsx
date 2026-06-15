@@ -3,7 +3,7 @@
 import type { JSX, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Sun, Calendar, Star, Sparkles, Printer, MessageCircle, User, Monitor } from "lucide-react";
+import { Sun, Calendar, Star, Sparkles, Printer, MessageCircle, User } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/today", label: "Today", Icon: Sun },
@@ -12,7 +12,6 @@ const NAV_ITEMS = [
   { href: "/planner", label: "Planner", Icon: Sparkles },
   { href: "/print-calendar", label: "Print Calendar", Icon: Printer },
   { href: "/ask", label: "Ask the Pandit", Icon: MessageCircle },
-  { href: "/display", label: "Temple Display", Icon: Monitor },
   { href: "/profile", label: "Profile", Icon: User },
 ];
 

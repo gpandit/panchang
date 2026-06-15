@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { JSX } from "react";
+import type { DailyPanchangView, MuhuratWindow, PanchangElement } from "@pandit/api-client-ts";
+import { fetchDailyPanchang } from "@/features/today/api";
+import { formatTime } from "@/features/today/time";
 
 // ── Palette (Festival direction, scaled for large signage) ───────────────────
 const D = {
@@ -41,43 +44,19 @@ const LANGS = [
   { code: "ml", name: "മലയാളം", script: "Malayalam" },
 ];
 
-// ── Temple identity (placeholder — admin-editable) ───────────────────────────
+// ── Temple identity & location (placeholder — admin-editable) ────────────────
 const TEMPLE = {
   name: "Shree Siddhivinayak Mandir",
   nameDev: "श्री सिद्धिविनायक मंदिर",
   tagline: "Sanātana Dharma",
   location: "Dubai · United Arab Emirates",
+  latitude: 25.2048,
+  longitude: 55.2708,
+  timezone: "Asia/Dubai",
 };
 
-// ── Panchang data (Mon 8 June 2026, Dubai — Sankashti Chaturthi) ─────────────
-const PANDIT = {
-  greg: { weekday: "Monday", day: "08", month: "June", year: 2026 },
-  vara: "Somvar",
-  paksha: "Krishna Paksha",
-  month: { amanta: "Jyeshtha", purnimanta: "Ashadha" },
-  hinduDate: "Krishna Tritiya",
-  samvat: { vikram: "2083 Kalayukta" },
-  angas: {
-    tithi: { name: "Tritiya", upto: "14:32" },
-    nakshatra: { name: "Uttara Ashadha", upto: "19:11" },
-    yoga: { name: "Brahma", upto: "09:50" },
-    karana: { name: "Vishti", upto: "14:32" },
-  },
-  sun: { rise: "05:34", set: "19:08" },
-  moon: { rise: "22:47", set: "08:12" },
-  good: [
-    { name: "Abhijit Muhurat", time: ["12:01", "12:54"] },
-    { name: "Brahma Muhurat", time: ["04:10", "04:58"] },
-    { name: "Amrit Kalam", time: ["24:38", "26:14"] },
-  ],
-  avoid: [
-    { name: "Rahu Kalam", time: ["07:18", "09:01"] },
-    { name: "Yamaganda", time: ["10:44", "12:27"] },
-    { name: "Gulika Kalam", time: ["14:10", "15:53"] },
-  ],
-  highlight: { title: "Sankashti Chaturthi", deity: "Ganesha", moonrise: "22:47" },
-  mantra: { dev: "ॐ गं गणपतये नमः", tr: "Oṃ Gaṃ Gaṇapataye Namaḥ", count: 108 },
-};
+// How often the Panchang payload is re-fetched so the display stays current.
+const REFRESH_INTERVAL_MS = 60_000;
 
 // ── Aarti schedule (placeholder — admin-editable) ────────────────────────────
 const AARTI = {
@@ -176,11 +155,12 @@ const AARTI = {
   ],
 };
 
-// ── Mantra data ──────────────────────────────────────────────────────────────
+// ── Mantra data (placeholder — admin-editable) ───────────────────────────────
 const MANTRA = {
   dev: "ॐ गं गणपतये नमः",
   tr: "Oṃ Gaṃ Gaṇapataye Namaḥ",
   count: 108,
+  deity: "Ganesha",
   meaning: {
     en: "I bow to Shri Ganesha, the remover of all obstacles.",
     hi: "विघ्नहर्ता श्री गणेश को नमस्कार।",
@@ -199,12 +179,13 @@ const MANTRA = {
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-function fmt12(hhmm: string): string {
-  const [h, m] = hhmm.split(":").map(Number);
-  const h24 = (h ?? 0) % 24;
-  const period = h24 < 12 ? "AM" : "PM";
-  const h12 = ((h24 + 11) % 12) + 1;
-  return `${h12}:${String(m ?? 0).padStart(2, "0")} ${period}`;
+
+/** Extract HH:MM from an ISO 8601 datetime string as minutes-since-midnight. */
+function isoToMins(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const match = iso.match(/T(\d{2}):(\d{2})/);
+  if (!match) return null;
+  return parseInt(match[1]!, 10) * 60 + parseInt(match[2]!, 10);
 }
 
 function toMins(hhmm: string): number {
@@ -212,8 +193,31 @@ function toMins(hhmm: string): number {
   return (h ?? 0) * 60 + (m ?? 0);
 }
 
-function isActive(time: [string, string], now: number): boolean {
-  return now >= toMins(time[0]) && now < toMins(time[1]);
+function muhuratActive(m: MuhuratWindow, now: number): boolean {
+  const start = isoToMins(m.startTime);
+  const end = isoToMins(m.endTime);
+  if (start === null || end === null || now < 0) return false;
+  return now >= start && now < end;
+}
+
+function getElement(elements: PanchangElement[], key: string): PanchangElement | undefined {
+  return elements.find((el) => el.key === key);
+}
+
+function elementEnds(element: PanchangElement | undefined): string {
+  if (!element?.secondaryValue?.startsWith("ends:")) return "";
+  const formatted = formatTime(element.secondaryValue.slice(5), "12h");
+  return formatted ? `until ${formatted}` : "";
+}
+
+function dateParts(dateStr: string): { weekday: string; day: string; month: string; year: number } {
+  const d = new Date(`${dateStr}T00:00:00`);
+  return {
+    weekday: d.toLocaleDateString("en-US", { weekday: "long" }),
+    day: String(d.getDate()).padStart(2, "0"),
+    month: d.toLocaleDateString("en-US", { month: "long" }),
+    year: d.getFullYear(),
+  };
 }
 
 function nextAarti(
@@ -240,6 +244,10 @@ function darshantStatus(
   return { open: false, label: "Closed", session: "" };
 }
 
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 // ── Board selector ────────────────────────────────────────────────────────────
 type Board = "panchang" | "aarti" | "mantra";
 
@@ -258,6 +266,8 @@ export function TempleDisplayClient(): JSX.Element {
   // filled in after mount, avoiding a hydration mismatch.
   const [clock, setClock] = useState<Date | null>(null);
   const [visible, setVisible] = useState(true);
+  const [panchang, setPanchang] = useState<DailyPanchangView | null>(null);
+  const [panchangError, setPanchangError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   // Live clock
@@ -265,6 +275,36 @@ export function TempleDisplayClient(): JSX.Element {
     setClock(new Date());
     const id = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // Panchang data — fetched on mount and re-fetched every minute so the
+  // display stays current as the date/tithi change.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load(forceRefresh: boolean): Promise<void> {
+      const result = await fetchDailyPanchang({
+        date: todayISO(),
+        latitude: TEMPLE.latitude,
+        longitude: TEMPLE.longitude,
+        timezone: TEMPLE.timezone,
+        forceRefresh,
+      });
+      if (cancelled) return;
+      if (result.data) {
+        setPanchang(result.data);
+        setPanchangError(null);
+      } else {
+        setPanchangError(result.error ?? "unavailable");
+      }
+    }
+
+    void load(false);
+    const id = setInterval(() => void load(true), REFRESH_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
   // Language rotation every 7 seconds with crossfade
@@ -293,7 +333,7 @@ export function TempleDisplayClient(): JSX.Element {
   return (
     <div className="flex flex-col min-h-screen" style={{ background: D.cream, fontFamily: D.sans }}>
       {/* Masthead */}
-      <Masthead timeStr={timeStr} visible={visible} />
+      <Masthead timeStr={timeStr} visible={visible} panchang={panchang} />
 
       {/* Board selector tabs */}
       <div
@@ -330,7 +370,9 @@ export function TempleDisplayClient(): JSX.Element {
 
       {/* Board content */}
       <div className="flex-1 overflow-auto p-6 lg:p-10">
-        {board === "panchang" && <PanchangBoard lang={lang} visible={visible} nowM={nowM} />}
+        {board === "panchang" && (
+          <PanchangBoard panchang={panchang} error={panchangError} visible={visible} nowM={nowM} />
+        )}
         {board === "aarti" && <AartiBoard lang={lang} visible={visible} nowM={nowM} />}
         {board === "mantra" && <MantraBoard lang={lang} visible={visible} />}
       </div>
@@ -342,7 +384,19 @@ export function TempleDisplayClient(): JSX.Element {
 }
 
 // ── Masthead ──────────────────────────────────────────────────────────────────
-function Masthead({ timeStr, visible }: { timeStr: string; visible: boolean }): JSX.Element {
+function Masthead({
+  timeStr,
+  visible,
+  panchang,
+}: {
+  timeStr: string;
+  visible: boolean;
+  panchang: DailyPanchangView | null;
+}): JSX.Element {
+  const parts = panchang ? dateParts(panchang.date) : null;
+  const tithi = panchang ? getElement(panchang.elements, "tithi") : undefined;
+  const paksha = panchang ? getElement(panchang.elements, "paksha") : undefined;
+
   return (
     <header
       className="arch-motif flex items-center justify-between px-8 py-4"
@@ -395,10 +449,10 @@ function Masthead({ timeStr, visible }: { timeStr: string; visible: boolean }): 
           {timeStr}
         </p>
         <p className="text-sm mt-1" style={{ color: D.goldHi }}>
-          {PANDIT.greg.weekday}, {PANDIT.greg.day} {PANDIT.greg.month} {PANDIT.greg.year}
+          {parts ? `${parts.weekday}, ${parts.day} ${parts.month} ${parts.year}` : "—"}
         </p>
         <p className="text-xs" style={{ color: "rgba(255,246,234,0.7)" }}>
-          {PANDIT.highlight.title} · {PANDIT.paksha}
+          {tithi && paksha ? `${tithi.value} · ${paksha.value}` : "Loading Panchang…"}
         </p>
       </div>
     </header>
@@ -407,17 +461,40 @@ function Masthead({ timeStr, visible }: { timeStr: string; visible: boolean }): 
 
 // ── Panchang Board ────────────────────────────────────────────────────────────
 function PanchangBoard({
-  lang,
+  panchang,
+  error,
   visible,
   nowM,
 }: {
-  lang: (typeof LANGS)[0];
+  panchang: DailyPanchangView | null;
+  error: string | null;
   visible: boolean;
   nowM: number;
 }): JSX.Element {
+  if (!panchang) {
+    return (
+      <div className="flex items-center justify-center h-full" style={{ color: D.mute }}>
+        <p style={{ fontFamily: D.disp, fontSize: "1.5rem" }}>
+          {error ? `Unable to load Panchang (${error})` : "Loading today's Panchang…"}
+        </p>
+      </div>
+    );
+  }
+
+  const tithi = getElement(panchang.elements, "tithi");
+  const nakshatra = getElement(panchang.elements, "nakshatra");
+  const yoga = getElement(panchang.elements, "yoga");
+  const karana = getElement(panchang.elements, "karana");
+  const moonRashi = getElement(panchang.elements, "moon_rashi");
+  const paksha = getElement(panchang.elements, "paksha");
+
+  const festival = panchang.festivals[0];
+  const good = panchang.muhurats.filter((m) => m.type === "auspicious");
+  const avoid = panchang.muhurats.filter((m) => m.type === "inauspicious");
+
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto">
-      {/* Festival hero */}
+      {/* Hero */}
       <div
         className="rounded-3xl p-6 flex items-center gap-6"
         style={{
@@ -441,18 +518,14 @@ function PanchangBoard({
             className="text-xs font-bold uppercase tracking-widest"
             style={{ color: "rgba(255,246,234,0.85)" }}
           >
-            Today's Vrat
+            {festival ? "Today's Vrat" : "Today's Panchang"}
           </p>
           <p style={{ fontFamily: D.disp, fontSize: "2.2rem", color: "#fff", lineHeight: 1.05 }}>
-            {PANDIT.highlight.title}
+            {festival?.name ?? panchang.summaryTitle}
           </p>
           <Fade visible={visible}>
             <p className="text-lg mt-1" style={{ color: "#FFF6EA" }}>
-              {lang.code === "hi"
-                ? "संकष्टी चतुर्थी · श्री गणेश"
-                : lang.code === "gu"
-                  ? "સંકષ્ટી ચતુર્થી · શ્રી ગણેશ"
-                  : `${PANDIT.highlight.title} · ${PANDIT.highlight.deity}`}
+              {panchang.panchangHindiDate}
             </p>
           </Fade>
         </div>
@@ -464,7 +537,7 @@ function PanchangBoard({
             Moonrise
           </p>
           <p style={{ fontFamily: D.disp, fontSize: "2rem", color: D.goldHi }} className="tabular">
-            {fmt12(PANDIT.highlight.moonrise)}
+            {formatTime(panchang.moonrise, "12h") || "—"}
           </p>
         </div>
       </div>
@@ -472,27 +545,11 @@ function PanchangBoard({
       {/* Angas grid */}
       <div className="grid grid-cols-5 gap-4">
         {[
-          {
-            label: "Tithi",
-            name: PANDIT.angas.tithi.name,
-            sub: `until ${fmt12(PANDIT.angas.tithi.upto)}`,
-          },
-          {
-            label: "Nakshatra",
-            name: "U. Ashadha",
-            sub: `until ${fmt12(PANDIT.angas.nakshatra.upto)}`,
-          },
-          {
-            label: "Yoga",
-            name: PANDIT.angas.yoga.name,
-            sub: `until ${fmt12(PANDIT.angas.yoga.upto)}`,
-          },
-          {
-            label: "Karana",
-            name: PANDIT.angas.karana.name,
-            sub: `until ${fmt12(PANDIT.angas.karana.upto)}`,
-          },
-          { label: "Moonsign", name: "Makara", sub: "Rashi" },
+          { label: "Tithi", name: tithi?.value ?? "—", sub: elementEnds(tithi) },
+          { label: "Nakshatra", name: nakshatra?.value ?? "—", sub: elementEnds(nakshatra) },
+          { label: "Yoga", name: yoga?.value ?? "—", sub: elementEnds(yoga) },
+          { label: "Karana", name: karana?.value ?? "—", sub: elementEnds(karana) },
+          { label: "Moonsign", name: moonRashi?.value ?? "—", sub: paksha?.value ?? "" },
         ].map((a) => (
           <div
             key={a.label}
@@ -527,10 +584,10 @@ function PanchangBoard({
       {/* Sun / Moon strip */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: "Sunrise", time: PANDIT.sun.rise, icon: "🌅" },
-          { label: "Sunset", time: PANDIT.sun.set, icon: "🌇" },
-          { label: "Moonrise", time: PANDIT.moon.rise, icon: "🌕" },
-          { label: "Moonset", time: PANDIT.moon.set, icon: "🌘" },
+          { label: "Sunrise", time: panchang.sunrise, icon: "🌅" },
+          { label: "Sunset", time: panchang.sunset, icon: "🌇" },
+          { label: "Moonrise", time: panchang.moonrise, icon: "🌕" },
+          { label: "Moonset", time: panchang.moonset, icon: "🌘" },
         ].map((s) => (
           <div
             key={s.label}
@@ -547,7 +604,7 @@ function PanchangBoard({
               {s.label}
             </p>
             <p style={{ fontFamily: D.disp, fontSize: "1.4rem", color: D.ink }} className="tabular">
-              {fmt12(s.time)}
+              {formatTime(s.time, "12h") || "—"}
             </p>
           </div>
         ))}
@@ -555,8 +612,8 @@ function PanchangBoard({
 
       {/* Auspicious / Inauspicious */}
       <div className="grid grid-cols-2 gap-6">
-        <MuhuratCol heading="Auspicious Windows" items={PANDIT.good} tone="good" nowMins={nowM} />
-        <MuhuratCol heading="Avoid" items={PANDIT.avoid} tone="bad" nowMins={nowM} />
+        <MuhuratCol heading="Auspicious Windows" items={good} tone="good" nowMins={nowM} />
+        <MuhuratCol heading="Avoid" items={avoid} tone="bad" nowMins={nowM} />
       </div>
     </div>
   );
@@ -569,7 +626,7 @@ function MuhuratCol({
   nowMins,
 }: {
   heading: string;
-  items: { name: string; time: string[] }[];
+  items: MuhuratWindow[];
   tone: "good" | "bad";
   nowMins: number;
 }): JSX.Element {
@@ -584,11 +641,13 @@ function MuhuratCol({
         {heading}
       </p>
       <div className="flex flex-col gap-3">
+        {items.length === 0 && (
+          <p className="text-sm" style={{ color: D.mute }}>
+            None today
+          </p>
+        )}
         {items.map((item) => {
-          const active =
-            item.time[0] && item.time[1]
-              ? isActive([item.time[0], item.time[1]] as [string, string], nowMins)
-              : false;
+          const active = muhuratActive(item, nowMins);
           return (
             <div
               key={item.name}
@@ -607,9 +666,7 @@ function MuhuratCol({
                 )}
               </div>
               <p style={{ fontFamily: D.disp, fontSize: "1rem", color: c }} className="tabular">
-                {item.time[0] && item.time[1]
-                  ? `${fmt12(item.time[0])} – ${fmt12(item.time[1])}`
-                  : ""}
+                {formatTime(item.startTime, "12h")} – {formatTime(item.endTime, "12h")}
               </p>
             </div>
           );
@@ -670,10 +727,12 @@ function AartiBoard({
             Darshan Hours
           </p>
           <p className="text-sm mt-1" style={{ color: D.ink }}>
-            Morning: {fmt12(AARTI.darshan.morning[0]!)} – {fmt12(AARTI.darshan.morning[1]!)}
+            Morning: {formatTimeHHMM(AARTI.darshan.morning[0]!)} –{" "}
+            {formatTimeHHMM(AARTI.darshan.morning[1]!)}
           </p>
           <p className="text-sm" style={{ color: D.ink }}>
-            Evening: {fmt12(AARTI.darshan.evening[0]!)} – {fmt12(AARTI.darshan.evening[1]!)}
+            Evening: {formatTimeHHMM(AARTI.darshan.evening[0]!)} –{" "}
+            {formatTimeHHMM(AARTI.darshan.evening[1]!)}
           </p>
         </div>
       </div>
@@ -731,7 +790,7 @@ function AartiBoard({
                     }}
                     className="tabular"
                   >
-                    {fmt12(a.time)}
+                    {formatTimeHHMM(a.time)}
                   </p>
                   <p className="text-xs" style={{ color: D.mute }}>
                     {a.note}
@@ -744,6 +803,15 @@ function AartiBoard({
       </div>
     </div>
   );
+}
+
+/** Format a plain "HH:MM" (24h) schedule time as 12-hour, e.g. "5:00 AM". */
+function formatTimeHHMM(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const h24 = (h ?? 0) % 24;
+  const period = h24 < 12 ? "AM" : "PM";
+  const h12 = ((h24 + 11) % 12) + 1;
+  return `${h12}:${String(m ?? 0).padStart(2, "0")} ${period}`;
 }
 
 // ── Mantra Board ──────────────────────────────────────────────────────────────
@@ -770,7 +838,7 @@ function MantraBoard({
           className="text-xs font-bold uppercase tracking-widest mb-4"
           style={{ color: D.goldHi, letterSpacing: "0.2em" }}
         >
-          Mantra of the Day · {PANDIT.highlight.deity}
+          Mantra of the Day · {MANTRA.deity}
         </p>
         <p
           style={{
