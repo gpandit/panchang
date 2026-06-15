@@ -22,15 +22,14 @@ env:
   PANCHANG_EPHEMERIS_LICENSE: agpl   # commercial licence is a hard launch gate
 
 jobs:
-  # ── 1. CI gate — must be green before any image is pushed ──────────────────
-  ci-gate:
-    name: CI gate (required)
-    uses: ./.github/workflows/ci.yml
-
-  # ── 2. Build and push Docker images ────────────────────────────────────────
+  # ── 1. Build and push Docker images ────────────────────────────────────────
+  # Note: CI (.github/workflows/ci.yml) already runs on every push to main via
+  # its own `on: push` trigger and is enforced as a required status check on
+  # main, so it isn't re-invoked here. (A `uses: ./.github/workflows/ci.yml`
+  # reusable-workflow call is invalid unless ci.yml declares `on: workflow_call`,
+  # which would make this entire file fail to parse — 0 jobs, 0s runtime.)
   build-images:
     name: Build & push images
-    needs: ci-gate
     runs-on: ubuntu-latest
     permissions:
       contents: read
