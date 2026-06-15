@@ -193,10 +193,6 @@ function toMins(hhmm: string): number {
   return (h ?? 0) * 60 + (m ?? 0);
 }
 
-function isActive(time: [string, string], now: number): boolean {
-  return now >= toMins(time[0]) && now < toMins(time[1]);
-}
-
 function muhuratActive(m: MuhuratWindow, now: number): boolean {
   const start = isoToMins(m.startTime);
   const end = isoToMins(m.endTime);
