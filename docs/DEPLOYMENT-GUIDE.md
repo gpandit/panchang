@@ -1,4 +1,4 @@
-# The Pandit — Production Deployment Guide
+ # The Pandit — Production Deployment Guide
 
 A step-by-step guide to take The Pandit live: the backend server, the web app, the
 admin console, and the iOS + Android apps. Written so a non-technical owner can
@@ -330,6 +330,18 @@ docker compose --env-file .env.prod -f infra/docker-compose.staging.yml up -d
 docker compose --env-file .env.prod -f infra/docker-compose.staging.yml \
   run --rm api python -m alembic upgrade head
 ```
+This runs the Alembic migrations against Postgres. A successful run ends with a line
+like:
+```
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_initial_temple, initial temple schema + demo seed
+```
+It creates the `temples` and `temple_admin_accounts` tables and seeds one demo temple
+(`temple-siddhivinayak`) plus its admin login, so the Temple Display has data
+immediately. The migration is idempotent — re-running it is a safe no-op once the
+schema is at `head`.
+
+> If you instead see `No module named alembic`, you're running an **old API image**
+> that predates the database layer. Rebuild/pull the API image (§5.9) and retry.
 
 ### 5.11 Verify it's working
 ```bash

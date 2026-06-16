@@ -23,6 +23,10 @@ RUN uv sync --package the-pandit-api --no-dev --no-cache --no-install-workspace
 COPY services/api/src ./services/api/src
 COPY services/panchang/src ./services/panchang/src
 
+# Alembic migrations (config + versions) — run with `python -m alembic upgrade head`
+COPY services/api/alembic.ini ./alembic.ini
+COPY services/api/alembic ./alembic
+
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM python:3.12-slim AS runtime
 
@@ -43,6 +47,10 @@ COPY --from=builder /app/.venv /app/.venv
 # Copy application source
 COPY --from=builder /app/services/api/src /app/services/api/src
 COPY --from=builder /app/services/panchang/src /app/services/panchang/src
+
+# Copy Alembic config + migrations so `python -m alembic upgrade head` works from /app
+COPY --from=builder /app/alembic.ini /app/alembic.ini
+COPY --from=builder /app/alembic /app/alembic
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/services/api/src:/app/services/panchang/src"

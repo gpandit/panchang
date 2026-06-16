@@ -7,6 +7,10 @@ Version prefix: /v1/...
 OpenAPI schema:  GET /openapi.json  (also /docs and /redoc in debug mode)
 """
 
+import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -16,6 +20,9 @@ from api.models.common import ApiError, ApiErrorResponse
 from api.routers.admin import content as admin_content
 from api.routers.admin import flags as admin_flags
 from api.routers.admin import reporting as admin_reporting
+from api.routers.admin import temples as admin_temples
+from api.routers.temple import auth as temple_auth
+from api.routers.temple import config as temple_config
 from api.routers.v1 import (
     festivals,
     notes,
@@ -24,12 +31,36 @@ from api.routers.v1 import (
     profile,
     reminders,
     subscriptions,
+    temple,
 )
 from api.settings import get_settings
 
 settings = get_settings()
+logger = logging.getLogger("api.startup")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Seed the demo temple + admin on startup.
+
+    Idempotent and tolerant: if the schema isn't migrated yet (tables missing),
+    log a warning instead of crashing — ``alembic upgrade head`` populates the
+    same rows, so the demo data appears either way.
+    """
+    from api.temple import store
+
+    try:
+        store.seed()
+    except Exception as exc:  # never let seeding take down the API
+        logger.warning(
+            "Temple seed skipped (%s). Run `alembic upgrade head` to create the schema.",
+            exc,
+        )
+    yield
+
 
 app = FastAPI(
+    lifespan=lifespan,
     title="The Pandit API",
     version="1.0.0",
     description=(
@@ -72,6 +103,7 @@ app.include_router(reminders.router, prefix=V1)
 app.include_router(profile.router, prefix=V1)
 app.include_router(subscriptions.router, prefix=V1)
 app.include_router(pdf.router, prefix=V1)
+app.include_router(temple.router, prefix=V1)
 
 # ── Admin routers ─────────────────────────────────────────────────────────────
 ADMIN = "/admin/v1"
@@ -79,6 +111,13 @@ ADMIN = "/admin/v1"
 app.include_router(admin_content.router, prefix=ADMIN)
 app.include_router(admin_flags.router, prefix=ADMIN)
 app.include_router(admin_reporting.router, prefix=ADMIN)
+app.include_router(admin_temples.router, prefix=ADMIN)
+
+# ── Temple-admin routers ──────────────────────────────────────────────────────
+TEMPLE = "/temple/v1"
+
+app.include_router(temple_auth.router, prefix=TEMPLE)
+app.include_router(temple_config.router, prefix=TEMPLE)
 
 
 # ── Global exception handlers ─────────────────────────────────────────────────
