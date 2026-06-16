@@ -42,7 +42,5 @@ async def create_temple(data: TempleCreateIn, claims: _SuperDep) -> TempleConfig
 async def assign_admin(temple_id: str, data: AdminAssignIn, claims: _SuperDep) -> dict[str, str]:
     if store.get_temple(temple_id) is None:
         raise HTTPException(status_code=404, detail="Temple not found")
-    account = store.assign_admin(
-        email=data.email, password=data.password, temple_id=temple_id
-    )
+    account = store.assign_admin(email=data.email, password=data.password, temple_id=temple_id)
     return {"id": account.id, "email": account.email, "temple_id": account.temple_id}

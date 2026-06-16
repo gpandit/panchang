@@ -33,9 +33,7 @@ def super_token() -> str:
 
 
 async def _login(client: AsyncClient, email: str, password: str):
-    return await client.post(
-        "/temple/v1/auth/login", json={"email": email, "password": password}
-    )
+    return await client.post("/temple/v1/auth/login", json={"email": email, "password": password})
 
 
 # ── Login ────────────────────────────────────────────────────────────────────
@@ -65,18 +63,14 @@ async def test_login_unknown_email_401(client: AsyncClient):
 async def test_me_requires_temple_token(client: AsyncClient):
     # A plain user token has no temple_id claim → 403.
     plain = create_token("user-1")
-    resp = await client.get(
-        "/temple/v1/auth/me", headers={"Authorization": f"Bearer {plain}"}
-    )
+    resp = await client.get("/temple/v1/auth/me", headers={"Authorization": f"Bearer {plain}"})
     assert resp.status_code == 403
 
 
 async def test_me_returns_assigned_temple(client: AsyncClient):
     login = await _login(client, store.DEMO_ADMIN_EMAIL, store.DEMO_ADMIN_PASSWORD)
     token = login.json()["token"]
-    resp = await client.get(
-        "/temple/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
-    )
+    resp = await client.get("/temple/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
     assert resp.json()["id"] == store.DEMO_TEMPLE_ID
 
@@ -99,9 +93,7 @@ async def test_update_persists_and_keeps_identity(client: AsyncClient):
         "aarti": [
             {"key": "mangala", "name": "Maṅgala", "dev": "मंगला", "time": "06:00", "note": "x"}
         ],
-        "events": [
-            {"id": "e1", "title": "Ekadashi", "date": "2026-06-20"}
-        ],
+        "events": [{"id": "e1", "title": "Ekadashi", "date": "2026-06-20"}],
     }
     resp = await client.put("/temple/v1/temple", json=payload, headers=headers)
     assert resp.status_code == 200
@@ -134,9 +126,7 @@ async def test_public_read_unknown_404(client: AsyncClient):
 # ── Superuser provisioning ───────────────────────────────────────────────────
 
 
-async def test_superuser_creates_temple_and_assigns_admin(
-    client: AsyncClient, super_token: str
-):
+async def test_superuser_creates_temple_and_assigns_admin(client: AsyncClient, super_token: str):
     headers = {"Authorization": f"Bearer {super_token}"}
     create = await client.post(
         "/admin/v1/temples",
