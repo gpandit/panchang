@@ -4,6 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import type { JSX } from "react";
 import type { DailyPanchangView, MuhuratWindow, PanchangElement } from "@pandit/api-client-ts";
 import { fetchDailyPanchang } from "@/features/today/api";
+import {
+  DEFAULT_TEMPLE_ID,
+  fetchTempleConfig,
+  type TempleAarti,
+  type TempleConfig,
+  type TempleEvent,
+} from "@/features/today/temple";
 import { formatTime } from "@/features/today/time";
 
 // ── Palette (Festival direction, scaled for large signage) ───────────────────
@@ -220,10 +227,7 @@ function dateParts(dateStr: string): { weekday: string; day: string; month: stri
   };
 }
 
-function nextAarti(
-  schedule: typeof AARTI.schedule,
-  now: number,
-): (typeof AARTI.schedule)[0] | null {
+function nextAarti(schedule: TempleAarti[], now: number): TempleAarti | null {
   return schedule.find((a) => toMins(a.time) > now) ?? null;
 }
 
@@ -268,7 +272,35 @@ export function TempleDisplayClient(): JSX.Element {
   const [visible, setVisible] = useState(true);
   const [panchang, setPanchang] = useState<DailyPanchangView | null>(null);
   const [panchangError, setPanchangError] = useState<string | null>(null);
+  const [templeCfg, setTempleCfg] = useState<TempleConfig | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Resolve which temple this display is for from ?temple=<id> (client-only),
+  // then load its admin-managed config. Falls back to the hardcoded defaults
+  // below while loading or if the fetch fails.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("temple") ?? DEFAULT_TEMPLE_ID;
+    let cancelled = false;
+    void fetchTempleConfig(id).then((cfg) => {
+      if (!cancelled && cfg) setTempleCfg(cfg);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Effective identity / schedule — admin config when available, else defaults.
+  const identity = {
+    name: templeCfg?.name ?? TEMPLE.name,
+    nameDev: templeCfg?.name_dev ?? TEMPLE.nameDev,
+    location: templeCfg?.location.label ?? TEMPLE.location,
+    latitude: templeCfg?.location.lat ?? TEMPLE.latitude,
+    longitude: templeCfg?.location.lon ?? TEMPLE.longitude,
+    timezone: templeCfg?.location.tz ?? TEMPLE.timezone,
+  };
+  const aartiSchedule: TempleAarti[] = templeCfg?.aarti ?? AARTI.schedule;
+  const events: TempleEvent[] = templeCfg?.events ?? [];
 
   // Live clock
   useEffect(() => {
@@ -285,9 +317,9 @@ export function TempleDisplayClient(): JSX.Element {
     async function load(forceRefresh: boolean): Promise<void> {
       const result = await fetchDailyPanchang({
         date: todayISO(),
-        latitude: TEMPLE.latitude,
-        longitude: TEMPLE.longitude,
-        timezone: TEMPLE.timezone,
+        latitude: identity.latitude,
+        longitude: identity.longitude,
+        timezone: identity.timezone,
         forceRefresh,
       });
       if (cancelled) return;
@@ -305,7 +337,8 @@ export function TempleDisplayClient(): JSX.Element {
       cancelled = true;
       clearInterval(id);
     };
-  }, []);
+    // Re-fetch when the resolved location changes (admin config loaded/edited).
+  }, [identity.latitude, identity.longitude, identity.timezone]);
 
   // Language rotation every 7 seconds with crossfade
   useEffect(() => {
@@ -333,7 +366,14 @@ export function TempleDisplayClient(): JSX.Element {
   return (
     <div className="flex flex-col min-h-screen" style={{ background: D.cream, fontFamily: D.sans }}>
       {/* Masthead */}
-      <Masthead timeStr={timeStr} visible={visible} panchang={panchang} />
+      <Masthead
+        timeStr={timeStr}
+        visible={visible}
+        panchang={panchang}
+        name={identity.name}
+        nameDev={identity.nameDev}
+        location={identity.location}
+      />
 
       {/* Board selector tabs */}
       <div
@@ -373,7 +413,15 @@ export function TempleDisplayClient(): JSX.Element {
         {board === "panchang" && (
           <PanchangBoard panchang={panchang} error={panchangError} visible={visible} nowM={nowM} />
         )}
-        {board === "aarti" && <AartiBoard lang={lang} visible={visible} nowM={nowM} />}
+        {board === "aarti" && (
+          <AartiBoard
+            lang={lang}
+            visible={visible}
+            nowM={nowM}
+            schedule={aartiSchedule}
+            events={events}
+          />
+        )}
         {board === "mantra" && <MantraBoard lang={lang} visible={visible} />}
       </div>
 
@@ -388,10 +436,16 @@ function Masthead({
   timeStr,
   visible,
   panchang,
+  name,
+  nameDev,
+  location,
 }: {
   timeStr: string;
   visible: boolean;
   panchang: DailyPanchangView | null;
+  name: string;
+  nameDev: string;
+  location: string;
 }): JSX.Element {
   const parts = panchang ? dateParts(panchang.date) : null;
   const tithi = panchang ? getElement(panchang.elements, "tithi") : undefined;
@@ -419,18 +473,18 @@ function Masthead({
             className="font-bold leading-tight"
             style={{ fontFamily: D.disp, fontSize: "1.6rem", color: "#FFF6EA" }}
           >
-            {TEMPLE.name}
+            {name}
           </p>
           <Fade visible={visible}>
             <p
               className="text-sm mt-0.5"
               style={{ color: D.goldHi, fontFamily: D.sans, fontWeight: 600 }}
             >
-              {TEMPLE.nameDev}
+              {nameDev}
             </p>
           </Fade>
           <p className="text-xs mt-0.5" style={{ color: "rgba(255,246,234,0.6)" }}>
-            {TEMPLE.location}
+            {location}
           </p>
         </div>
       </div>
@@ -681,13 +735,17 @@ function AartiBoard({
   lang,
   visible,
   nowM,
+  schedule,
+  events,
 }: {
   lang: (typeof LANGS)[0];
   visible: boolean;
   nowM: number;
+  schedule: TempleAarti[];
+  events: TempleEvent[];
 }): JSX.Element {
   const status = darshantStatus(AARTI.darshan, nowM);
-  const next = nextAarti(AARTI.schedule, nowM);
+  const next = nextAarti(schedule, nowM);
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
@@ -743,7 +801,7 @@ function AartiBoard({
           <p style={{ fontFamily: D.disp, fontSize: "1.3rem", color: "#FFF6EA" }}>Ārati Schedule</p>
         </div>
         <div style={{ background: D.paper }}>
-          {AARTI.schedule.map((a) => {
+          {schedule.map((a) => {
             const isNext = next?.key === a.key;
             const isPast = toMins(a.time) < nowM;
             return (
@@ -777,7 +835,7 @@ function AartiBoard({
                   </div>
                   <Fade visible={visible}>
                     <p className="text-sm mt-0.5" style={{ color: D.mute }}>
-                      {a.nat[lang.code as keyof typeof a.nat] ?? a.dev}
+                      {a.nat?.[lang.code] ?? a.dev}
                     </p>
                   </Fade>
                 </div>
@@ -801,6 +859,38 @@ function AartiBoard({
           })}
         </div>
       </div>
+
+      {/* Events & announcements (admin-managed) */}
+      {events.length > 0 && (
+        <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${D.line}` }}>
+          <div className="px-6 py-4" style={{ background: D.maroon }}>
+            <p style={{ fontFamily: D.disp, fontSize: "1.3rem", color: "#FFF6EA" }}>
+              Events &amp; Announcements
+            </p>
+          </div>
+          <div style={{ background: D.paper }}>
+            {events.map((ev) => (
+              <div
+                key={ev.id}
+                className="px-6 py-4"
+                style={{ borderBottom: `1px solid ${D.lineSoft}` }}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <p style={{ fontFamily: D.disp, fontSize: "1.2rem", color: D.ink }}>{ev.title}</p>
+                  <p className="text-sm tabular" style={{ color: D.saffron }}>
+                    {[ev.date, ev.time].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+                {ev.description ? (
+                  <p className="text-sm mt-0.5" style={{ color: D.mute }}>
+                    {ev.description}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

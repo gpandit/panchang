@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     environment: str = "development"
 
     # ── Database ──────────────────────────────────────────────────────────────
-    database_url: str = "postgresql+asyncpg://pandit:pandit@localhost:5432/pandit_dev"
+    database_url: str = "postgresql+psycopg://pandit:pandit@localhost:5432/pandit_dev"
 
     # ── Redis ─────────────────────────────────────────────────────────────────
     redis_url: str = "redis://localhost:6379/0"

@@ -1,11 +1,18 @@
 """Shared fixtures for the API gateway test suite.
 
-All tests use an in-process AsyncClient (no real network/DB/Redis).
-The panchang downstream is mocked via httpx transport overrides or
-direct cache injection so tests run fully offline.
+All tests use an in-process AsyncClient (no real network/Redis). The database is a
+shared in-memory SQLite (set below before settings are read); temple tests create
+and seed their tables via the store. The panchang downstream is mocked via httpx
+transport overrides or direct cache injection so tests run fully offline.
 """
 
 from __future__ import annotations
+
+import os
+
+# Point the DB at in-memory SQLite before anything reads settings. The engine
+# factory applies a StaticPool so the in-memory DB is shared across connections.
+os.environ.setdefault("API_DATABASE_URL", "sqlite://")
 
 import pytest
 import pytest_asyncio
