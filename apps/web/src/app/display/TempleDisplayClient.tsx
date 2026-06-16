@@ -876,9 +876,7 @@ function AartiBoard({
                 style={{ borderBottom: `1px solid ${D.lineSoft}` }}
               >
                 <div className="flex items-center justify-between gap-4">
-                  <p style={{ fontFamily: D.disp, fontSize: "1.2rem", color: D.ink }}>
-                    {ev.title}
-                  </p>
+                  <p style={{ fontFamily: D.disp, fontSize: "1.2rem", color: D.ink }}>{ev.title}</p>
                   <p className="text-sm tabular" style={{ color: D.saffron }}>
                     {[ev.date, ev.time].filter(Boolean).join(" · ")}
                   </p>

@@ -181,7 +181,11 @@ export function TempleSettingsPage() {
           display.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: t.space.md }}>
-          <Field text="Location label" value={loc.label} onChange={(v) => updateLoc({ label: v })} />
+          <Field
+            text="Location label"
+            value={loc.label}
+            onChange={(v) => updateLoc({ label: v })}
+          />
           <Field text="Timezone (IANA)" value={loc.tz} onChange={(v) => updateLoc({ tz: v })} />
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: t.space.md, marginTop: t.space.md }}>
@@ -275,7 +279,9 @@ export function TempleSettingsPage() {
               borderBottom: `1px solid ${t.color.border}`,
             }}
           >
-            <div style={{ display: "flex", flexWrap: "wrap", gap: t.space.sm, alignItems: "flex-end" }}>
+            <div
+              style={{ display: "flex", flexWrap: "wrap", gap: t.space.sm, alignItems: "flex-end" }}
+            >
               <Field text="Title" value={ev.title} onChange={(v) => updateEvent(i, { title: v })} />
               <div style={{ width: 150 }}>
                 <Field
