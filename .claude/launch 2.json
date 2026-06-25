@@ -5,20 +5,13 @@
       "name": "web",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@pandit/web", "dev"],
-      "port": 3000,
-      "env": { "NEXT_PUBLIC_API_URL": "http://127.0.0.1:8000" }
+      "port": 3000
     },
     {
       "name": "admin",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@pandit/admin", "dev"],
       "port": 3001
-    },
-    {
-      "name": "temple-admin",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@pandit/temple-admin", "dev"],
-      "port": 3002
     }
   ]
 }
