@@ -56,7 +56,7 @@ cd /opt/pandit-prod
 # Clone the repository (if not already present)
 if [ ! -d .git ]; then
   echo "Cloning repository..."
-  git clone https://github.com/gpandit/pandit.git . 2>/dev/null || true
+  git clone https://github.com/gpandit/pandit-xyz.git . 2>/dev/null || true
 fi
 
 # Create directories for certificates and environment files

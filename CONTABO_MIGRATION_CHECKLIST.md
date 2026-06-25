@@ -16,7 +16,7 @@ Complete these steps to migrate from DigitalOcean to Contabo.
 
 ```bash
 # Run automated setup (installs Docker, Docker Compose, creates directories)
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/gpandit/pandit/main/infra/contabo-setup.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/gpandit/pandit-xyz/main/infra/contabo-setup.sh)"
 
 # Verify Docker installation
 docker --version

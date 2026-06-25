@@ -21,7 +21,7 @@ ssh root@your.contabo.server.ip
 ### 1.2 Run the automated setup script
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/gpandit/pandit/main/infra/contabo-setup.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/gpandit/pandit-xyz/main/infra/contabo-setup.sh)"
 ```
 
 ### 1.3 Verify Docker installation
