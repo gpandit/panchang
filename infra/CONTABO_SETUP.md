@@ -10,21 +10,64 @@ This guide walks you through setting up your Contabo server to run the Pandit ap
 - SSL certificates (Cloudflare, Let's Encrypt, or self-signed)
 - S3 credentials for file storage (AWS S3, Linode Object Storage, or MinIO)
 
-## Phase 1: Automated Server Setup (5 minutes)
+## Phase 1: Automated Server Setup (10 minutes)
 
-### 1.1 SSH into your server
+`pandit-xyz` is a **private** repo, so `curl | bash` against raw.githubusercontent.com
+won't work — it 404s with no auth. Copy the script over with `scp` and set up a
+read-only deploy key for the `git clone` the script performs.
+
+### 1.1 Copy the setup script to the server
+
+From your local machine (not the server):
+
+```bash
+scp infra/contabo-setup.sh root@your.contabo.server.ip:/root/contabo-setup.sh
+```
+
+### 1.2 SSH into your server and generate a deploy key
 
 ```bash
 ssh root@your.contabo.server.ip
+ssh-keygen -t ed25519 -f ~/.ssh/pandit_deploy_key -N "" -C "contabo-deploy"
+cat ~/.ssh/pandit_deploy_key.pub
 ```
 
-### 1.2 Run the automated setup script
+Copy the printed public key.
+
+### 1.3 Register the deploy key on GitHub (read-only)
+
+Back on your local machine:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/gpandit/pandit-xyz/main/infra/contabo-setup.sh)"
+gh repo deploy-key add - --repo gpandit/pandit-xyz --title "contabo-$(hostname)" --read-only <<< "ssh-ed25519 AAAA...paste-the-key..."
 ```
 
-### 1.3 Verify Docker installation
+Or via the web UI: **github.com/gpandit/pandit-xyz → Settings → Deploy keys → Add deploy key** (leave "Allow write access" unchecked).
+
+### 1.4 Point SSH at the deploy key, then verify
+
+Back on the server:
+
+```bash
+cat >> ~/.ssh/config << 'EOF'
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/pandit_deploy_key
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+
+ssh -T git@github.com   # should greet you by repo, not reject the connection
+```
+
+### 1.5 Run the setup script
+
+```bash
+bash /root/contabo-setup.sh
+```
+
+### 1.6 Verify Docker installation
 
 ```bash
 docker --version

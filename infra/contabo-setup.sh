@@ -53,10 +53,15 @@ echo -e "${YELLOW}[5/7] Creating deployment directories...${NC}"
 mkdir -p /opt/pandit-prod
 cd /opt/pandit-prod
 
-# Clone the repository (if not already present)
+# Clone the repository (if not already present).
+# pandit-xyz is private, so this needs SSH auth (a deploy key) configured at
+# ~/.ssh/config for Host github.com — see infra/CONTABO_SETUP.md Phase 1.
 if [ ! -d .git ]; then
   echo "Cloning repository..."
-  git clone https://github.com/gpandit/pandit-xyz.git . 2>/dev/null || true
+  if ! git clone git@github.com:gpandit/pandit-xyz.git .; then
+    echo -e "${RED}Clone failed. Confirm a deploy key is configured: ssh -T git@github.com${NC}"
+    exit 1
+  fi
 fi
 
 # Create directories for certificates and environment files

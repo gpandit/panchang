@@ -10,22 +10,30 @@ Complete these steps to migrate from DigitalOcean to Contabo.
 - [ ] Have S3 credentials (or object storage alternative)
 - [ ] Note your Contabo server IP/DNS name
 
-## Phase 1: Initial Server Setup (5 min)
+## Phase 1: Initial Server Setup (10 min)
 
-### On the Contabo server (SSH):
+`pandit-xyz` is private, so the script can't be fetched via `curl` from
+raw.githubusercontent.com (404, no auth). See `infra/CONTABO_SETUP.md` Phase 1
+for the full scp + deploy-key flow. Short version:
 
 ```bash
-# Run automated setup (installs Docker, Docker Compose, creates directories)
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/gpandit/pandit-xyz/main/infra/contabo-setup.sh)"
+# From your local machine: copy the script over
+scp infra/contabo-setup.sh root@CONTABO_IP:/root/contabo-setup.sh
+
+# On the server: generate a deploy key, register it read-only on GitHub,
+# point ~/.ssh/config at it for github.com, then:
+bash /root/contabo-setup.sh
 
 # Verify Docker installation
 docker --version
 docker compose version
 ```
 
+- [ ] Deploy key generated on server and registered (read-only) on `gpandit/pandit-xyz`
+- [ ] `ssh -T git@github.com` succeeds from the server
 - [ ] Docker installed successfully
 - [ ] Docker Compose installed successfully
-- [ ] `/opt/pandit-prod/` directory created
+- [ ] `/opt/pandit-prod/` directory created (repo cloned into it)
 
 ## Phase 2: SSL Certificates (3 min)
 
