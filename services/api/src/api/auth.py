@@ -12,13 +12,32 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
+from collections.abc import Iterable
 
 import jwt
 from fastapi import HTTPException, status
 from jwt.exceptions import DecodeError, ExpiredSignatureError, InvalidTokenError
 
-from api.models.auth import SubscriptionTier, TokenClaims
+from api.models.auth import Role, SubscriptionTier, TokenClaims
 from api.settings import get_settings
+
+
+def _parse_roles(raw: object) -> set[Role]:
+    """Coerce the JWT ``roles`` claim (a list of strings) into a ``set[Role]``.
+
+    Unknown/malformed entries are dropped rather than raising, so a token minted
+    by a newer issuer never 500s an older gateway. A missing claim → empty set
+    (legacy pre-marketplace tokens).
+    """
+    if not isinstance(raw, (list, tuple, set)):
+        return set()
+    roles: set[Role] = set()
+    for item in raw:
+        try:
+            roles.add(Role(item))
+        except ValueError:
+            continue
+    return roles
 
 
 def decode_token(token: str) -> TokenClaims:
@@ -56,14 +75,23 @@ def decode_token(token: str) -> TokenClaims:
         sub=payload["sub"],
         email=payload.get("email"),
         tier=tier,
+        roles=_parse_roles(payload.get("roles")),
         exp=payload.get("exp"),
         iat=payload.get("iat"),
     )
 
 
-def create_admin_token(sub: str, admin_role: str, **extra: object) -> str:
+def create_admin_token(
+    sub: str,
+    admin_role: str,
+    *,
+    roles: Iterable[Role] | None = None,
+    **extra: object,
+) -> str:
     """Create a JWT with an admin_role claim — used in tests and the admin auth stub."""
-    return create_token(sub, tier=SubscriptionTier.BASIC, admin_role=admin_role, **extra)
+    return create_token(
+        sub, tier=SubscriptionTier.BASIC, roles=roles, admin_role=admin_role, **extra
+    )
 
 
 def create_temple_token(sub: str, temple_id: str, email: str | None = None) -> str:
@@ -94,8 +122,19 @@ def verify_password(password: str, *, password_hash: str, salt: str) -> bool:
     return hmac.compare_digest(candidate, password_hash)
 
 
-def create_token(sub: str, tier: SubscriptionTier = SubscriptionTier.BASIC, **extra: object) -> str:
-    """Create a signed JWT — used in tests and by the auth service stub."""
+def create_token(
+    sub: str,
+    tier: SubscriptionTier = SubscriptionTier.BASIC,
+    *,
+    roles: Iterable[Role] | None = None,
+    **extra: object,
+) -> str:
+    """Create a signed JWT — used in tests and by the auth service stub.
+
+    ``roles`` (F3) is serialized as a JSON list of role strings so a single login
+    can carry ``patron`` and/or ``pandit`` (and/or ``admin``). Omit it for legacy
+    single-purpose tokens.
+    """
     import time
 
     settings = get_settings()
@@ -106,4 +145,6 @@ def create_token(sub: str, tier: SubscriptionTier = SubscriptionTier.BASIC, **ex
         "exp": int(time.time()) + settings.access_token_expire_seconds,
         **extra,
     }
+    if roles is not None:
+        payload["roles"] = [Role(r).value for r in roles]
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)

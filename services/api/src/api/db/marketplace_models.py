@@ -516,9 +516,7 @@ class VideoSessionRow(Base):
     join_window_start: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    join_window_end: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    join_window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # join/leave events feeding completion/no-show resolution.
     join_log: Mapped[list[dict[str, Any]]] = mapped_column(
         JSON_VARIANT, nullable=False, default=list

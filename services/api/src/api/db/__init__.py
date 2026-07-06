@@ -29,6 +29,7 @@ from api.db.session import (
     reset_engine,
     session_scope,
 )
+from api.marketplace import vault as _vault_models  # noqa: F401  (F3 vault tables)
 
 __all__ = [
     "Base",

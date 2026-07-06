@@ -80,9 +80,7 @@ def upgrade() -> None:
         sa.Column("languages", JSON_VARIANT, nullable=False),
         sa.Column("tradition", sa.String(), nullable=True),
         sa.Column("experience_years", sa.Integer(), nullable=True),
-        sa.Column(
-            "verification_status", sa.String(), nullable=False, server_default="unverified"
-        ),
+        sa.Column("verification_status", sa.String(), nullable=False, server_default="unverified"),
         sa.Column("rating_agg", sa.Numeric(3, 2), nullable=True),
         sa.Column("rating_count", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("standing_score", sa.Numeric(5, 2), nullable=True),
@@ -129,9 +127,7 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
     )
     op.create_index("ix_pandit_services_pandit_id", "pandit_services", ["pandit_id"])
-    op.create_index(
-        "ix_pandit_services_service_type_id", "pandit_services", ["service_type_id"]
-    )
+    op.create_index("ix_pandit_services_service_type_id", "pandit_services", ["service_type_id"])
 
     op.create_table(
         "travel_policies",
@@ -148,9 +144,7 @@ def upgrade() -> None:
         sa.Column("fee_config", JSON_VARIANT, nullable=False),
         sa.Column("requires_pickup", sa.Boolean(), nullable=False, server_default=sa.false()),
     )
-    op.create_index(
-        "ix_travel_policies_pandit_id", "travel_policies", ["pandit_id"], unique=True
-    )
+    op.create_index("ix_travel_policies_pandit_id", "travel_policies", ["pandit_id"], unique=True)
 
     op.create_table(
         "availabilities",
@@ -167,9 +161,7 @@ def upgrade() -> None:
         sa.Column("buffer_min", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("accept_mode", sa.String(), nullable=False, server_default="manual"),
     )
-    op.create_index(
-        "ix_availabilities_pandit_id", "availabilities", ["pandit_id"], unique=True
-    )
+    op.create_index("ix_availabilities_pandit_id", "availabilities", ["pandit_id"], unique=True)
 
     op.create_table(
         "verification_records",
@@ -397,9 +389,7 @@ def upgrade() -> None:
         sa.Column("recording_ref", sa.String(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
     )
-    op.create_index(
-        "ix_video_sessions_booking_id", "video_sessions", ["booking_id"], unique=True
-    )
+    op.create_index("ix_video_sessions_booking_id", "video_sessions", ["booking_id"], unique=True)
 
     # ── Disputes ───────────────────────────────────────────────────────────────
     op.create_table(

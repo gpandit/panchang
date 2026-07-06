@@ -69,9 +69,7 @@ async def test_marketplace_schema_builds_on_sqlite() -> None:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
             # Sanity: the bookings table really exists in the built schema.
-            tables = await conn.run_sync(
-                lambda sync_conn: sa.inspect(sync_conn).get_table_names()
-            )
+            tables = await conn.run_sync(lambda sync_conn: sa.inspect(sync_conn).get_table_names())
             assert "bookings" in tables
             # And the overlap ExcludeConstraint is NOT part of the SQLite schema.
             assert BookingStatus.CONFIRMED in ACTIVE_BOOKING_STATUSES
@@ -162,9 +160,7 @@ async def test_overlapping_confirmed_bookings_rejected_at_db_level() -> None:
     try:
         # Build the schema via the real migration so the ExcludeConstraint + btree_gist
         # extension are created exactly as production gets them.
-        os.environ["API_DATABASE_URL"] = _PG_DSN.replace(
-            "postgresql+psycopg", "postgresql", 1
-        )
+        os.environ["API_DATABASE_URL"] = _PG_DSN.replace("postgresql+psycopg", "postgresql", 1)
         cfg = Config(str(_alembic_ini_path()))
         command.upgrade(cfg, "head")
 
@@ -186,9 +182,10 @@ async def test_overlapping_confirmed_bookings_rejected_at_db_level() -> None:
                         "confirmed",
                     )
                 )
-        assert "no_double_booking_overlap" in str(exc_info.value).lower() or "exclu" in str(
-            exc_info.value
-        ).lower()
+        assert (
+            "no_double_booking_overlap" in str(exc_info.value).lower()
+            or "exclu" in str(exc_info.value).lower()
+        )
 
         # A cancelled booking in the same slot is fine — the constraint is partial.
         async with engine.begin() as conn:
