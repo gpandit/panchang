@@ -13,6 +13,11 @@ only thing that creates tables in staging/prod. ``Base.metadata.create_all`` is 
 solely by the test suite against in-memory SQLite.
 """
 
+# Import model modules for their side effect of registering every table on
+# ``Base.metadata`` — this is what makes Alembic autogenerate and the SQLite test
+# suite's ``create_all`` see the full schema (temple + marketplace).
+from api.db import marketplace_models as _marketplace_models  # noqa: F401
+from api.db import models as _models  # noqa: F401
 from api.db.base import Base
 from api.db.repository import Repository
 from api.db.session import (

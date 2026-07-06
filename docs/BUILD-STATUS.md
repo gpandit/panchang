@@ -16,7 +16,7 @@ and fill the branch/commit. Statuses: `todo` · `in-progress` · `done` · `bloc
 | Step | Model | Status | Branch / commit | Notes |
 |---|---|---|---|---|
 | F1 Persistence layer (Postgres + SQLAlchemy async + Alembic) | 🔴 Opus | done | fix/staging-deploy-workflow | async engine + `get_session` dep + `Repository` added atop existing sync/Alembic layer; psycopg3 async driver (no asyncpg), aiosqlite for tests |
-| F2 Marketplace schema + no-double-booking constraint | 🔴 Opus | todo | | depends F1 |
+| F2 Marketplace schema + no-double-booking constraint | 🔴 Opus | done | marketplace-build | 16 ORM models + Pydantic schemas; Alembic 0002 with PG `EXCLUDE USING gist` overlap constraint (`btree_gist`, active-status predicate) + `policy_snapshot` JSONB; sqlite/PG split so `create_all` works on aiosqlite; PG-gated overlap test (runs in CI). Local: 95 passed, 1 skipped |
 | F3 Dual-role identity + Vault refs | 🔴 Opus | todo | | depends F1, F2 |
 | F4 Module skeleton + router registration | 🟢 Sonnet | todo | | depends F1 |
 | F5 Service taxonomy seed | 🟢 Sonnet | todo | | depends F2 |
