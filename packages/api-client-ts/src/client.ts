@@ -10,6 +10,7 @@ import type {
   ApiResponse,
   DailyPanchangOut,
   FestivalOut,
+  MarketplaceHealthOut,
   MonthCalendarOut,
   NoteIn,
   NoteOut,
@@ -164,5 +165,13 @@ export class PanditApiClient {
 
   async getPdfJob(jobId: string): Promise<ApiResponse<PdfJobOut>> {
     return this.request(`/v1/pdf/jobs/${jobId}`);
+  }
+
+  // ── Marketplace (F4 — module skeleton) ─────────────────────────────────────
+  // Domain endpoints (providers, verification, booking, payments, ...) land as
+  // each WS-A/B/C/D/E step ships. Only the liveness probe exists today.
+
+  async getMarketplaceHealthz(): Promise<MarketplaceHealthOut> {
+    return this.request("/v1/marketplace/healthz");
   }
 }

@@ -12,13 +12,8 @@
           "panchang"
         ],
         "summary": "Daily Panchang",
-        "description": "Returns the full Panchang for the requested date and location. Served from the edge/in-process cache \u2014 typical p99 < 50 ms on cache hit.",
+        "description": "Returns the view-ready Panchang for the requested date and location, for the Today screen. Served from the edge/in-process cache \u2014 typical p99 < 50 ms on cache hit.",
         "operationId": "daily_panchang_v1_panchang_daily_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "date",
@@ -100,7 +95,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse_DailyPanchangOut_"
+                  "$ref": "#/components/schemas/ApiResponse_DailyPanchangViewOut_"
                 }
               }
             }
@@ -236,7 +231,7 @@
           "festivals"
         ],
         "summary": "List festivals",
-        "operationId": "list_festivals_v1_festivals_get",
+        "operationId": "list_festivals_endpoint_v1_festivals_get",
         "security": [
           {
             "HTTPBearer": []
@@ -274,6 +269,40 @@
             }
           },
           {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Region"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 10
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Locale"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -304,6 +333,54 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PaginatedResponse_FestivalOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/festivals/{festival_id}": {
+      "get": {
+        "tags": [
+          "festivals"
+        ],
+        "summary": "Get festival detail",
+        "operationId": "get_festival_endpoint_v1_festivals__festival_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "festival_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "title": "Festival Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_FestivalDetailOut_"
                 }
               }
             }
@@ -899,10 +976,1191 @@
           }
         }
       }
+    },
+    "/v1/temple/{temple_id}": {
+      "get": {
+        "tags": [
+          "temple"
+        ],
+        "summary": "Get Temple",
+        "operationId": "get_temple_v1_temple__temple_id__get",
+        "parameters": [
+          {
+            "name": "temple_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Temple Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TempleConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/marketplace/healthz": {
+      "get": {
+        "tags": [
+          "marketplace"
+        ],
+        "summary": "Marketplace Healthz",
+        "description": "Liveness probe for the marketplace domain \u2014 returns 200 once routers are wired.",
+        "operationId": "marketplace_healthz_v1_marketplace_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Marketplace Healthz V1 Marketplace Healthz Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/content/festivals": {
+      "get": {
+        "tags": [
+          "admin-content"
+        ],
+        "summary": "List Festivals",
+        "operationId": "list_festivals_admin_v1_content_festivals_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FestivalRecord"
+                  },
+                  "title": "Response List Festivals Admin V1 Content Festivals Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "admin-content"
+        ],
+        "summary": "Create Festival",
+        "operationId": "create_festival_admin_v1_content_festivals_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/content/festivals/{festival_id}": {
+      "get": {
+        "tags": [
+          "admin-content"
+        ],
+        "summary": "Get Festival",
+        "operationId": "get_festival_admin_v1_content_festivals__festival_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "festival_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Festival Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "admin-content"
+        ],
+        "summary": "Update Festival",
+        "operationId": "update_festival_admin_v1_content_festivals__festival_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "festival_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Festival Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FestivalIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin-content"
+        ],
+        "summary": "Delete Festival",
+        "operationId": "delete_festival_admin_v1_content_festivals__festival_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "festival_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Festival Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/content/festivals/{festival_id}/submit-review": {
+      "post": {
+        "tags": [
+          "admin-content"
+        ],
+        "summary": "Submit For Review",
+        "operationId": "submit_for_review_admin_v1_content_festivals__festival_id__submit_review_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "festival_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Festival Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/content/festivals/{festival_id}/publish": {
+      "post": {
+        "tags": [
+          "admin-content"
+        ],
+        "summary": "Publish Festival",
+        "operationId": "publish_festival_admin_v1_content_festivals__festival_id__publish_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "festival_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Festival Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/content/festivals/{festival_id}/reject": {
+      "post": {
+        "tags": [
+          "admin-content"
+        ],
+        "summary": "Reject Festival",
+        "operationId": "reject_festival_admin_v1_content_festivals__festival_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "festival_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Festival Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FestivalRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/content/audit": {
+      "get": {
+        "tags": [
+          "admin-content"
+        ],
+        "summary": "Get Audit Trail",
+        "operationId": "get_audit_trail_admin_v1_content_audit_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "resource_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resource Type"
+            }
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resource Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {},
+                  "title": "Response Get Audit Trail Admin V1 Content Audit Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/flags/report": {
+      "post": {
+        "tags": [
+          "admin-flags"
+        ],
+        "summary": "Report Flag",
+        "description": "Any authenticated user can flag content or a Panchang date.",
+        "operationId": "report_flag_admin_v1_flags_report_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlagIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlagRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/flags": {
+      "get": {
+        "tags": [
+          "admin-flags"
+        ],
+        "summary": "List Flags",
+        "operationId": "list_flags_admin_v1_flags_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FlagRecord"
+                  },
+                  "title": "Response List Flags Admin V1 Flags Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/flags/{flag_id}": {
+      "get": {
+        "tags": [
+          "admin-flags"
+        ],
+        "summary": "Get Flag",
+        "operationId": "get_flag_admin_v1_flags__flag_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "flag_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Flag Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlagRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/flags/{flag_id}/resolve": {
+      "post": {
+        "tags": [
+          "admin-flags"
+        ],
+        "summary": "Resolve Flag",
+        "operationId": "resolve_flag_admin_v1_flags__flag_id__resolve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "flag_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Flag Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlagResolve"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlagRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/reporting/overview": {
+      "get": {
+        "tags": [
+          "admin-reporting"
+        ],
+        "summary": "Get Overview",
+        "operationId": "get_overview_admin_v1_reporting_overview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "last_30d",
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/temples": {
+      "get": {
+        "tags": [
+          "admin-temples"
+        ],
+        "summary": "List Temples",
+        "operationId": "list_temples_admin_v1_temples_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TempleConfig"
+                  },
+                  "type": "array",
+                  "title": "Response List Temples Admin V1 Temples Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "admin-temples"
+        ],
+        "summary": "Create Temple",
+        "operationId": "create_temple_admin_v1_temples_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TempleCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TempleConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/admin/v1/temples/{temple_id}/admins": {
+      "post": {
+        "tags": [
+          "admin-temples"
+        ],
+        "summary": "Assign Admin",
+        "operationId": "assign_admin_admin_v1_temples__temple_id__admins_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "temple_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Temple Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminAssignIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Assign Admin Admin V1 Temples  Temple Id  Admins Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/marketplace/healthz": {
+      "get": {
+        "tags": [
+          "admin-marketplace"
+        ],
+        "summary": "Admin Marketplace Healthz",
+        "description": "Liveness probe for the marketplace admin namespace.",
+        "operationId": "admin_marketplace_healthz_admin_v1_marketplace_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Admin Marketplace Healthz Admin V1 Marketplace Healthz Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/temple/v1/auth/login": {
+      "post": {
+        "tags": [
+          "temple-auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_temple_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/temple/v1/auth/me": {
+      "get": {
+        "tags": [
+          "temple-auth"
+        ],
+        "summary": "Me",
+        "operationId": "me_temple_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TempleConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/temple/v1/temple": {
+      "get": {
+        "tags": [
+          "temple-config"
+        ],
+        "summary": "Get My Temple",
+        "operationId": "get_my_temple_temple_v1_temple_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TempleConfig"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "temple-config"
+        ],
+        "summary": "Update My Temple",
+        "operationId": "update_my_temple_temple_v1_temple_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TempleConfigIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TempleConfig"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "AartiEntry": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "dev": {
+            "type": "string",
+            "title": "Dev"
+          },
+          "time": {
+            "type": "string",
+            "title": "Time"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          },
+          "nat": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Nat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "dev",
+          "time"
+        ],
+        "title": "AartiEntry",
+        "description": "One row of the aarti schedule. `nat` holds optional per-language names."
+      },
+      "AdminAssignIn": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "AdminAssignIn",
+        "description": "Superuser payload to assign an admin login to a temple."
+      },
+      "AdvisoryOut": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "good",
+              "avoid"
+            ],
+            "title": "Category"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "label"
+        ],
+        "title": "AdvisoryOut"
+      },
       "AngaSpanOut": {
         "properties": {
           "index": {
@@ -943,10 +2201,10 @@
         ],
         "title": "AngaSpanOut"
       },
-      "ApiResponse_DailyPanchangOut_": {
+      "ApiResponse_DailyPanchangViewOut_": {
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/DailyPanchangOut"
+            "$ref": "#/components/schemas/DailyPanchangViewOut"
           },
           "meta": {
             "anyOf": [
@@ -965,7 +2223,31 @@
         "required": [
           "data"
         ],
-        "title": "ApiResponse[DailyPanchangOut]"
+        "title": "ApiResponse[DailyPanchangViewOut]"
+      },
+      "ApiResponse_FestivalDetailOut_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/FestivalDetailOut"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[FestivalDetailOut]"
       },
       "ApiResponse_LocationOut_": {
         "properties": {
@@ -1313,6 +2595,79 @@
         ],
         "title": "ChoghadiyaOut"
       },
+      "ContentStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "review",
+          "published",
+          "rejected"
+        ],
+        "title": "ContentStatus"
+      },
+      "ContentVersion": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
+          "changed_by": {
+            "type": "string",
+            "title": "Changed By"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Changed At"
+          },
+          "snapshot": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Snapshot"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "status",
+          "changed_by",
+          "changed_at",
+          "snapshot"
+        ],
+        "title": "ContentVersion"
+      },
+      "DailyHighlightOut": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "DailyHighlightOut"
+      },
       "DailyPanchangOut": {
         "properties": {
           "date": {
@@ -1440,6 +2795,168 @@
         "title": "DailyPanchangOut",
         "description": "Full Panchang for one (date, location, settings) \u2014 the primary API payload."
       },
+      "DailyPanchangViewOut": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz"
+          },
+          "locationLabel": {
+            "type": "string",
+            "title": "Locationlabel"
+          },
+          "summaryTitle": {
+            "type": "string",
+            "title": "Summarytitle"
+          },
+          "panchangHindiDate": {
+            "type": "string",
+            "title": "Panchanghindidate"
+          },
+          "elements": {
+            "items": {
+              "$ref": "#/components/schemas/PanchangElementOut"
+            },
+            "type": "array",
+            "title": "Elements"
+          },
+          "sunrise": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sunrise"
+          },
+          "sunset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sunset"
+          },
+          "moonrise": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moonrise"
+          },
+          "moonset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moonset"
+          },
+          "muhurats": {
+            "items": {
+              "$ref": "#/components/schemas/MuhuratWindowOut"
+            },
+            "type": "array",
+            "title": "Muhurats"
+          },
+          "festivals": {
+            "items": {
+              "$ref": "#/components/schemas/FestivalViewOut"
+            },
+            "type": "array",
+            "title": "Festivals"
+          },
+          "advisories": {
+            "items": {
+              "$ref": "#/components/schemas/AdvisoryOut"
+            },
+            "type": "array",
+            "title": "Advisories"
+          },
+          "highlights": {
+            "items": {
+              "$ref": "#/components/schemas/DailyHighlightOut"
+            },
+            "type": "array",
+            "title": "Highlights"
+          },
+          "dharmaCard": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DharmaCardOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "leapMonthFlag": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "adhika",
+                  "kshaya"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leapmonthflag"
+          },
+          "cachedAt": {
+            "type": "string",
+            "title": "Cachedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "lat",
+          "lon",
+          "tz",
+          "locationLabel",
+          "summaryTitle",
+          "panchangHindiDate",
+          "elements",
+          "sunrise",
+          "sunset",
+          "moonrise",
+          "moonset",
+          "muhurats",
+          "festivals",
+          "advisories",
+          "highlights",
+          "cachedAt"
+        ],
+        "title": "DailyPanchangViewOut",
+        "description": "View-ready daily Panchang payload for GET /v1/panchang/daily."
+      },
       "DayEventsOut": {
         "properties": {
           "sunrise": {
@@ -1478,6 +2995,233 @@
         ],
         "title": "DayEventsOut"
       },
+      "DharmaCardOut": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "attribution": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribution"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "body"
+        ],
+        "title": "DharmaCardOut"
+      },
+      "FestivalDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "puja": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Puja"
+          },
+          "katha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Katha"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "date",
+          "description",
+          "tags"
+        ],
+        "title": "FestivalDetailOut",
+        "description": "Full festival record including CMS prose \u2014 returned by the detail endpoint."
+      },
+      "FestivalIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "default": ""
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "puja": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Puja"
+          },
+          "katha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Katha"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region",
+            "default": "all"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale",
+            "default": "en"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "slug"
+        ],
+        "title": "FestivalIn"
+      },
       "FestivalOut": {
         "properties": {
           "id": {
@@ -1509,6 +3253,28 @@
             },
             "type": "array",
             "title": "Tags"
+          },
+          "region": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Region"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
           }
         },
         "type": "object",
@@ -1520,6 +3286,255 @@
           "tags"
         ],
         "title": "FestivalOut"
+      },
+      "FestivalRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/ContentVersion"
+            },
+            "type": "array",
+            "title": "Versions"
+          },
+          "current": {
+            "$ref": "#/components/schemas/FestivalIn"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "versions",
+          "current",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "FestivalRecord"
+      },
+      "FestivalViewOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "festival",
+              "vrat",
+              "ekadashi",
+              "other"
+            ],
+            "title": "Type"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "significance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Significance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "FestivalViewOut"
+      },
+      "FlagIn": {
+        "properties": {
+          "resource_type": {
+            "type": "string",
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resource_type",
+          "resource_id",
+          "reason"
+        ],
+        "title": "FlagIn"
+      },
+      "FlagRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "resource_type": {
+            "type": "string",
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "reported_by": {
+            "type": "string",
+            "title": "Reported By"
+          },
+          "reported_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Reported At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FlagStatus"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "resolution_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "resource_type",
+          "resource_id",
+          "reason",
+          "details",
+          "reported_by",
+          "reported_at",
+          "status"
+        ],
+        "title": "FlagRecord"
+      },
+      "FlagResolve": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "resolution_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "FlagResolve"
+      },
+      "FlagStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "in_review",
+          "resolved",
+          "dismissed"
+        ],
+        "title": "FlagStatus"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1605,6 +3620,42 @@
         ],
         "title": "LocationOut"
       },
+      "LoginIn": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginIn"
+      },
+      "LoginOut": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "temple_id": {
+            "type": "string",
+            "title": "Temple Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "temple_id"
+        ],
+        "title": "LoginOut"
+      },
       "MonthCalendarOut": {
         "properties": {
           "year": {
@@ -1630,6 +3681,49 @@
           "days"
         ],
         "title": "MonthCalendarOut"
+      },
+      "MuhuratWindowOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "startTime": {
+            "type": "string",
+            "title": "Starttime"
+          },
+          "endTime": {
+            "type": "string",
+            "title": "Endtime"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "auspicious",
+              "inauspicious"
+            ],
+            "title": "Type"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "startTime",
+          "endTime",
+          "type"
+        ],
+        "title": "MuhuratWindowOut"
       },
       "NoteIn": {
         "properties": {
@@ -1748,15 +3842,67 @@
         ],
         "title": "PaginatedResponse[FestivalOut]"
       },
+      "PanchangElementOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "secondaryValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secondaryvalue"
+          },
+          "group": {
+            "type": "string",
+            "enum": [
+              "core",
+              "solar",
+              "lunar",
+              "other"
+            ],
+            "title": "Group"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "value",
+          "group"
+        ],
+        "title": "PanchangElementOut"
+      },
       "PdfJobIn": {
         "properties": {
           "year": {
             "type": "integer",
             "title": "Year"
-          },
-          "month": {
-            "type": "integer",
-            "title": "Month"
           },
           "lat": {
             "type": "number",
@@ -1784,7 +3930,6 @@
         "type": "object",
         "required": [
           "year",
-          "month",
           "lat",
           "lon",
           "tz"
@@ -2020,6 +4165,59 @@
         ],
         "title": "ReminderOut"
       },
+      "ReportOut": {
+        "properties": {
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ReportRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/ReportRow"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "rows",
+          "totals"
+        ],
+        "title": "ReportOut"
+      },
+      "ReportRow": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "signups": {
+            "type": "integer",
+            "title": "Signups"
+          },
+          "active_users": {
+            "type": "integer",
+            "title": "Active Users"
+          },
+          "conversions": {
+            "type": "integer",
+            "title": "Conversions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "signups",
+          "active_users",
+          "conversions"
+        ],
+        "title": "ReportRow"
+      },
       "SubscriptionOut": {
         "properties": {
           "user_id": {
@@ -2058,6 +4256,225 @@
           "features"
         ],
         "title": "SubscriptionOut"
+      },
+      "TempleConfig": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "name_dev": {
+            "type": "string",
+            "title": "Name Dev"
+          },
+          "tagline": {
+            "type": "string",
+            "title": "Tagline",
+            "default": ""
+          },
+          "location": {
+            "$ref": "#/components/schemas/TempleLocation"
+          },
+          "aarti": {
+            "items": {
+              "$ref": "#/components/schemas/AartiEntry"
+            },
+            "type": "array",
+            "title": "Aarti"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TempleEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "name_dev",
+          "location",
+          "updated_at"
+        ],
+        "title": "TempleConfig",
+        "description": "Full temple record. Identity fields are superuser-managed."
+      },
+      "TempleConfigIn": {
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/TempleLocation"
+          },
+          "aarti": {
+            "items": {
+              "$ref": "#/components/schemas/AartiEntry"
+            },
+            "type": "array",
+            "title": "Aarti"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TempleEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "location"
+        ],
+        "title": "TempleConfigIn",
+        "description": "Editable subset of a temple, owned by the temple admin."
+      },
+      "TempleCreateIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "name_dev": {
+            "type": "string",
+            "title": "Name Dev"
+          },
+          "tagline": {
+            "type": "string",
+            "title": "Tagline",
+            "default": ""
+          },
+          "location": {
+            "$ref": "#/components/schemas/TempleLocation"
+          },
+          "aarti": {
+            "items": {
+              "$ref": "#/components/schemas/AartiEntry"
+            },
+            "type": "array",
+            "title": "Aarti"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TempleEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "name_dev",
+          "location"
+        ],
+        "title": "TempleCreateIn",
+        "description": "Superuser payload to create a temple."
+      },
+      "TempleEvent": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "title_dev": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Dev"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "default": ""
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "TempleEvent",
+        "description": "A temple event/announcement shown on the display."
+      },
+      "TempleLocation": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lon": {
+            "type": "number",
+            "title": "Lon"
+          },
+          "tz": {
+            "type": "string",
+            "title": "Tz"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "lat",
+          "lon",
+          "tz"
+        ],
+        "title": "TempleLocation",
+        "description": "Session location for the display. lat/lon are used to compute tithi etc."
       },
       "TimeValueOut": {
         "properties": {

@@ -9,6 +9,7 @@ import type {
   AngaSpanOut,
   DailyPanchangOut,
   LocationOut,
+  MarketplaceHealthOut,
   SubscriptionOut,
   SubscriptionTier,
 } from "../src/index.js";
@@ -63,5 +64,10 @@ describe("@pandit/api-client-ts type exports", () => {
   it("module index exports are defined", async () => {
     const mod = await import("../src/index.js");
     expect(mod).toBeDefined();
+  });
+
+  it("MarketplaceHealthOut shape is constructable", () => {
+    const health: MarketplaceHealthOut = { status: "ok" };
+    expect(health.status).toBe("ok");
   });
 });

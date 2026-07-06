@@ -44,6 +44,8 @@ export type {
   // PDF
   PdfJobIn,
   PdfJobOut,
+  // Marketplace (F4 — module skeleton)
+  MarketplaceHealthOut,
   // Today / Daily view (Step 3.2)
   TimeFormat,
   MuhuratWindow,

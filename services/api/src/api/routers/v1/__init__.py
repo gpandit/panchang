@@ -1,5 +1,6 @@
 from api.routers.v1 import (
     festivals,
+    marketplace,
     notes,
     panchang,
     pdf,
@@ -10,6 +11,7 @@ from api.routers.v1 import (
 
 __all__ = [
     "festivals",
+    "marketplace",
     "notes",
     "panchang",
     "pdf",

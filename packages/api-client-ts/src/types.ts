@@ -283,6 +283,16 @@ export interface PanchangElement {
   explanation?: string; // CMS-sourced
 }
 
+// ─── Marketplace (F4 — module skeleton + router registration) ───────────────
+// Domain modules (providers, verification, availability, search, bookings,
+// pricing, payments, policy, messaging, reviews, video, safety, finance) are
+// scaffolded server-side but ship no endpoints yet beyond the liveness probe.
+// Real request/response types land alongside each module's WS-A/B/C/D/E step.
+
+export interface MarketplaceHealthOut {
+  status: "ok";
+}
+
 /** View-ready daily Panchang payload from the /v1/panchang/daily endpoint. */
 export interface DailyPanchangView {
   date: string; // "YYYY-MM-DD"

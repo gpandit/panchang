@@ -18,7 +18,7 @@ and fill the branch/commit. Statuses: `todo` · `in-progress` · `done` · `bloc
 | F1 Persistence layer (Postgres + SQLAlchemy async + Alembic) | 🔴 Opus | done | fix/staging-deploy-workflow | async engine + `get_session` dep + `Repository` added atop existing sync/Alembic layer; psycopg3 async driver (no asyncpg), aiosqlite for tests |
 | F2 Marketplace schema + no-double-booking constraint | 🔴 Opus | done | marketplace-build | 16 ORM models + Pydantic schemas; Alembic 0002 with PG `EXCLUDE USING gist` overlap constraint (`btree_gist`, active-status predicate) + `policy_snapshot` JSONB; sqlite/PG split so `create_all` works on aiosqlite; PG-gated overlap test (runs in CI). Local: 95 passed, 1 skipped |
 | F3 Dual-role identity + Vault refs | 🔴 Opus | done | marketplace-build | `Role` enum + `roles` set on JWT claims (legacy tokens decode empty — tier logic untouched); `require_role(*roles)` mirrors `require_tier`; `marketplace/vault.py` `Vault`/`VaultRef` (stdlib encrypt-then-MAC via HKDF from secret_key, access-logged reads, raw never serialized); Alembic 0003 vault tables. Local: 152 passed, 1 skipped |
-| F4 Module skeleton + router registration | 🟢 Sonnet | todo | | depends F1 |
+| F4 Module skeleton + router registration | 🟢 Sonnet | done | marketplace-build | 13 domain packages per Arch §1 (providers/verification/availability/search/bookings/pricing/payments/policy/messaging/reviews/video/safety/finance), each a stub `router.py`; registered under `/v1/marketplace` + `/admin/v1/marketplace` in main.py; `GET /v1/marketplace/healthz`→200; refreshed stale docs/openapi.json (additive) + api-client-ts types. Local: 156 passed, 1 skipped |
 | F5 Service taxonomy seed | 🟢 Sonnet | todo | | depends F2 |
 
 ## WS-A · Provider side (∥ WS-B after F)

@@ -19,12 +19,14 @@ from api.middleware.rate_limit import SlidingWindowRateLimiter
 from api.models.common import ApiError, ApiErrorResponse
 from api.routers.admin import content as admin_content
 from api.routers.admin import flags as admin_flags
+from api.routers.admin import marketplace as admin_marketplace
 from api.routers.admin import reporting as admin_reporting
 from api.routers.admin import temples as admin_temples
 from api.routers.temple import auth as temple_auth
 from api.routers.temple import config as temple_config
 from api.routers.v1 import (
     festivals,
+    marketplace,
     notes,
     panchang,
     pdf,
@@ -104,6 +106,7 @@ app.include_router(profile.router, prefix=V1)
 app.include_router(subscriptions.router, prefix=V1)
 app.include_router(pdf.router, prefix=V1)
 app.include_router(temple.router, prefix=V1)
+app.include_router(marketplace.router, prefix=V1)
 
 # ── Admin routers ─────────────────────────────────────────────────────────────
 ADMIN = "/admin/v1"
@@ -112,6 +115,7 @@ app.include_router(admin_content.router, prefix=ADMIN)
 app.include_router(admin_flags.router, prefix=ADMIN)
 app.include_router(admin_reporting.router, prefix=ADMIN)
 app.include_router(admin_temples.router, prefix=ADMIN)
+app.include_router(admin_marketplace.router, prefix=ADMIN)
 
 # ── Temple-admin routers ──────────────────────────────────────────────────────
 TEMPLE = "/temple/v1"
