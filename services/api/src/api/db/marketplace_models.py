@@ -85,6 +85,48 @@ class VerificationStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class OnboardingState(StrEnum):
+    """Provider onboarding state machine (dev-plan A1 / Architecture §3).
+
+    ``DRAFT`` is the initial state a newly-registered Pandit profile starts in.
+    ``submit_for_review`` moves it to ``SUBMITTED``; ops then moves it to exactly
+    one of ``APPROVED`` / ``REJECTED`` / ``CHANGES_REQUESTED`` (E1, WS-E — not built
+    here). ``CHANGES_REQUESTED`` loops back to ``DRAFT`` so the pandit can resubmit.
+    """
+
+    DRAFT = "draft"
+    SUBMITTED = "submitted"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    CHANGES_REQUESTED = "changes_requested"
+
+
+#: Legal transition map — the single source of truth for A1's state machine. Reused
+#: by the service layer (to validate a requested transition) and by tests. Keys are
+#: the *current* state; values are the set of states directly reachable from it.
+ONBOARDING_TRANSITIONS: dict[OnboardingState, frozenset[OnboardingState]] = {
+    OnboardingState.DRAFT: frozenset({OnboardingState.SUBMITTED}),
+    OnboardingState.SUBMITTED: frozenset(
+        {
+            OnboardingState.APPROVED,
+            OnboardingState.REJECTED,
+            OnboardingState.CHANGES_REQUESTED,
+        }
+    ),
+    OnboardingState.APPROVED: frozenset(),
+    OnboardingState.REJECTED: frozenset(),
+    OnboardingState.CHANGES_REQUESTED: frozenset({OnboardingState.DRAFT}),
+}
+
+
+class AgreementType(StrEnum):
+    """The three agreement documents A1 requires acceptance of (dev-plan A1 / X2)."""
+
+    PARTNER_AGREEMENT = "partner_agreement"
+    CODE_OF_CONDUCT = "code_of_conduct"
+    CANCELLATION_POLICY = "cancellation_policy"
+
+
 class TravelFeeModel(StrEnum):
     FLAT = "flat"
     PER_MILE = "per_mile"
@@ -149,6 +191,12 @@ class PanditRow(Base):
     verification_status: Mapped[str] = mapped_column(
         String, nullable=False, default=VerificationStatus.UNVERIFIED.value
     )
+    # Provider onboarding state machine (A1). Discoverability (search/B1) requires
+    # onboarding_state == APPROVED *and* verification_status == VERIFIED — see
+    # PanditRepository.is_discoverable / list_discoverable in providers/repository.py.
+    onboarding_state: Mapped[str] = mapped_column(
+        String, nullable=False, default=OnboardingState.DRAFT.value, index=True
+    )
     rating_agg: Mapped[float | None] = mapped_column(Numeric(3, 2), nullable=True)
     rating_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     standing_score: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
@@ -168,6 +216,39 @@ class PanditRow(Base):
     )
     verification_record: Mapped[VerificationRecordRow | None] = relationship(
         back_populates="pandit", uselist=False, cascade="all, delete-orphan"
+    )
+    agreement_acceptances: Mapped[list[AgreementAcceptanceRow]] = relationship(
+        back_populates="pandit", cascade="all, delete-orphan"
+    )
+
+
+class AgreementAcceptanceRow(Base):
+    """A logged, versioned acceptance of one onboarding legal document (A1 / X2).
+
+    One row per (pandit, agreement_type, version) acceptance event — re-accepting a
+    later version of the same document inserts a new row rather than overwriting, so
+    the acceptance history is a full audit trail (who accepted which version, when).
+    """
+
+    __tablename__ = "agreement_acceptances"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    pandit_id: Mapped[str] = mapped_column(
+        String, ForeignKey("pandits.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    agreement_type: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    version: Mapped[str] = mapped_column(String, nullable=False)
+    accepted_by: Mapped[str] = mapped_column(String, nullable=False)
+    accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    pandit: Mapped[PanditRow] = relationship(back_populates="agreement_acceptances")
+
+    __table_args__ = (
+        Index(
+            "ix_agreement_acceptances_pandit_type",
+            "pandit_id",
+            "agreement_type",
+        ),
     )
 
 

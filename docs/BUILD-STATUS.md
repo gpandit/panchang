@@ -25,7 +25,7 @@ and fill the branch/commit. Statuses: `todo` · `in-progress` · `done` · `bloc
 
 | Step | Model | Status | Branch / commit | Notes |
 |---|---|---|---|---|
-| A1 Provider registration & onboarding | 🟢 Sonnet | todo | | depends F3, F4 |
+| A1 Provider registration & onboarding | 🟢 Sonnet | done | marketplace-build | `/v1/marketplace/providers` (register/me/agreements/submit-for-review), `require_role(PANDIT)`; OnboardingState machine DRAFT→SUBMITTED→APPROVED/REJECTED/CHANGES_REQUESTED (illegal→409); reusable `discoverable_predicate()` (APPROVED+VERIFIED) for B1/A2; versioned+logged agreement_acceptances; Alembic 0005. Local: 188 passed, 1 skipped. NOTE: role-minting into JWT is an upstream auth gap (no users/roles table yet — F3 is claims-only) |
 | A2 Verification & KYC (Vault-backed) | 🔴 Opus | todo | | depends F3, A1, X1 |
 | A3 Catalogue / modes / travel / samagri / pricing | 🟢 Sonnet | todo | | depends F5, A1 |
 | A4 Availability & scheduling | 🔴 Opus | todo | | depends F2, A1 |

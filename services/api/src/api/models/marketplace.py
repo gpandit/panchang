@@ -19,9 +19,11 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from api.db.marketplace_models import (
+    AgreementType,
     BookingStatus,
     DisputeState,
     ModerationState,
+    OnboardingState,
     PaymentStatus,
     PayoutStatus,
     ReviewAuthorRole,
@@ -32,9 +34,11 @@ from api.db.marketplace_models import (
 )
 
 __all__ = [  # noqa: RUF022 — grouped by domain (enums, catalogue, bookings, …) not alphabetical
+    "AgreementType",
     "BookingStatus",
     "DisputeState",
     "ModerationState",
+    "OnboardingState",
     "PaymentStatus",
     "PayoutStatus",
     "ReviewAuthorRole",
@@ -42,6 +46,12 @@ __all__ = [  # noqa: RUF022 — grouped by domain (enums, catalogue, bookings, �
     "ServiceMode",
     "TravelFeeModel",
     "VerificationStatus",
+    # Provider onboarding (A1)
+    "PanditRegisterIn",
+    "PanditRegisterOut",
+    "AgreementAcceptanceIn",
+    "AgreementAcceptanceOut",
+    "OnboardingTransitionOut",
     # Pandit / catalogue
     "PanditOut",
     "PanditServiceIn",
@@ -71,6 +81,53 @@ __all__ = [  # noqa: RUF022 — grouped by domain (enums, catalogue, bookings, �
     "DisputeIn",
     "DisputeOut",
 ]
+
+
+# ── Provider registration & onboarding (A1) ───────────────────────────────────
+
+
+class PanditRegisterIn(BaseModel):
+    """Create/upgrade the caller to a provider — the first step of onboarding."""
+
+    display_name: str = Field(..., min_length=1)
+    bio: str | None = None
+    base_location_id: str | None = None
+    languages: list[str] = []
+    tradition: str | None = None
+    experience_years: int | None = Field(None, ge=0)
+
+
+class PanditRegisterOut(BaseModel):
+    id: str
+    user_id: str
+    display_name: str
+    onboarding_state: OnboardingState
+    verification_status: VerificationStatus
+    created_at: datetime
+
+
+class AgreementAcceptanceIn(BaseModel):
+    """Records acceptance of one versioned onboarding legal document."""
+
+    agreement_type: AgreementType
+    version: str = Field(..., min_length=1)
+
+
+class AgreementAcceptanceOut(BaseModel):
+    id: str
+    pandit_id: str
+    agreement_type: AgreementType
+    version: str
+    accepted_by: str
+    accepted_at: datetime
+
+
+class OnboardingTransitionOut(BaseModel):
+    """Response for any onboarding state-machine transition (e.g. submit_for_review)."""
+
+    id: str
+    onboarding_state: OnboardingState
+    previous_state: OnboardingState
 
 
 # ── Pandit profile & catalogue ────────────────────────────────────────────────
@@ -126,6 +183,7 @@ class PanditOut(BaseModel):
     tradition: str | None = None
     experience_years: int | None = None
     verification_status: VerificationStatus
+    onboarding_state: OnboardingState
     rating_agg: float | None = None
     rating_count: int = 0
     standing_score: float | None = None
