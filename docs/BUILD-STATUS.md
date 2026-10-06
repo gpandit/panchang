@@ -1,5 +1,18 @@
 # Build Status — Pandit Services Marketplace
 
+## v3.0 orchestrator progress
+
+This section records the ordered v3.0 build-dashboard implementation run. It is
+kept separate from the legacy marketplace workstream below. A package is marked
+done only after its focused checks and code review have completed; real service,
+vendor, and commercial-licence gates remain explicit until verified.
+
+| Package | Status | Evidence / next action |
+|---|---|---|
+| S0-01 ADRs and architecture decisions | done | `docs/adr/0001`–`0009`; documentation structure and link checks passed. |
+| S0-02 FastAPI/OpenAPI reconciliation | in-progress | Runtime inventory and drift guardrails added; generated-client/contract closure remains to be reviewed. |
+| S0-03 SQLAlchemy async/PostgreSQL foundation | in-progress | Driver normalization and injectable Alembic smoke seam added; foundation review and Postgres/PostGIS evidence remain. |
+
 Resumable progress manifest for the build defined in [`dev-plan-marketplace.md`](dev-plan-marketplace.md).
 Architecture context: [`architecture-marketplace.md`](architecture-marketplace.md).
 
