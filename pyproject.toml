@@ -61,7 +61,7 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
-pythonpath = ["services/panchang/src", "services/api/src"]
+pythonpath = [".", "services/panchang/src", "services/api/src"]
 
 [dependency-groups]
 dev = [

@@ -12,9 +12,9 @@ from datetime import UTC, date, datetime
 import pytest
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.schema import CreateTable
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy.schema import CreateTable
 
 from api.db import Base
 from api.db import models as _models  # noqa: F401
@@ -54,14 +54,14 @@ def test_v3_schema_contains_dependency_ordered_domains(v3_session: Session) -> N
 
 def test_sensitive_values_are_references_not_profile_columns() -> None:
     ordinary = {column.name for column in UserRow.__table__.columns}
-    assert not ordinary.intersection({"date_of_birth", "time_of_birth", "place_of_birth", "kyc_document", "exact_address"})
+    assert not ordinary.intersection(
+        {"date_of_birth", "time_of_birth", "place_of_birth", "kyc_document", "exact_address"}
+    )
     assert {"email_ref", "phone_ref", "auth_subject_ref"} <= ordinary
 
 
 def test_booking_range_uses_postgres_timestamptz_range_and_integer_money() -> None:
-    booking_ddl = str(
-        CreateTable(BookingRow.__table__).compile(dialect=postgresql.dialect())
-    )
+    booking_ddl = str(CreateTable(BookingRow.__table__).compile(dialect=postgresql.dialect()))
     assert "TSTZRANGE" in booking_ddl
     assert "BIGINT" in str(LedgerJournalRow.__table__.c.debit_total_minor.type)
 

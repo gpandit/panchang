@@ -9,15 +9,17 @@ publishing, booking state transitions, and provider calls) belongs to later stag
 
 from __future__ import annotations
 
-from datetime import date as DateValue, datetime
+from collections.abc import Callable
+from datetime import date as date_value
+from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import (
-    Boolean,
-    BigInteger,
-    CheckConstraint,
     DDL,
+    BigInteger,
+    Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -37,7 +39,7 @@ from sqlalchemy.types import TypeDecorator, UserDefinedType
 from api.db.base import JSON_VARIANT, Base
 
 
-class GeographyPoint(UserDefinedType):
+class GeographyPoint(UserDefinedType[str]):
     """PostGIS point type; SQLite accepts the name as an ordinary fallback type."""
 
     cache_ok = True
@@ -109,11 +111,17 @@ class UserRow(Base):
 
 class UserPreferenceRow(Base):
     __tablename__ = "user_preferences"
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
     scheme: Mapped[str] = mapped_column(String(32), nullable=False, server_default="amanta")
     ayanamsa: Mapped[str] = mapped_column(String(32), nullable=False, server_default="lahiri")
-    calendar_style: Mapped[str] = mapped_column(String(32), nullable=False, server_default="gregorian")
-    notification_settings: Mapped[dict[str, Any]] = mapped_column(JSON_VARIANT, nullable=False, default=dict)
+    calendar_style: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="gregorian"
+    )
+    notification_settings: Mapped[dict[str, Any]] = mapped_column(
+        JSON_VARIANT, nullable=False, default=dict
+    )
     created_at = _created()
     updated_at = _updated()
 
@@ -121,7 +129,9 @@ class UserPreferenceRow(Base):
 class LocationRow(Base):
     __tablename__ = "locations"
     id = _id()
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     label: Mapped[str] = mapped_column(String(160), nullable=False)
     lat: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
     lon: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
@@ -134,7 +144,13 @@ class LocationRow(Base):
         CheckConstraint("lat >= -90 AND lat <= 90", name="ck_locations_latitude"),
         CheckConstraint("lon >= -180 AND lon <= 180", name="ck_locations_longitude"),
         Index("ix_locations_user", "user_id"),
-        Index("uq_locations_primary_user", "user_id", unique=True, sqlite_where=text("is_primary = 1"), postgresql_where=text("is_primary = true")),
+        Index(
+            "uq_locations_primary_user",
+            "user_id",
+            unique=True,
+            sqlite_where=text("is_primary = 1"),
+            postgresql_where=text("is_primary = true"),
+        ),
     )
 
 
@@ -151,8 +167,12 @@ class FamilyGroupRow(Base):
 class FamilyMembershipRow(Base):
     __tablename__ = "family_memberships"
     id = _id()
-    group_id: Mapped[str] = mapped_column(UUID, ForeignKey("family_groups.id", ondelete="CASCADE"), nullable=False)
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    group_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("family_groups.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     role: Mapped[str] = mapped_column(String(16), nullable=False, server_default="member")
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="invited")
     invited_at: Mapped[datetime | None] = mapped_column(UTC)
@@ -170,7 +190,9 @@ class VaultRefRow(Base):
     purpose: Mapped[str] = mapped_column(String(128), nullable=False)
     provider_ref: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at = _created()
-    __table_args__ = (UniqueConstraint("subject_type", "subject_id", "purpose", name="uq_vault_subject_purpose"),)
+    __table_args__ = (
+        UniqueConstraint("subject_type", "subject_id", "purpose", name="uq_vault_subject_purpose"),
+    )
 
 
 class VaultAccessLogRow(Base):
@@ -260,7 +282,9 @@ class OutboxEventRow(Base):
 class DeviceRow(Base):
     __tablename__ = "devices"
     id = _id()
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     platform: Mapped[str] = mapped_column(String(16), nullable=False)
     push_token_ref: Mapped[str] = mapped_column(String(255), nullable=False)
     locale: Mapped[str] = mapped_column(String(16), nullable=False)
@@ -273,18 +297,22 @@ class DeviceRow(Base):
 class LegalAcceptanceRow(Base):
     __tablename__ = "legal_acceptances"
     id = _id()
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     document: Mapped[str] = mapped_column(String(128), nullable=False)
     version: Mapped[str] = mapped_column(String(32), nullable=False)
     accepted_at: Mapped[datetime] = mapped_column(UTC, nullable=False)
     ip_hash: Mapped[str | None] = mapped_column(String(128))
-    __table_args__ = (UniqueConstraint("user_id", "document", "version", name="uq_legal_acceptance"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "document", "version", name="uq_legal_acceptance"),
+    )
 
 
 class PanchangDayRow(Base):
     __tablename__ = "panchang_days"
     id = _id()
-    date: Mapped[DateValue] = mapped_column(Date, nullable=False)
+    date: Mapped[date_value] = mapped_column(Date, nullable=False)
     grid_lat: Mapped[Decimal] = mapped_column(Numeric(9, 4), nullable=False)
     grid_lon: Mapped[Decimal] = mapped_column(Numeric(9, 4), nullable=False)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -295,7 +323,16 @@ class PanchangDayRow(Base):
     created_at = _created()
     updated_at = _updated()
     __table_args__ = (
-        UniqueConstraint("date", "grid_lat", "grid_lon", "timezone", "ayanamsa", "scheme", "engine_version", name="uq_panchang_cache_key"),
+        UniqueConstraint(
+            "date",
+            "grid_lat",
+            "grid_lon",
+            "timezone",
+            "ayanamsa",
+            "scheme",
+            "engine_version",
+            name="uq_panchang_cache_key",
+        ),
         Index("ix_panchang_day_grid", "date", "grid_lat", "grid_lon"),
     )
 
@@ -320,14 +357,16 @@ class FestivalOccurrenceRow(Base):
     id = _id()
     rule_id: Mapped[str] = mapped_column(UUID, ForeignKey("festival_rules.id"), nullable=False)
     rule_version: Mapped[int] = mapped_column(Integer, nullable=False)
-    date: Mapped[DateValue] = mapped_column(Date, nullable=False)
+    date: Mapped[date_value] = mapped_column(Date, nullable=False)
     grid_lat: Mapped[Decimal] = mapped_column(Numeric(9, 4), nullable=False)
     grid_lon: Mapped[Decimal] = mapped_column(Numeric(9, 4), nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     anchor_utc: Mapped[datetime] = mapped_column(UTC, nullable=False)
     explanation: Mapped[str] = mapped_column(Text, nullable=False)
     __table_args__ = (
-        UniqueConstraint("rule_id", "rule_version", "date", "grid_lat", "grid_lon", name="uq_festival_occurrence"),
+        UniqueConstraint(
+            "rule_id", "rule_version", "date", "grid_lat", "grid_lon", name="uq_festival_occurrence"
+        ),
         Index("ix_festival_occurrence_date_grid", "date", "grid_lat", "grid_lon"),
     )
 
@@ -343,7 +382,9 @@ class ContentVersionRow(Base):
     source: Mapped[str] = mapped_column(String(255), nullable=False)
     diff: Mapped[dict[str, Any]] = mapped_column(JSON_VARIANT, nullable=False, default=dict)
     created_at = _created()
-    __table_args__ = (UniqueConstraint("entity_type", "entity_id", "version", name="uq_content_version"),)
+    __table_args__ = (
+        UniqueConstraint("entity_type", "entity_id", "version", name="uq_content_version"),
+    )
 
 
 class FestivalContentRow(Base):
@@ -361,7 +402,11 @@ class FestivalContentRow(Base):
     state: Mapped[str] = mapped_column(String(16), nullable=False, server_default="draft")
     created_at = _created()
     updated_at = _updated()
-    __table_args__ = (UniqueConstraint("festival_id", "festival_version", "locale", name="uq_festival_content_locale"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "festival_id", "festival_version", "locale", name="uq_festival_content_locale"
+        ),
+    )
 
 
 class ContentFlagRow(Base):
@@ -389,9 +434,13 @@ class VratTypeRow(Base):
 class NoteRow(Base):
     __tablename__ = "notes"
     id = _id()
-    owner_user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    family_group_id: Mapped[str | None] = mapped_column(UUID, ForeignKey("family_groups.id", ondelete="SET NULL"))
-    date_ref: Mapped[DateValue | None] = mapped_column(Date)
+    owner_user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    family_group_id: Mapped[str | None] = mapped_column(
+        UUID, ForeignKey("family_groups.id", ondelete="SET NULL")
+    )
+    date_ref: Mapped[date_value | None] = mapped_column(Date)
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
@@ -403,20 +452,30 @@ class NoteRow(Base):
 class BookmarkRow(Base):
     __tablename__ = "bookmarks"
     id = _id()
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     target_type: Mapped[str] = mapped_column(String(64), nullable=False)
     target_id: Mapped[str] = mapped_column(UUID, nullable=False)
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at = _created()
-    __table_args__ = (UniqueConstraint("user_id", "target_type", "target_id", "category", name="uq_bookmark_target"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "target_type", "target_id", "category", name="uq_bookmark_target"
+        ),
+    )
 
 
 class ReminderRow(Base):
     __tablename__ = "reminders"
     id = _id()
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     recurrence_spec: Mapped[dict[str, Any]] = mapped_column(JSON_VARIANT, nullable=False)
-    location_id: Mapped[str | None] = mapped_column(UUID, ForeignKey("locations.id", ondelete="SET NULL"))
+    location_id: Mapped[str | None] = mapped_column(
+        UUID, ForeignKey("locations.id", ondelete="SET NULL")
+    )
     next_fire_at: Mapped[datetime | None] = mapped_column(UTC)
     fire_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="1")
@@ -428,17 +487,23 @@ class ReminderRow(Base):
 class ReminderOccurrenceRow(Base):
     __tablename__ = "reminder_occurrences"
     id = _id()
-    reminder_id: Mapped[str] = mapped_column(UUID, ForeignKey("reminders.id", ondelete="CASCADE"), nullable=False)
+    reminder_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("reminders.id", ondelete="CASCADE"), nullable=False
+    )
     occurrence_key: Mapped[str] = mapped_column(String(255), nullable=False)
     fire_at: Mapped[datetime] = mapped_column(UTC, nullable=False)
     state: Mapped[str] = mapped_column(String(16), nullable=False, server_default="pending")
-    __table_args__ = (UniqueConstraint("reminder_id", "occurrence_key", name="uq_reminder_occurrence"),)
+    __table_args__ = (
+        UniqueConstraint("reminder_id", "occurrence_key", name="uq_reminder_occurrence"),
+    )
 
 
 class VratRecordRow(Base):
     __tablename__ = "vrat_records"
     id = _id()
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     vrat_type_id: Mapped[str] = mapped_column(UUID, ForeignKey("vrat_types.id"), nullable=False)
     occurrence_ref: Mapped[str | None] = mapped_column(UUID)
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="planned")
@@ -451,11 +516,15 @@ class VratRecordRow(Base):
 class PlannerRequestRow(Base):
     __tablename__ = "planner_requests"
     id = _id()
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     event_type: Mapped[str] = mapped_column(String(64), nullable=False)
-    start_date: Mapped[DateValue] = mapped_column(Date, nullable=False)
-    end_date: Mapped[DateValue] = mapped_column(Date, nullable=False)
-    location_id: Mapped[str | None] = mapped_column(UUID, ForeignKey("locations.id", ondelete="SET NULL"))
+    start_date: Mapped[date_value] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date_value] = mapped_column(Date, nullable=False)
+    location_id: Mapped[str | None] = mapped_column(
+        UUID, ForeignKey("locations.id", ondelete="SET NULL")
+    )
     preferences: Mapped[dict[str, Any]] = mapped_column(JSON_VARIANT, nullable=False, default=dict)
     created_at = _created()
     __table_args__ = (CheckConstraint("end_date >= start_date", name="ck_planner_date_range"),)
@@ -464,10 +533,12 @@ class PlannerRequestRow(Base):
 class CalendarJobRow(Base):
     __tablename__ = "calendar_jobs"
     id = _id()
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     template: Mapped[str] = mapped_column(String(64), nullable=False)
-    start_date: Mapped[DateValue] = mapped_column(Date, nullable=False)
-    end_date: Mapped[DateValue] = mapped_column(Date, nullable=False)
+    start_date: Mapped[date_value] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date_value] = mapped_column(Date, nullable=False)
     options: Mapped[dict[str, Any]] = mapped_column(JSON_VARIANT, nullable=False, default=dict)
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="queued")
     object_ref: Mapped[str | None] = mapped_column(String(512))
@@ -478,7 +549,9 @@ class CalendarJobRow(Base):
 class SubscriptionRow(Base):
     __tablename__ = "subscriptions"
     id = _id()
-    user_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     tier: Mapped[str] = mapped_column(String(16), nullable=False)
     source: Mapped[str] = mapped_column(String(32), nullable=False)
     provider_ref: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -488,7 +561,13 @@ class SubscriptionRow(Base):
     updated_at = _updated()
     __table_args__ = (
         UniqueConstraint("source", "provider_ref", name="uq_subscription_provider_ref"),
-        Index("uq_active_subscription_user", "user_id", unique=True, sqlite_where=text("status = 'active'"), postgresql_where=text("status = 'active'")),
+        Index(
+            "uq_active_subscription_user",
+            "user_id",
+            unique=True,
+            sqlite_where=text("status = 'active'"),
+            postgresql_where=text("status = 'active'"),
+        ),
     )
 
 
@@ -509,14 +588,18 @@ class ProviderAccountRow(Base):
 class VerificationRecordRow(Base):
     __tablename__ = "verification_records"
     id = _id()
-    provider_id: Mapped[str] = mapped_column(UUID, ForeignKey("provider_accounts.id"), nullable=False)
+    provider_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("provider_accounts.id"), nullable=False
+    )
     kind: Mapped[str] = mapped_column(String(64), nullable=False)
     vendor: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     vault_ref_id: Mapped[str | None] = mapped_column(UUID, ForeignKey("vault_refs.id"))
     expires_at: Mapped[datetime | None] = mapped_column(UTC)
     created_at = _created()
-    __table_args__ = (UniqueConstraint("provider_id", "kind", "vendor", name="uq_verification_provider_kind"),)
+    __table_args__ = (
+        UniqueConstraint("provider_id", "kind", "vendor", name="uq_verification_provider_kind"),
+    )
 
 
 class CommissionPolicyRow(Base):
@@ -525,7 +608,9 @@ class CommissionPolicyRow(Base):
     marketplace: Mapped[str] = mapped_column(String(32), nullable=False)
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     rate: Mapped[Decimal] = mapped_column(Numeric(7, 6), nullable=False)
-    pass_through_rules: Mapped[dict[str, Any]] = mapped_column(JSON_VARIANT, nullable=False, default=dict)
+    pass_through_rules: Mapped[dict[str, Any]] = mapped_column(
+        JSON_VARIANT, nullable=False, default=dict
+    )
     effective_from: Mapped[datetime] = mapped_column(UTC, nullable=False)
     created_at = _created()
     __table_args__ = (CheckConstraint("rate >= 0 AND rate <= 1", name="ck_commission_rate"),)
@@ -542,7 +627,10 @@ class TaxRecordRow(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False)
     created_at = _created()
-    __table_args__ = (CheckConstraint("amount_minor >= 0", name="ck_tax_nonnegative"), CheckConstraint("length(currency) = 3", name="ck_tax_currency"))
+    __table_args__ = (
+        CheckConstraint("amount_minor >= 0", name="ck_tax_nonnegative"),
+        CheckConstraint("length(currency) = 3", name="ck_tax_currency"),
+    )
 
 
 class PaymentRow(Base):
@@ -557,20 +645,28 @@ class PaymentRow(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
     captured_at: Mapped[datetime | None] = mapped_column(UTC)
     created_at = _created()
-    __table_args__ = (CheckConstraint("amount_minor >= 0", name="ck_payment_nonnegative"), CheckConstraint("length(currency) = 3", name="ck_payment_currency"))
+    __table_args__ = (
+        CheckConstraint("amount_minor >= 0", name="ck_payment_nonnegative"),
+        CheckConstraint("length(currency) = 3", name="ck_payment_currency"),
+    )
 
 
 class PayoutRow(Base):
     __tablename__ = "payouts"
     id = _id()
-    provider_id: Mapped[str] = mapped_column(UUID, ForeignKey("provider_accounts.id"), nullable=False)
+    provider_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("provider_accounts.id"), nullable=False
+    )
     aggregate_ref: Mapped[str] = mapped_column(UUID, nullable=False)
     amount_minor: Mapped[int] = mapped_column(MONEY, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
     hold_until: Mapped[datetime | None] = mapped_column(UTC)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     created_at = _created()
-    __table_args__ = (CheckConstraint("amount_minor >= 0", name="ck_payout_nonnegative"), CheckConstraint("length(currency) = 3", name="ck_payout_currency"))
+    __table_args__ = (
+        CheckConstraint("amount_minor >= 0", name="ck_payout_nonnegative"),
+        CheckConstraint("length(currency) = 3", name="ck_payout_currency"),
+    )
 
 
 class RefundRow(Base):
@@ -609,8 +705,13 @@ class LedgerJournalRow(Base):
     credit_total_minor: Mapped[int] = mapped_column(MONEY, nullable=False, server_default="0")
     created_at = _created()
     __table_args__ = (
-        CheckConstraint("debit_total_minor = credit_total_minor", name="ck_ledger_journal_balanced"),
-        CheckConstraint("debit_total_minor >= 0 AND credit_total_minor >= 0", name="ck_ledger_journal_nonnegative"),
+        CheckConstraint(
+            "debit_total_minor = credit_total_minor", name="ck_ledger_journal_balanced"
+        ),
+        CheckConstraint(
+            "debit_total_minor >= 0 AND credit_total_minor >= 0",
+            name="ck_ledger_journal_nonnegative",
+        ),
         CheckConstraint("length(currency) = 3", name="ck_ledger_journal_currency"),
         Index("ix_ledger_journal_aggregate", "aggregate_ref"),
     )
@@ -619,13 +720,17 @@ class LedgerJournalRow(Base):
 class LedgerEntryRow(Base):
     __tablename__ = "ledger_entries"
     id = _id()
-    journal_id: Mapped[str] = mapped_column(UUID, ForeignKey("ledger_journals.id", ondelete="CASCADE"), nullable=False)
+    journal_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("ledger_journals.id", ondelete="CASCADE"), nullable=False
+    )
     account: Mapped[str] = mapped_column(String(255), nullable=False)
     debit_minor: Mapped[int] = mapped_column(MONEY, nullable=False, server_default="0")
     credit_minor: Mapped[int] = mapped_column(MONEY, nullable=False, server_default="0")
     created_at = _created()
     __table_args__ = (
-        CheckConstraint("debit_minor >= 0 AND credit_minor >= 0", name="ck_ledger_entry_nonnegative"),
+        CheckConstraint(
+            "debit_minor >= 0 AND credit_minor >= 0", name="ck_ledger_entry_nonnegative"
+        ),
         CheckConstraint("(debit_minor = 0) <> (credit_minor = 0)", name="ck_ledger_entry_one_side"),
         Index("ix_ledger_entries_journal", "journal_id"),
     )
@@ -640,12 +745,16 @@ class WebhookReceiptRow(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     processed_at: Mapped[datetime | None] = mapped_column(UTC)
     created_at = _created()
-    __table_args__ = (UniqueConstraint("provider", "external_event_id", name="uq_webhook_provider_event"),)
+    __table_args__ = (
+        UniqueConstraint("provider", "external_event_id", name="uq_webhook_provider_event"),
+    )
 
 
 class PanditRow(Base):
     __tablename__ = "pandits"
-    provider_id: Mapped[str] = mapped_column(UUID, ForeignKey("provider_accounts.id", ondelete="CASCADE"), primary_key=True)
+    provider_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("provider_accounts.id", ondelete="CASCADE"), primary_key=True
+    )
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
     bio: Mapped[str] = mapped_column(Text, nullable=False, default="")
     base_location_id: Mapped[str | None] = mapped_column(UUID, ForeignKey("locations.id"))
@@ -672,8 +781,12 @@ class ServiceTypeRow(Base):
 class PanditServiceRow(Base):
     __tablename__ = "pandit_services"
     id = _id()
-    pandit_id: Mapped[str] = mapped_column(UUID, ForeignKey("pandits.provider_id", ondelete="CASCADE"), nullable=False)
-    service_type_id: Mapped[str] = mapped_column(UUID, ForeignKey("service_types.id"), nullable=False)
+    pandit_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("pandits.provider_id", ondelete="CASCADE"), nullable=False
+    )
+    service_type_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("service_types.id"), nullable=False
+    )
     modes: Mapped[list[str]] = mapped_column(JSON_VARIANT, nullable=False, default=list)
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     base_price_minor: Mapped[int] = mapped_column(MONEY, nullable=False)
@@ -682,7 +795,11 @@ class PanditServiceRow(Base):
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="0")
     created_at = _created()
     updated_at = _updated()
-    __table_args__ = (CheckConstraint("duration_minutes > 0", name="ck_pandit_service_duration"), CheckConstraint("base_price_minor >= 0", name="ck_pandit_service_price"), CheckConstraint("length(currency) = 3", name="ck_pandit_service_currency"))
+    __table_args__ = (
+        CheckConstraint("duration_minutes > 0", name="ck_pandit_service_duration"),
+        CheckConstraint("base_price_minor >= 0", name="ck_pandit_service_price"),
+        CheckConstraint("length(currency) = 3", name="ck_pandit_service_currency"),
+    )
 
 
 class SamagriListRow(Base):
@@ -696,25 +813,33 @@ class SamagriListRow(Base):
     shopify_variant_id: Mapped[str | None] = mapped_column(String(255))
     created_at = _created()
     __table_args__ = (
-        CheckConstraint("festival_ref IS NOT NULL OR service_type_id IS NOT NULL", name="ck_samagri_parent"),
+        CheckConstraint(
+            "festival_ref IS NOT NULL OR service_type_id IS NOT NULL", name="ck_samagri_parent"
+        ),
         UniqueConstraint("festival_ref", "service_type_id", "item_name", name="uq_samagri_item"),
     )
 
 
 class TravelPolicyRow(Base):
     __tablename__ = "travel_policies"
-    pandit_id: Mapped[str] = mapped_column(UUID, ForeignKey("pandits.provider_id", ondelete="CASCADE"), primary_key=True)
+    pandit_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("pandits.provider_id", ondelete="CASCADE"), primary_key=True
+    )
     radius_miles: Mapped[Decimal] = mapped_column(Numeric(7, 2), nullable=False)
     fee_model: Mapped[str] = mapped_column(String(32), nullable=False)
     bands: Mapped[list[dict[str, Any]]] = mapped_column(JSON_VARIANT, nullable=False, default=list)
     pickup_required: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="0")
-    __table_args__ = (CheckConstraint("radius_miles >= 0 AND radius_miles <= 100", name="ck_travel_radius"),)
+    __table_args__ = (
+        CheckConstraint("radius_miles >= 0 AND radius_miles <= 100", name="ck_travel_radius"),
+    )
 
 
 class AvailabilityRuleRow(Base):
     __tablename__ = "availability_rules"
     id = _id()
-    pandit_id: Mapped[str] = mapped_column(UUID, ForeignKey("pandits.provider_id", ondelete="CASCADE"), nullable=False)
+    pandit_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("pandits.provider_id", ondelete="CASCADE"), nullable=False
+    )
     weekly_hours: Mapped[dict[str, Any]] = mapped_column(JSON_VARIANT, nullable=False)
     lead_time_minutes: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     buffer_minutes: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
@@ -725,11 +850,16 @@ class AvailabilityRuleRow(Base):
 class AvailabilityBlackoutRow(Base):
     __tablename__ = "availability_blackouts"
     id = _id()
-    pandit_id: Mapped[str] = mapped_column(UUID, ForeignKey("pandits.provider_id", ondelete="CASCADE"), nullable=False)
+    pandit_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("pandits.provider_id", ondelete="CASCADE"), nullable=False
+    )
     starts_at: Mapped[datetime] = mapped_column(UTC, nullable=False)
     ends_at: Mapped[datetime] = mapped_column(UTC, nullable=False)
     reason: Mapped[str | None] = mapped_column(Text)
-    __table_args__ = (CheckConstraint("ends_at > starts_at", name="ck_blackout_range"), Index("ix_blackouts_pandit_time", "pandit_id", "starts_at", "ends_at"))
+    __table_args__ = (
+        CheckConstraint("ends_at > starts_at", name="ck_blackout_range"),
+        Index("ix_blackouts_pandit_time", "pandit_id", "starts_at", "ends_at"),
+    )
 
 
 class BookingRow(Base):
@@ -757,7 +887,9 @@ class BookingRow(Base):
 class BookingEventRow(Base):
     __tablename__ = "booking_events"
     id = _id()
-    booking_id: Mapped[str] = mapped_column(UUID, ForeignKey("bookings.id", ondelete="CASCADE"), nullable=False)
+    booking_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("bookings.id", ondelete="CASCADE"), nullable=False
+    )
     from_state: Mapped[str | None] = mapped_column(String(32))
     to_state: Mapped[str] = mapped_column(String(32), nullable=False)
     actor_ref: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -769,12 +901,17 @@ class BookingEventRow(Base):
 class BookingHoldRow(Base):
     __tablename__ = "booking_holds"
     id = _id()
-    booking_id: Mapped[str] = mapped_column(UUID, ForeignKey("bookings.id", ondelete="CASCADE"), nullable=False)
+    booking_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("bookings.id", ondelete="CASCADE"), nullable=False
+    )
     slot_range: Mapped[str] = mapped_column(TimestampRange(), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(UTC, nullable=False)
     state: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
     created_at = _created()
-    __table_args__ = (UniqueConstraint("booking_id", "state", name="uq_active_booking_hold"), Index("ix_booking_holds_expiry", "state", "expires_at"))
+    __table_args__ = (
+        UniqueConstraint("booking_id", "state", name="uq_active_booking_hold"),
+        Index("ix_booking_holds_expiry", "state", "expires_at"),
+    )
 
 
 class ReviewRow(Base):
@@ -788,7 +925,10 @@ class ReviewRow(Base):
     moderation: Mapped[str] = mapped_column(String(16), nullable=False, server_default="pending")
     reveal_at: Mapped[datetime | None] = mapped_column(UTC)
     created_at = _created()
-    __table_args__ = (UniqueConstraint("booking_id", "author_role", name="uq_review_booking_side"), CheckConstraint("stars BETWEEN 1 AND 5", name="ck_review_stars"))
+    __table_args__ = (
+        UniqueConstraint("booking_id", "author_role", name="uq_review_booking_side"),
+        CheckConstraint("stars BETWEEN 1 AND 5", name="ck_review_stars"),
+    )
 
 
 class ConversationRow(Base):
@@ -804,7 +944,9 @@ class ConversationRow(Base):
 class MessageRow(Base):
     __tablename__ = "messages"
     id = _id()
-    conversation_id: Mapped[str] = mapped_column(UUID, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    conversation_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
+    )
     sender_id: Mapped[str] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     masked_body: Mapped[str] = mapped_column(Text, nullable=False)
     attachment_ref: Mapped[str | None] = mapped_column(String(512))
@@ -815,17 +957,23 @@ class MessageRow(Base):
 class VideoSessionRow(Base):
     __tablename__ = "video_sessions"
     id = _id()
-    booking_id: Mapped[str] = mapped_column(UUID, ForeignKey("bookings.id"), nullable=False, unique=True)
+    booking_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("bookings.id"), nullable=False, unique=True
+    )
     provider: Mapped[str] = mapped_column(String(64), nullable=False)
     room_ref: Mapped[str] = mapped_column(String(255), nullable=False)
-    join_log: Mapped[list[dict[str, Any]]] = mapped_column(JSON_VARIANT, nullable=False, default=list)
+    join_log: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON_VARIANT, nullable=False, default=list
+    )
     recording_ref: Mapped[str | None] = mapped_column(String(512))
     created_at = _created()
 
 
 class SellerRow(Base):
     __tablename__ = "sellers"
-    provider_id: Mapped[str] = mapped_column(UUID, ForeignKey("provider_accounts.id", ondelete="CASCADE"), primary_key=True)
+    provider_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("provider_accounts.id", ondelete="CASCADE"), primary_key=True
+    )
     shop_name: Mapped[str] = mapped_column(String(200), nullable=False)
     approval: Mapped[str] = mapped_column(String(32), nullable=False, server_default="pending")
     standing: Mapped[str] = mapped_column(String(32), nullable=False, server_default="good")
@@ -843,7 +991,12 @@ class ProductRefRow(Base):
     festival_refs: Mapped[list[str]] = mapped_column(JSON_VARIANT, nullable=False, default=list)
     product_type: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at = _created()
-    __table_args__ = (UniqueConstraint("shopify_product_id", "shopify_variant_id", name="uq_shopify_product_variant"), Index("ix_product_refs_seller", "seller_id"))
+    __table_args__ = (
+        UniqueConstraint(
+            "shopify_product_id", "shopify_variant_id", name="uq_shopify_product_variant"
+        ),
+        Index("ix_product_refs_seller", "seller_id"),
+    )
 
 
 class OrderRefRow(Base):
@@ -862,19 +1015,26 @@ class OrderRefRow(Base):
 class OrderSellerSplitRow(Base):
     __tablename__ = "order_seller_splits"
     id = _id()
-    order_id: Mapped[str] = mapped_column(UUID, ForeignKey("order_refs.id", ondelete="CASCADE"), nullable=False)
+    order_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("order_refs.id", ondelete="CASCADE"), nullable=False
+    )
     seller_id: Mapped[str] = mapped_column(UUID, ForeignKey("sellers.provider_id"), nullable=False)
     line_refs: Mapped[list[str]] = mapped_column(JSON_VARIANT, nullable=False, default=list)
     commission_minor: Mapped[int] = mapped_column(MONEY, nullable=False)
     payout_status: Mapped[str] = mapped_column(String(32), nullable=False)
     created_at = _created()
-    __table_args__ = (UniqueConstraint("order_id", "seller_id", name="uq_order_seller_split"), CheckConstraint("commission_minor >= 0", name="ck_split_commission"))
+    __table_args__ = (
+        UniqueConstraint("order_id", "seller_id", name="uq_order_seller_split"),
+        CheckConstraint("commission_minor >= 0", name="ck_split_commission"),
+    )
 
 
 class FulfillmentRow(Base):
     __tablename__ = "fulfillments"
     id = _id()
-    split_id: Mapped[str] = mapped_column(UUID, ForeignKey("order_seller_splits.id", ondelete="CASCADE"), nullable=False)
+    split_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("order_seller_splits.id", ondelete="CASCADE"), nullable=False
+    )
     carrier: Mapped[str | None] = mapped_column(String(64))
     tracking: Mapped[str | None] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -904,17 +1064,24 @@ class ProductReviewRow(Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     moderation: Mapped[str] = mapped_column(String(16), nullable=False, server_default="pending")
     created_at = _created()
-    __table_args__ = (UniqueConstraint("product_id", "buyer_id", "order_ref_id", name="uq_product_review_purchase"), CheckConstraint("stars BETWEEN 1 AND 5", name="ck_product_review_stars"))
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id", "buyer_id", "order_ref_id", name="uq_product_review_purchase"
+        ),
+        CheckConstraint("stars BETWEEN 1 AND 5", name="ck_product_review_stars"),
+    )
 
 
 # SQLite has no range/exclusion constraint.  PostgreSQL derives the authoritative
 # range from the UTC start/end instants before applying the active-slot exclusion;
 # the starts/ends check and overlap triggers remain portable and are exercised by
 # the local model tests.
+# SQLAlchemy's DDL constructor has no typed signature; every statement below is a str.
+_ddl = cast(Callable[[str], DDL], DDL)
 event.listen(
     BookingRow.__table__,
     "after_create",
-    DDL(
+    _ddl(
         """
         CREATE OR REPLACE FUNCTION set_booking_slot_range() RETURNS trigger
         LANGUAGE plpgsql AS $$
@@ -929,7 +1096,7 @@ event.listen(
 event.listen(
     BookingRow.__table__,
     "after_create",
-    DDL(
+    _ddl(
         """
         CREATE TRIGGER set_booking_slot_range_before_write
         BEFORE INSERT OR UPDATE OF starts_at, ends_at ON bookings
@@ -940,7 +1107,7 @@ event.listen(
 event.listen(
     BookingRow.__table__,
     "after_create",
-    DDL(
+    _ddl(
         "ALTER TABLE bookings ADD CONSTRAINT ex_bookings_pandit_slot "
         "EXCLUDE USING gist (pandit_id WITH =, slot_range WITH &&) "
         "WHERE (state IN ('requested','confirmed','reschedule_pending','in_progress'))"
@@ -949,7 +1116,7 @@ event.listen(
 event.listen(
     BookingRow.__table__,
     "after_create",
-    DDL(
+    _ddl(
         "CREATE TRIGGER prevent_booking_overlap_insert "
         "BEFORE INSERT ON bookings "
         "WHEN NEW.state IN ('requested','confirmed','reschedule_pending','in_progress') "
@@ -962,7 +1129,7 @@ event.listen(
 event.listen(
     BookingRow.__table__,
     "after_create",
-    DDL(
+    _ddl(
         "CREATE TRIGGER prevent_booking_overlap_update "
         "BEFORE UPDATE OF pandit_id, starts_at, ends_at, state ON bookings "
         "WHEN NEW.state IN ('requested','confirmed','reschedule_pending','in_progress') "

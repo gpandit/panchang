@@ -67,10 +67,16 @@ async def test_outbox_claimability_and_idempotency_replay() -> None:
         assert await outbox.mark_published(event.id)
 
         idempotency = IdempotencyRepository(session)
-        first = await idempotency.begin(scope="booking:create", key="request-1", request_hash="hash-a")
+        first = await idempotency.begin(
+            scope="booking:create", key="request-1", request_hash="hash-a"
+        )
         assert not first.replayed
-        await idempotency.complete(first.record, response_ref="object://response-1", response_status=201)
-        replay = await idempotency.begin(scope="booking:create", key="request-1", request_hash="hash-a")
+        await idempotency.complete(
+            first.record, response_ref="object://response-1", response_status=201
+        )
+        replay = await idempotency.begin(
+            scope="booking:create", key="request-1", request_hash="hash-a"
+        )
         assert replay.replayed
         assert replay.record.response_ref == "object://response-1"
         await session.commit()
@@ -90,7 +96,10 @@ def test_vault_returns_opaque_reference_and_audits_scoped_reads() -> None:
     )
     assert "sensitive" not in repr(reference)
     assert "date_of_birth" not in str(reference.as_dict())
-    assert vault.read(reference, actor_ref="pandit-1", purpose="booking.address", subject_id="user-1") == raw
+    assert (
+        vault.read(reference, actor_ref="pandit-1", purpose="booking.address", subject_id="user-1")
+        == raw
+    )
     assert audit.records[0].actor_ref == "pandit-1"
     assert audit.records[0].purpose == "booking.address"
     with pytest.raises(VaultAccessDenied):

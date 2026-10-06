@@ -66,15 +66,11 @@ def _async_url(url: str) -> str:
     if driver.startswith("sqlite"):
         # Do not concatenate driver names (``sqlite+pysqlite`` would otherwise
         # become the invalid ``sqlite+aiosqlite+pysqlite``).
-        return parsed.set(drivername="sqlite+aiosqlite").render_as_string(
-            hide_password=False
-        )
+        return parsed.set(drivername="sqlite+aiosqlite").render_as_string(hide_password=False)
     if driver in {"postgres", "postgresql", "postgresql+asyncpg", "postgresql+psycopg2"}:
         # psycopg3 exposes both the synchronous and asynchronous SQLAlchemy
         # dialects, so one configured DSN works for both engine factories.
-        return parsed.set(drivername="postgresql+psycopg").render_as_string(
-            hide_password=False
-        )
+        return parsed.set(drivername="postgresql+psycopg").render_as_string(hide_password=False)
     return url
 
 
@@ -90,9 +86,7 @@ def _sync_url(url: str) -> str:
     parsed = make_url(url)
     driver = parsed.drivername
     if driver == "postgres" or driver in {"postgresql+asyncpg", "postgresql+psycopg2"}:
-        return parsed.set(drivername="postgresql+psycopg").render_as_string(
-            hide_password=False
-        )
+        return parsed.set(drivername="postgresql+psycopg").render_as_string(hide_password=False)
     if driver == "sqlite+aiosqlite":
         return parsed.set(drivername="sqlite").render_as_string(hide_password=False)
     return url

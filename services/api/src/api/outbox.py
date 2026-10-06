@@ -9,16 +9,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import cast
 from uuid import uuid4
 
 from sqlalchemy import select, update
+from sqlalchemy.engine import CursorResult
 
 from api.db.repository import Repository
 from api.db.v3_models import IdempotencyKeyRow, OutboxEventRow
 
 
-class IdempotencyConflict(ValueError):
+class IdempotencyConflictError(ValueError):
     """The same scoped key was submitted for a different request."""
+
+
+# Preserve the published exception name for existing callers.
+IdempotencyConflict = IdempotencyConflictError
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,10 +171,13 @@ class OutboxRepository(Repository[OutboxEventRow]):
         return rows
 
     async def mark_published(self, event_id: str, *, processed_at: datetime | None = None) -> bool:
-        result = await self.session.execute(
-            update(OutboxEventRow)
-            .where(OutboxEventRow.id == event_id, OutboxEventRow.state == "claimed")
-            .values(state="published", processed_at=_now(processed_at), last_error=None)
+        result = cast(
+            CursorResult[object],
+            await self.session.execute(
+                update(OutboxEventRow)
+                .where(OutboxEventRow.id == event_id, OutboxEventRow.state == "claimed")
+                .values(state="published", processed_at=_now(processed_at), last_error=None)
+            ),
         )
         await self.session.flush()
         return result.rowcount == 1
@@ -186,7 +195,9 @@ class OutboxRepository(Repository[OutboxEventRow]):
             return False
         row.state = "dead_letter" if row.attempts >= max_attempts else "failed"
         row.last_error = error_ref
-        row.available_at = retry_at or (_now() + timedelta(seconds=min(300, 2 ** min(row.attempts, 8))))
+        row.available_at = retry_at or (
+            _now() + timedelta(seconds=min(300, 2 ** min(row.attempts, 8)))
+        )
         row.claimed_by = None
         await self.session.flush()
         return True
@@ -194,6 +205,7 @@ class OutboxRepository(Repository[OutboxEventRow]):
 
 __all__ = [
     "IdempotencyConflict",
+    "IdempotencyConflictError",
     "IdempotencyRepository",
     "IdempotencyResult",
     "OutboxRepository",

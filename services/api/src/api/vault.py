@@ -19,8 +19,12 @@ from sqlalchemy.orm import Session
 from api.db.v3_models import VaultAccessLogRow
 
 
-class VaultAccessDenied(PermissionError):
+class VaultAccessDeniedError(PermissionError):
     """A reference was read outside its declared purpose/scope."""
+
+
+# Preserve the published exception name for existing callers.
+VaultAccessDenied = VaultAccessDeniedError
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,6 +197,7 @@ __all__ = [
     "InMemoryVaultAccessLog",
     "SqlAlchemyVaultAccessLogSink",
     "VaultAccessDenied",
+    "VaultAccessDeniedError",
     "VaultAccessLogSink",
     "VaultAccessRecord",
     "VaultPort",

@@ -9,14 +9,14 @@ from __future__ import annotations
 
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy.engine import Connection
 
+from alembic import context
 from api.db import Base, get_engine
-from api.db.session import _sync_url
 
 # Import models for their side effect of registering tables on Base.metadata.
 from api.db import models as _models  # noqa: F401
+from api.db.session import _sync_url
 
 config = context.config
 

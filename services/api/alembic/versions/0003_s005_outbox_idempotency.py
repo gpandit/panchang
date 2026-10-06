@@ -15,7 +15,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from alembic import op
-
 from api.db import Base
 from api.db import models as _models  # noqa: F401  # register metadata tables
 

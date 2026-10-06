@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).parents[3]
 INVENTORY = ROOT / "docs" / "openapi-v1-reconciliation.json"
 
@@ -38,9 +37,7 @@ def test_inventory_matches_registered_public_v1_routes() -> None:
     from api.main import app
 
     inventory = json.loads(INVENTORY.read_text())
-    documented = {
-        (item["path"], item["method"]) for item in inventory["runtime_operations"]
-    }
+    documented = {(item["path"], item["method"]) for item in inventory["runtime_operations"]}
     registered = {
         (route.path, method)
         for route in app.routes

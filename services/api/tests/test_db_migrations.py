@@ -11,10 +11,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
 
+from alembic import command
 
 API_ROOT = Path(__file__).parents[1]
 
@@ -53,9 +53,7 @@ def test_alembic_upgrade_head_on_isolated_database(tmp_path: Path) -> None:
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM temples")).scalar_one() == 1
             assert (
-                connection.execute(
-                    text("SELECT COUNT(*) FROM temple_admin_accounts")
-                ).scalar_one()
+                connection.execute(text("SELECT COUNT(*) FROM temple_admin_accounts")).scalar_one()
                 == 1
             )
     finally:

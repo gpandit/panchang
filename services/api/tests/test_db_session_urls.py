@@ -23,7 +23,4 @@ def test_async_and_sync_url_normalize_postgres_drivers() -> None:
         _async_url("postgresql+psycopg2://pandit:example-password@localhost:5432/pandit_dev")
         == expected
     )
-    assert (
-        _sync_url("postgres://pandit:example-password@localhost:5432/pandit_dev")
-        == expected
-    )
+    assert _sync_url("postgres://pandit:example-password@localhost:5432/pandit_dev") == expected
