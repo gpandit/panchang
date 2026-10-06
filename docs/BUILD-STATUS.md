@@ -14,7 +14,7 @@ vendor, and commercial-licence gates remain explicit until verified.
 | S0-03 SQLAlchemy async/PostgreSQL foundation | done | Driver normalization, injectable Alembic seam, isolated migration smoke test, and URL coverage reviewed; live Postgres/PostGIS integration remains an external gate. |
 | S0-04 v3 data-model migrations | done | Additive revision `0002_v3_data_model` registers 56 tables with local privacy, uniqueness, money, ledger, and booking-overlap checks; live Postgres/PostGIS migration remains an external gate. |
 | S0-05 outbox/idempotency/Vault interfaces | done | Revision `0003_s005_outbox_idempotency`, opaque event refs, scoped replay guards, deterministic Vault fake, and payload-free access logging reviewed; workers/external Vault remain later gates. |
-| S0-06 contract and authority checks | in-progress | `python3 tools/check_contract_authority.py` and `python3 -m unittest tools.test_contract_authority -v` passed (7 tests); CI wiring and generated-contract guard remain. |
+| S0-06 contract and authority checks | done | Offline checker and 7 unit tests pass and run in Python CI; runtime-route inventory drift is guarded. Generated-client drift is deferred until S0-02 target/runtime convergence, not claimed complete. |
 
 Resumable progress manifest for the build defined in [`dev-plan-marketplace.md`](dev-plan-marketplace.md).
 Architecture context: [`architecture-marketplace.md`](architecture-marketplace.md).
