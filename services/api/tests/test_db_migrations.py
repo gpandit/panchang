@@ -36,7 +36,18 @@ def test_alembic_upgrade_head_on_isolated_database(tmp_path: Path) -> None:
             command.upgrade(config, "head")
 
         tables = set(inspect(engine).get_table_names())
-        assert {"alembic_version", "temples", "temple_admin_accounts"} <= tables
+        assert {
+            "alembic_version",
+            "temples",
+            "temple_admin_accounts",
+            "users",
+            "panchang_days",
+            "reminders",
+            "provider_accounts",
+            "ledger_journals",
+            "bookings",
+            "order_refs",
+        } <= tables
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM temples")).scalar_one() == 1
             assert (

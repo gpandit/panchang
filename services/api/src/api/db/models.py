@@ -42,3 +42,8 @@ class TempleAdminRow(Base):
         String, ForeignKey("temples.id", ondelete="CASCADE"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+# Import v3 models after the legacy temple models so Alembic sees one complete
+# metadata graph while existing temple callers keep their historical classes.
+from api.db.v3_models import *  # noqa: E402,F401,F403
