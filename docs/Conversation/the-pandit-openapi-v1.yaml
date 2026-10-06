@@ -1,0 +1,7270 @@
+openapi: 3.1.0
+info:
+  title: The Pandit API
+  version: 1.0.0-skeleton
+  description: 'Public API contract for The Pandit — Panchang platform plus Pandit Services (Addendum A) and Pooja Items (Addendum
+    B) marketplaces.
+
+
+    Conventions: all instants are UTC ISO-8601; every Panchang interval also carries localOffsetMinutes and hoursFromSunrise
+    (24-plus). Money is in minor units. Cursor pagination. Entitlement tier per operation is declared in x-entitlement and
+    enforced at the gateway (403 + requiredTier). Money operations declare their rail in x-payment-rail; rails are never mixed.
+    Clients never compute Panchang or prices.'
+  contact:
+    name: Aqualeo — The Pandit
+servers:
+- url: https://api.thepandit.app
+  description: Production
+- url: https://api.staging.thepandit.app
+  description: Staging
+security:
+- bearerAuth: []
+tags:
+- name: Auth
+- name: Users
+- name: Panchang
+- name: Calendar
+- name: Festivals
+- name: Vrats
+- name: Muhurat
+- name: Planner
+- name: Notes
+- name: Bookmarks
+- name: Reminders
+- name: Family
+- name: Journal
+- name: PrintCalendar
+- name: Search
+- name: AI
+- name: Content
+- name: Share
+- name: Subscriptions
+- name: Pandits
+- name: Bookings
+- name: Disputes
+- name: Reviews
+- name: Video
+- name: Messaging
+- name: Provider
+- name: Shop
+- name: Notifications
+- name: Admin
+- name: Webhooks
+- name: Internal
+paths:
+  /v1/auth/oidc/{provider}:
+    post:
+      tags:
+      - Auth
+      summary: Exchange OIDC token
+      operationId: exchange_oidc_token
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: provider
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+          - google
+          - apple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OidcExchange'
+      security: []
+  /v1/auth/otp/request:
+    post:
+      tags:
+      - Auth
+      summary: Request OTP
+      operationId: request_otp
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpRequest'
+      security: []
+  /v1/auth/otp/verify:
+    post:
+      tags:
+      - Auth
+      summary: Verify OTP
+      operationId: verify_otp
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerify'
+      security: []
+  /v1/auth/guest:
+    post:
+      tags:
+      - Auth
+      summary: Create guest session
+      operationId: create_guest_session
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security: []
+  /v1/auth/refresh:
+    post:
+      tags:
+      - Auth
+      summary: Refresh token
+      operationId: refresh_token
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      security: []
+  /v1/me:
+    get:
+      tags:
+      - Users
+      summary: Get my profile
+      operationId: get_my_profile
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags:
+      - Users
+      summary: Update my profile
+      operationId: update_my_profile
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+    delete:
+      tags:
+      - Users
+      summary: Delete my account GDPR
+      operationId: delete_my_account_gdpr
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/me/export:
+    post:
+      tags:
+      - Users
+      summary: Request data export GDPR
+      operationId: request_data_export_gdpr
+      responses:
+        '202':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/me/vault/birth-details:
+    put:
+      tags:
+      - Users
+      summary: Set my birth details Vault
+      operationId: set_my_birth_details_vault
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BirthDetails'
+    delete:
+      tags:
+      - Users
+      summary: Delete my birth details
+      operationId: delete_my_birth_details
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/me/locations:
+    get:
+      tags:
+      - Users
+      summary: List saved locations
+      operationId: list_saved_locations
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - Users
+      summary: Add saved location
+      operationId: add_saved_location
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationCreate'
+  /v1/me/locations/{locationId}:
+    delete:
+      tags:
+      - Users
+      summary: Remove saved location
+      operationId: remove_saved_location
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: locationId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/me/devices:
+    post:
+      tags:
+      - Users
+      summary: Register push device token
+      operationId: register_push_device_token
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceToken'
+  /v1/me/notification-preferences:
+    get:
+      tags:
+      - Users
+      summary: Get notification preferences
+      operationId: get_notification_preferences
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPrefs'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    put:
+      tags:
+      - Users
+      summary: Update notification preferences
+      operationId: update_notification_preferences
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPrefs'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPrefs'
+  /v1/panchang/day:
+    get:
+      tags:
+      - Panchang
+      summary: Get Panchang for a day
+      operationId: get_panchang_for_a_day
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanchangDay'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - &id001
+        name: lat
+        in: query
+        required: false
+        schema:
+          type: number
+      - &id002
+        name: lon
+        in: query
+        required: false
+        schema:
+          type: number
+      - &id003
+        name: tz
+        in: query
+        required: false
+        schema:
+          type: string
+      - &id004
+        name: ayanamsa
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - lahiri
+          - raman
+          - kp
+          - true_chitra
+      - &id005
+        name: scheme
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - amanta
+          - purnimanta
+  /v1/panchang/range:
+    get:
+      tags:
+      - Panchang
+      summary: Get Panchang for a date range max 31 days
+      operationId: get_panchang_for_a_date_range_max_31_days
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanchangDayList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/calendar/month:
+    get:
+      tags:
+      - Calendar
+      summary: Get assembled month view
+      operationId: get_assembled_month_view
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthView'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: month
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: region
+        in: query
+        required: false
+        schema:
+          type: string
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/calendar/week:
+    get:
+      tags:
+      - Calendar
+      summary: Get assembled week view
+      operationId: get_assembled_week_view
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeekView'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: start
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/calendar/year:
+    get:
+      tags:
+      - Calendar
+      summary: Get year overview
+      operationId: get_year_overview
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YearView'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      parameters:
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/calendar/bundle:
+    get:
+      tags:
+      - Calendar
+      summary: Get offline month bundle 12 to 15 months
+      operationId: get_offline_month_bundle_12_to_15_months
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarBundle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      parameters:
+      - name: startMonth
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: months
+        in: query
+        required: false
+        schema:
+          type: integer
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/calendar/highlights/today:
+    get:
+      tags:
+      - Calendar
+      summary: Todays highlights card
+      operationId: todays_highlights_card
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HighlightsCard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/festivals:
+    get:
+      tags:
+      - Festivals
+      summary: List festivals with next occurrence
+      operationId: list_festivals_with_next_occurrence
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FestivalList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: region
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/festivals/{festivalId}:
+    get:
+      tags:
+      - Festivals
+      summary: Festival detail page
+      operationId: festival_detail_page
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FestivalDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: festivalId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: locale
+        in: query
+        required: false
+        schema:
+          type: string
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/festivals/{festivalId}/occurrences:
+    get:
+      tags:
+      - Festivals
+      summary: Resolved occurrences for a festival
+      operationId: resolved_occurrences_for_a_festival
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccurrenceList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: festivalId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: fromYear
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: toYear
+        in: query
+        required: false
+        schema:
+          type: integer
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/festivals/{festivalId}/samagri:
+    get:
+      tags:
+      - Festivals
+      summary: Puja samagri checklist
+      operationId: puja_samagri_checklist
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamagriList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: gold
+      parameters:
+      - name: festivalId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: region
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/festivals/{festivalId}/preparation:
+    get:
+      tags:
+      - Festivals
+      summary: Preparation timeline
+      operationId: preparation_timeline
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreparationTimeline'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      parameters:
+      - name: festivalId
+        in: path
+        required: true
+        schema:
+          type: string
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/vrats:
+    get:
+      tags:
+      - Vrats
+      summary: List trackable vrats
+      operationId: list_trackable_vrats
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VratList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+  /v1/me/vrat-records:
+    get:
+      tags:
+      - Vrats
+      summary: My vrat records
+      operationId: my_vrat_records
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VratRecordList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+    post:
+      tags:
+      - Vrats
+      summary: Create vrat record
+      operationId: create_vrat_record
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VratRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VratRecordCreate'
+  /v1/me/vrat-records/{recordId}:
+    patch:
+      tags:
+      - Vrats
+      summary: Update vrat record status
+      operationId: update_vrat_record_status
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VratRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      parameters:
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VratRecordUpdate'
+  /v1/muhurat/search:
+    post:
+      tags:
+      - Muhurat
+      summary: Find auspicious windows
+      operationId: find_auspicious_windows
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MuhuratResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MuhuratQuery'
+  /v1/muhurat/event-types:
+    get:
+      tags:
+      - Muhurat
+      summary: List event types
+      operationId: list_event_types
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventTypeList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/planner/daily:
+    get:
+      tags:
+      - Planner
+      summary: Daily spiritual planner
+      operationId: daily_spiritual_planner
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyPlan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/planner/monthly:
+    get:
+      tags:
+      - Planner
+      summary: Monthly spiritual planner
+      operationId: monthly_spiritual_planner
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyPlan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: gold
+      parameters:
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: month
+        in: query
+        required: false
+        schema:
+          type: integer
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/planner/annual:
+    get:
+      tags:
+      - Planner
+      summary: Annual Hindu planner
+      operationId: annual_hindu_planner
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnualPlan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: gold
+      parameters:
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/me/notes:
+    get:
+      tags:
+      - Notes
+      summary: List notes
+      operationId: list_notes
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - Notes
+      summary: Create note
+      operationId: create_note
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteCreate'
+  /v1/me/notes/{noteId}:
+    patch:
+      tags:
+      - Notes
+      summary: Update note
+      operationId: update_note
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteCreate'
+    delete:
+      tags:
+      - Notes
+      summary: Delete note
+      operationId: delete_note
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: noteId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/me/bookmarks:
+    get:
+      tags:
+      - Bookmarks
+      summary: List bookmarks
+      operationId: list_bookmarks
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookmarkList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - Bookmarks
+      summary: Create bookmark
+      operationId: create_bookmark
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bookmark'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookmarkCreate'
+  /v1/me/bookmarks/{bookmarkId}:
+    delete:
+      tags:
+      - Bookmarks
+      summary: Delete bookmark
+      operationId: delete_bookmark
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookmarkId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/me/reminders:
+    get:
+      tags:
+      - Reminders
+      summary: List reminders
+      operationId: list_reminders
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - Reminders
+      summary: Create reminder Gregorian or Tithi recurrence
+      operationId: create_reminder_gregorian_or_tithi_recurrence
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderCreate'
+  /v1/me/reminders/{reminderId}:
+    patch:
+      tags:
+      - Reminders
+      summary: Update reminder
+      operationId: update_reminder
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: reminderId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderCreate'
+    delete:
+      tags:
+      - Reminders
+      summary: Delete reminder
+      operationId: delete_reminder
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: reminderId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/me/reminders/{reminderId}/resolved:
+    get:
+      tags:
+      - Reminders
+      summary: Preview resolved fire times
+      operationId: preview_resolved_fire_times
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FireTimeList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: reminderId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: months
+        in: query
+        required: false
+        schema:
+          type: integer
+  /v1/me/family:
+    get:
+      tags:
+      - Family
+      summary: List family members
+      operationId: list_family_members
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMemberList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+    post:
+      tags:
+      - Family
+      summary: Add family member
+      operationId: add_family_member
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyMemberCreate'
+  /v1/me/family/{memberId}:
+    patch:
+      tags:
+      - Family
+      summary: Update family member
+      operationId: update_family_member
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FamilyMemberCreate'
+    delete:
+      tags:
+      - Family
+      summary: Remove family member
+      operationId: remove_family_member
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      parameters:
+      - name: memberId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/me/family/calendar:
+    get:
+      tags:
+      - Family
+      summary: Family calendar merged
+      operationId: family_calendar_merged
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthView'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      parameters:
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: month
+        in: query
+        required: false
+        schema:
+          type: integer
+  /v1/me/journal:
+    get:
+      tags:
+      - Journal
+      summary: Sankalp journal entries
+      operationId: sankalp_journal_entries
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JournalEntryList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: gold
+    post:
+      tags:
+      - Journal
+      summary: Create journal entry
+      operationId: create_journal_entry
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JournalEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: gold
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JournalEntryCreate'
+  /v1/me/japa:
+    get:
+      tags:
+      - Journal
+      summary: Japa tracker state
+      operationId: japa_tracker_state
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JapaState'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+    post:
+      tags:
+      - Journal
+      summary: Record japa count
+      operationId: record_japa_count
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JapaState'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JapaIncrement'
+  /v1/calendar-jobs:
+    post:
+      tags:
+      - PrintCalendar
+      summary: Request printable calendar generation
+      operationId: request_printable_calendar_generation
+      responses:
+        '202':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarJobCreate'
+    get:
+      tags:
+      - PrintCalendar
+      summary: List my calendar jobs
+      operationId: list_my_calendar_jobs
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/calendar-jobs/{jobId}:
+    get:
+      tags:
+      - PrintCalendar
+      summary: Get job status and signed URL
+      operationId: get_job_status_and_signed_url
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/calendar-templates:
+    get:
+      tags:
+      - PrintCalendar
+      summary: List calendar templates
+      operationId: list_calendar_templates
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/search:
+    get:
+      tags:
+      - Search
+      summary: Global search incl smart queries
+      operationId: global_search_incl_smart_queries
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: locale
+        in: query
+        required: false
+        schema:
+          type: string
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/ask:
+    post:
+      tags:
+      - AI
+      summary: Ask The Pandit grounded and disclaimered
+      operationId: ask_the_pandit_grounded_and_disclaimered
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: gold
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskRequest'
+  /v1/content/explain/{term}:
+    get:
+      tags:
+      - Content
+      summary: Explanation of a Panchang term
+      operationId: explanation_of_a_panchang_term
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: term
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: locale
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/content/daily-card:
+    get:
+      tags:
+      - Content
+      summary: Daily dharma card
+      operationId: daily_dharma_card
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DharmaCard'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - *id001
+      - *id002
+      - *id003
+      - *id004
+      - *id005
+  /v1/content/mantras:
+    get:
+      tags:
+      - Content
+      summary: List mantras
+      operationId: list_mantras
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: deity
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: locale
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/share/day:
+    post:
+      tags:
+      - Share
+      summary: Render shareable day image
+      operationId: render_shareable_day_image
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedUrl'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareRequest'
+  /v1/export/ical:
+    get:
+      tags:
+      - Share
+      summary: Export reminders or festivals as iCal
+      operationId: export_reminders_or_festivals_as_ical
+      responses:
+        '200':
+          description: Ok
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      parameters:
+      - name: scope
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - festivals
+          - reminders
+          - family
+  /v1/subscription:
+    get:
+      tags:
+      - Subscriptions
+      summary: Get my subscription and entitlements
+      operationId: get_my_subscription_and_entitlements
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/subscription/receipts/apple:
+    post:
+      tags:
+      - Subscriptions
+      summary: Submit Apple IAP receipt
+      operationId: submit_apple_iap_receipt
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-payment-rail: iap
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceiptSubmit'
+  /v1/subscription/receipts/google:
+    post:
+      tags:
+      - Subscriptions
+      summary: Submit Google Play purchase token
+      operationId: submit_google_play_purchase_token
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-payment-rail: play
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceiptSubmit'
+  /v1/subscription/checkout-session:
+    post:
+      tags:
+      - Subscriptions
+      summary: Create Stripe web checkout for subscription
+      operationId: create_stripe_web_checkout_for_subscription
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-payment-rail: stripe_web
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanSelect'
+  /v1/subscription/promo:
+    post:
+      tags:
+      - Subscriptions
+      summary: Apply promo code
+      operationId: apply_promo_code
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoApply'
+  /v1/pandits/search:
+    get:
+      tags:
+      - Pandits
+      summary: Search pandits explainable ranking
+      operationId: search_pandits_explainable_ranking
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditSearchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: serviceTypeId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: lat
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: lon
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: mode
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - in_person
+          - remote
+          - both
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: language
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: tradition
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: priceMax
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - recommended
+          - price
+          - rating
+          - distance
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/pandits/{panditId}:
+    get:
+      tags:
+      - Pandits
+      summary: Pandit public profile
+      operationId: pandit_public_profile
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: panditId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/pandits/{panditId}/availability:
+    get:
+      tags:
+      - Pandits
+      summary: Available slots
+      operationId: available_slots
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: panditId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: serviceId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: tz
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/pandits/{panditId}/reviews:
+    get:
+      tags:
+      - Pandits
+      summary: Public reviews
+      operationId: public_reviews
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: panditId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/service-types:
+    get:
+      tags:
+      - Pandits
+      summary: Service taxonomy linked to festivals and muhurat events
+      operationId: service_taxonomy_linked_to_festivals_and_muhurat_events
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceTypeList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: festivalId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: muhuratEventType
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/quotes:
+    post:
+      tags:
+      - Bookings
+      summary: Get itemised quote with policy snapshot
+      operationId: get_itemised_quote_with_policy_snapshot
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+  /v1/bookings:
+    post:
+      tags:
+      - Bookings
+      summary: Create booking atomic slot plus PaymentIntent
+      operationId: create_booking_atomic_slot_plus_paymentintent
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      x-payment-rail: stripe_connect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+    get:
+      tags:
+      - Bookings
+      summary: List my bookings
+      operationId: list_my_bookings
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: role
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - patron
+          - pandit
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/bookings/{bookingId}:
+    get:
+      tags:
+      - Bookings
+      summary: Get booking
+      operationId: get_booking
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/bookings/{bookingId}/events:
+    get:
+      tags:
+      - Bookings
+      summary: Booking event history
+      operationId: booking_event_history
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingEventList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/bookings/{bookingId}/accept:
+    post:
+      tags:
+      - Bookings
+      summary: Pandit accepts and captures payment
+      operationId: pandit_accepts_and_captures_payment
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-payment-rail: stripe_connect
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/bookings/{bookingId}/decline:
+    post:
+      tags:
+      - Bookings
+      summary: Pandit declines and releases authorisation
+      operationId: pandit_declines_and_releases_authorisation
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-payment-rail: stripe_connect
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonBody'
+  /v1/bookings/{bookingId}/reschedule:
+    post:
+      tags:
+      - Bookings
+      summary: Propose reschedule
+      operationId: propose_reschedule
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RescheduleProposal'
+  /v1/bookings/{bookingId}/reschedule/respond:
+    post:
+      tags:
+      - Bookings
+      summary: Accept or reject reschedule
+      operationId: accept_or_reject_reschedule
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RescheduleResponse'
+  /v1/bookings/{bookingId}/cancel:
+    post:
+      tags:
+      - Bookings
+      summary: Cancel with refund per policy snapshot
+      operationId: cancel_with_refund_per_policy_snapshot
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-payment-rail: stripe_connect
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonBody'
+  /v1/bookings/{bookingId}/check-in:
+    post:
+      tags:
+      - Bookings
+      summary: Check in at start of ceremony
+      operationId: check_in_at_start_of_ceremony
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/bookings/{bookingId}/complete:
+    post:
+      tags:
+      - Bookings
+      summary: Mark completed
+      operationId: mark_completed
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/bookings/{bookingId}/no-show:
+    post:
+      tags:
+      - Bookings
+      summary: Report no show
+      operationId: report_no_show
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonBody'
+  /v1/bookings/{bookingId}/address:
+    get:
+      tags:
+      - Bookings
+      summary: Ceremony address for pandit after paid confirmation
+      operationId: ceremony_address_for_pandit_after_paid_confirmation
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/bookings/{bookingId}/dispute:
+    post:
+      tags:
+      - Disputes
+      summary: Open booking dispute freezes payout
+      operationId: open_booking_dispute_freezes_payout
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeOpen'
+  /v1/bookings/{bookingId}/review:
+    post:
+      tags:
+      - Reviews
+      summary: Submit review two way delayed reveal
+      operationId: submit_review_two_way_delayed_reveal
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate'
+  /v1/bookings/{bookingId}/video/token:
+    post:
+      tags:
+      - Video
+      summary: Get video session join token
+      operationId: get_video_session_join_token
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoToken'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/bookings/{bookingId}/video/consent:
+    post:
+      tags:
+      - Video
+      summary: Record recording consent
+      operationId: record_recording_consent
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentBody'
+  /v1/disputes/{disputeId}:
+    get:
+      tags:
+      - Disputes
+      summary: Get dispute
+      operationId: get_dispute
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: disputeId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/disputes/{disputeId}/evidence:
+    post:
+      tags:
+      - Disputes
+      summary: Upload evidence
+      operationId: upload_evidence
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: disputeId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvidenceCreate'
+  /v1/conversations:
+    get:
+      tags:
+      - Messaging
+      summary: List my conversations
+      operationId: list_my_conversations
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - Messaging
+      summary: Start pre booking enquiry rate limited
+      operationId: start_pre_booking_enquiry_rate_limited
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-entitlement: silver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationCreate'
+  /v1/conversations/{conversationId}/messages:
+    get:
+      tags:
+      - Messaging
+      summary: List messages
+      operationId: list_messages
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+    post:
+      tags:
+      - Messaging
+      summary: Send message PII masked
+      operationId: send_message_pii_masked
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageCreate'
+  /v1/conversations/{conversationId}/report:
+    post:
+      tags:
+      - Messaging
+      summary: Report conversation
+      operationId: report_conversation
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: conversationId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonBody'
+  /v1/provider/apply:
+    post:
+      tags:
+      - Provider
+      summary: Apply as pandit or seller
+      operationId: apply_as_pandit_or_seller
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderApplication'
+  /v1/provider/me:
+    get:
+      tags:
+      - Provider
+      summary: My provider account
+      operationId: my_provider_account
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags:
+      - Provider
+      summary: Update provider account
+      operationId: update_provider_account
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderUpdate'
+  /v1/provider/onboarding/stripe-link:
+    post:
+      tags:
+      - Provider
+      summary: Create Stripe Connect onboarding link
+      operationId: create_stripe_connect_onboarding_link
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/provider/verification/session:
+    post:
+      tags:
+      - Provider
+      summary: Start KYC session
+      operationId: start_kyc_session
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/provider/verification:
+    get:
+      tags:
+      - Provider
+      summary: Verification status
+      operationId: verification_status
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/provider/legal/accept:
+    post:
+      tags:
+      - Provider
+      summary: Accept provider agreement version
+      operationId: accept_provider_agreement_version
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegalAccept'
+  /v1/provider/pandit/profile:
+    get:
+      tags:
+      - Provider
+      summary: My pandit profile
+      operationId: my_pandit_profile
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    put:
+      tags:
+      - Provider
+      summary: Update pandit profile
+      operationId: update_pandit_profile
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PanditProfileUpdate'
+  /v1/provider/pandit/services:
+    get:
+      tags:
+      - Provider
+      summary: My services
+      operationId: my_services
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditServiceList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - Provider
+      summary: Add service
+      operationId: add_service
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditService'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PanditServiceCreate'
+  /v1/provider/pandit/services/{serviceId}:
+    patch:
+      tags:
+      - Provider
+      summary: Update service
+      operationId: update_service
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanditService'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PanditServiceCreate'
+    delete:
+      tags:
+      - Provider
+      summary: Remove service
+      operationId: remove_service
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: serviceId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/provider/pandit/travel-policy:
+    put:
+      tags:
+      - Provider
+      summary: Set travel policy
+      operationId: set_travel_policy
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TravelPolicy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TravelPolicy'
+  /v1/provider/pandit/availability:
+    get:
+      tags:
+      - Provider
+      summary: Get availability
+      operationId: get_availability
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    put:
+      tags:
+      - Provider
+      summary: Set availability
+      operationId: set_availability
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Availability'
+  /v1/provider/pandit/blackouts:
+    post:
+      tags:
+      - Provider
+      summary: Add blackout dates
+      operationId: add_blackout_dates
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Blackout'
+  /v1/provider/bookings:
+    get:
+      tags:
+      - Provider
+      summary: Bookings for my services
+      operationId: bookings_for_my_services
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/provider/payouts:
+    get:
+      tags:
+      - Provider
+      summary: My payouts
+      operationId: my_payouts
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/provider/payouts/request:
+    post:
+      tags:
+      - Provider
+      summary: Request on demand payout
+      operationId: request_on_demand_payout
+      responses:
+        '202':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-payment-rail: stripe_connect
+  /v1/provider/statements:
+    get:
+      tags:
+      - Provider
+      summary: Earnings statements and tax documents
+      operationId: earnings_statements_and_tax_documents
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatementList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: year
+        in: query
+        required: false
+        schema:
+          type: integer
+  /v1/provider/standing:
+    get:
+      tags:
+      - Provider
+      summary: My standing score breakdown
+      operationId: my_standing_score_breakdown
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Standing'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/shop/collections:
+    get:
+      tags:
+      - Shop
+      summary: Collections Shopify Storefront proxy
+      operationId: collections_shopify_storefront_proxy
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: festivalId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: region
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/shop/products:
+    get:
+      tags:
+      - Shop
+      summary: Products
+      operationId: products
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: collectionId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/shop/products/{handle}:
+    get:
+      tags:
+      - Shop
+      summary: Product detail
+      operationId: product_detail
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: handle
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/shop/cart:
+    post:
+      tags:
+      - Shop
+      summary: Create cart
+      operationId: create_cart
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartCreate'
+    get:
+      tags:
+      - Shop
+      summary: Get cart
+      operationId: get_cart
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: cartId
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/shop/cart/lines:
+    post:
+      tags:
+      - Shop
+      summary: Add or update cart lines
+      operationId: add_or_update_cart_lines
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartLines'
+  /v1/shop/cart/from-samagri:
+    post:
+      tags:
+      - Shop
+      summary: Build cart from samagri checklist
+      operationId: build_cart_from_samagri_checklist
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SamagriToCart'
+  /v1/shop/checkout:
+    post:
+      tags:
+      - Shop
+      summary: Get Shopify hosted checkout URL
+      operationId: get_shopify_hosted_checkout_url
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-payment-rail: shopify_checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+  /v1/shop/orders:
+    get:
+      tags:
+      - Shop
+      summary: My orders
+      operationId: my_orders
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/shop/orders/{orderId}:
+    get:
+      tags:
+      - Shop
+      summary: Order and fulfilment status
+      operationId: order_and_fulfilment_status
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/shop/orders/{orderId}/dispute:
+    post:
+      tags:
+      - Disputes
+      summary: Open goods dispute
+      operationId: open_goods_dispute
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeOpen'
+  /v1/provider/seller/orders:
+    get:
+      tags:
+      - Provider
+      summary: Seller orders
+      operationId: seller_orders
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/me/notifications:
+    get:
+      tags:
+      - Notifications
+      summary: In app notification feed
+      operationId: in_app_notification_feed
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/me/notifications/{notificationId}/read:
+    post:
+      tags:
+      - Notifications
+      summary: Mark notification read
+      operationId: mark_notification_read
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: notificationId
+        in: path
+        required: true
+        schema:
+          type: string
+  /v1/admin/festival-rules:
+    get:
+      tags:
+      - Admin
+      summary: List festival rules
+      operationId: list_festival_rules
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FestivalRuleList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - Admin
+      summary: Create festival rule draft
+      operationId: create_festival_rule_draft
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FestivalRule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FestivalRule'
+  /v1/admin/festival-rules/{ruleId}:
+    put:
+      tags:
+      - Admin
+      summary: Update festival rule new version
+      operationId: update_festival_rule_new_version
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FestivalRule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: ruleId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FestivalRule'
+  /v1/admin/festival-rules/{ruleId}/preview:
+    post:
+      tags:
+      - Admin
+      summary: Preview resolved dates for a rule
+      operationId: preview_resolved_dates_for_a_rule
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccurrenceList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: ruleId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RulePreviewRequest'
+  /v1/admin/content/{entityType}/{entityId}/transition:
+    post:
+      tags:
+      - Admin
+      summary: Content workflow transition
+      operationId: content_workflow_transition
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: entityType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: entityId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentTransition'
+  /v1/admin/flags:
+    get:
+      tags:
+      - Admin
+      summary: Flag and review queue
+      operationId: flag_and_review_queue
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlagList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/admin/cache/warm:
+    post:
+      tags:
+      - Admin
+      summary: Trigger cache warm for grid cells
+      operationId: trigger_cache_warm_for_grid_cells
+      responses:
+        '202':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarmRequest'
+  /v1/admin/harness/runs:
+    get:
+      tags:
+      - Admin
+      summary: Accuracy harness runs
+      operationId: accuracy_harness_runs
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HarnessRunList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/admin/providers:
+    get:
+      tags:
+      - Admin
+      summary: Provider approval queue
+      operationId: provider_approval_queue
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/admin/providers/{providerId}/decision:
+    post:
+      tags:
+      - Admin
+      summary: Approve reject or suspend provider
+      operationId: approve_reject_or_suspend_provider
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderAccount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: providerId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderDecision'
+  /v1/admin/service-types:
+    post:
+      tags:
+      - Admin
+      summary: Create service type
+      operationId: create_service_type
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceType'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceType'
+  /v1/admin/bookings:
+    get:
+      tags:
+      - Admin
+      summary: Booking console
+      operationId: booking_console
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/admin/bookings/{bookingId}/override:
+    post:
+      tags:
+      - Admin
+      summary: Ops state override with reason
+      operationId: ops_state_override_with_reason
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateOverride'
+  /v1/admin/disputes:
+    get:
+      tags:
+      - Admin
+      summary: Dispute console
+      operationId: dispute_console
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisputeList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: state
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/admin/disputes/{disputeId}/decide:
+    post:
+      tags:
+      - Admin
+      summary: Decide dispute refund release or partial
+      operationId: decide_dispute_refund_release_or_partial
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dispute'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      x-payment-rail: stripe_connect
+      parameters:
+      - name: disputeId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeDecision'
+  /v1/admin/payouts:
+    get:
+      tags:
+      - Admin
+      summary: Payout management
+      operationId: payout_management
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/admin/payouts/{payoutId}/hold:
+    post:
+      tags:
+      - Admin
+      summary: Hold or release payout
+      operationId: hold_or_release_payout
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payout'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: payoutId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonBody'
+  /v1/admin/commission-config:
+    get:
+      tags:
+      - Admin
+      summary: Get commission and fee config
+      operationId: get_commission_and_fee_config
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommissionConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    put:
+      tags:
+      - Admin
+      summary: Update commission and fee config
+      operationId: update_commission_and_fee_config
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommissionConfig'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommissionConfig'
+  /v1/admin/ranking-weights:
+    put:
+      tags:
+      - Admin
+      summary: Update ranking weights
+      operationId: update_ranking_weights
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RankingWeights'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RankingWeights'
+  /v1/admin/ledger/reconciliation:
+    get:
+      tags:
+      - Admin
+      summary: Ledger vs Stripe reconciliation report
+      operationId: ledger_vs_stripe_reconciliation_report
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconciliationReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+  /v1/admin/reviews/moderation:
+    get:
+      tags:
+      - Admin
+      summary: Review moderation queue
+      operationId: review_moderation_queue
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/admin/audit:
+    get:
+      tags:
+      - Admin
+      summary: Audit trail
+      operationId: audit_trail
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      parameters:
+      - name: actor
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+  /v1/webhooks/stripe:
+    post:
+      tags:
+      - Webhooks
+      summary: Stripe events signature verified idempotent
+      operationId: stripe_events_signature_verified_idempotent
+      responses:
+        '200':
+          description: Ok
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security: []
+  /v1/webhooks/shopify:
+    post:
+      tags:
+      - Webhooks
+      summary: Shopify order and fulfilment events HMAC verified
+      operationId: shopify_order_and_fulfilment_events_hmac_verified
+      responses:
+        '200':
+          description: Ok
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security: []
+  /v1/webhooks/apple:
+    post:
+      tags:
+      - Webhooks
+      summary: Apple App Store Server Notifications v2
+      operationId: apple_app_store_server_notifications_v2
+      responses:
+        '200':
+          description: Ok
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security: []
+  /v1/webhooks/google:
+    post:
+      tags:
+      - Webhooks
+      summary: Google Play RTDN
+      operationId: google_play_rtdn
+      responses:
+        '200':
+          description: Ok
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security: []
+  /v1/webhooks/kyc:
+    post:
+      tags:
+      - Webhooks
+      summary: KYC provider events
+      operationId: kyc_provider_events
+      responses:
+        '200':
+          description: Ok
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security: []
+  /v1/webhooks/video:
+    post:
+      tags:
+      - Webhooks
+      summary: Video provider room events join log
+      operationId: video_provider_room_events_join_log
+      responses:
+        '200':
+          description: Ok
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security: []
+  /internal/pcs/compute:
+    post:
+      tags:
+      - Internal
+      summary: Compute Panchang batch PCS only
+      operationId: compute_panchang_batch_pcs_only
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PanchangDayList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComputeRequest'
+  /internal/pcs/resolve-festivals:
+    post:
+      tags:
+      - Internal
+      summary: Resolve festival rules for gridCell and year
+      operationId: resolve_festival_rules_for_gridcell_and_year
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccurrenceList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveRequest'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Entitlement or role check failed; body includes requiredTier when applicable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        code: &id006
+          type: string
+        message: *id006
+        details:
+          type: object
+        requiredTier:
+          type: string
+          nullable: true
+      required:
+      - code
+      - message
+    OidcExchange:
+      type: object
+      properties:
+        idToken: *id006
+        nonce: *id006
+      required:
+      - idToken
+    OtpRequest:
+      type: object
+      properties:
+        channel:
+          type: string
+          enum:
+          - email
+          - sms
+        destination: *id006
+      required:
+      - channel
+      - destination
+    OtpVerify:
+      type: object
+      properties:
+        destination: *id006
+        code: *id006
+      required:
+      - destination
+      - code
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken: *id006
+      required:
+      - refreshToken
+    TokenPair:
+      type: object
+      properties:
+        accessToken: *id006
+        refreshToken: *id006
+        expiresIn: &id010
+          type: integer
+      required:
+      - accessToken
+      - refreshToken
+    Preferences:
+      type: object
+      properties:
+        locale: *id006
+        scheme:
+          type: string
+          enum:
+          - amanta
+          - purnimanta
+        ayanamsa: *id006
+        samvat:
+          type: string
+          enum:
+          - vikram
+          - shaka
+          - gujarati
+        regionalCalendar: *id006
+        timeFormat:
+          type: string
+          enum:
+          - 12h
+          - 24h
+          - 24plus
+        region: *id006
+        deity: *id006
+    User:
+      type: object
+      properties:
+        id: &id008
+          type: string
+          format: uuid
+        displayName: *id006
+        tier:
+          type: string
+          enum:
+          - basic
+          - silver
+          - gold
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+            - patron
+            - pandit
+            - seller
+            - admin
+            - ops
+            - editor
+        preferences:
+          $ref: '#/components/schemas/Preferences'
+        hasBirthDetails: &id009
+          type: boolean
+      required:
+      - id
+      - tier
+    UserUpdate:
+      type: object
+      properties:
+        displayName: *id006
+        preferences:
+          $ref: '#/components/schemas/Preferences'
+    LocationCreate:
+      type: object
+      properties:
+        label: *id006
+        lat: &id007
+          type: number
+        lon: *id007
+        tz: *id006
+      required:
+      - lat
+      - lon
+      - tz
+    BirthDetails:
+      type: object
+      properties:
+        dateOfBirth: &id012
+          type: string
+          format: date
+        timeOfBirth:
+          type: string
+          pattern: ^\d{2}:\d{2}$
+        placeOfBirth:
+          $ref: '#/components/schemas/LocationCreate'
+      required:
+      - dateOfBirth
+      description: Stored only in the Vault; never returned in profile payloads
+    Location:
+      type: object
+      properties:
+        id: *id008
+        label: *id006
+        lat: *id007
+        lon: *id007
+        tz: *id006
+        gridCell: *id006
+      required:
+      - id
+      - lat
+      - lon
+      - tz
+    LocationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    DeviceToken:
+      type: object
+      properties:
+        platform:
+          type: string
+          enum:
+          - ios
+          - android
+          - web
+        token: *id006
+      required:
+      - platform
+      - token
+    NotificationPrefs:
+      type: object
+      properties:
+        quietHours:
+          type: object
+          properties:
+            start: *id006
+            end: *id006
+        categories:
+          type: object
+          additionalProperties: *id009
+        dailySummaryTime: *id006
+        language: *id006
+        sound: *id006
+    Interval:
+      type: object
+      properties:
+        name: *id006
+        index: *id010
+        startUtc: &id011
+          type: string
+          format: date-time
+        endUtc: *id011
+        localOffsetMinutes: *id010
+        hoursFromSunrise:
+          type: number
+          description: First-class 24-plus value; may exceed 24
+        flags:
+          type: array
+          items:
+            type: string
+            enum:
+            - kshaya
+            - vriddhi
+            - carriesOver
+            - sunriseFallback
+      required:
+      - startUtc
+      - endUtc
+      - hoursFromSunrise
+    PanchangDay:
+      type: object
+      properties:
+        date: *id012
+        gridCell: *id006
+        tz: *id006
+        ayanamsa: *id006
+        scheme: *id006
+        sunrise: *id011
+        sunset: *id011
+        moonrise:
+          type: string
+          format: date-time
+          nullable: true
+        moonset:
+          type: string
+          format: date-time
+          nullable: true
+        sunriseFallback: *id009
+        vara: *id006
+        tithi:
+          type: array
+          items:
+            $ref: '#/components/schemas/Interval'
+        nakshatra:
+          type: array
+          items:
+            $ref: '#/components/schemas/Interval'
+        yoga:
+          type: array
+          items:
+            $ref: '#/components/schemas/Interval'
+        karana:
+          type: array
+          items:
+            $ref: '#/components/schemas/Interval'
+        paksha:
+          type: string
+          enum:
+          - shukla
+          - krishna
+        amantaMonth: *id006
+        purnimantaMonth: *id006
+        adhikaMaas: *id009
+        kshayaMaas: *id009
+        moonsign: *id006
+        sunsign: *id006
+        samvat:
+          type: object
+          properties:
+            vikram: *id010
+            shaka: *id010
+            gujarati: *id010
+            samvatsara: *id006
+        ritu: *id006
+        ayana: *id006
+        windows:
+          type: object
+          properties:
+            rahuKalam:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            yamaganda:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            gulika:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            abhijit:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            durMuhurat:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            varjyam:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            amritKalam:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            brahmaMuhurat:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            nishita:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            choghadiya:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            hora:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+            gowri:
+              type: array
+              items:
+                $ref: '#/components/schemas/Interval'
+        moonPhase: *id007
+        festivalOccurrenceIds:
+          type: array
+          items:
+            type: string
+        engineVersion: *id006
+      required:
+      - date
+      - gridCell
+      - sunrise
+      - sunset
+      - tithi
+      - nakshatra
+    PanchangDayList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PanchangDay'
+      required:
+      - items
+    DayCell:
+      type: object
+      properties:
+        date: *id012
+        hinduDate: *id006
+        tithiAtSunrise: *id006
+        nakshatraAtSunrise: *id006
+        moonPhase: *id007
+        festivals:
+          type: array
+          items:
+            type: string
+        indicators:
+          type: array
+          items:
+            type: string
+            enum:
+            - ekadashi
+            - purnima
+            - amavasya
+            - sankranti
+            - pradosham
+            - chaturthi
+        userMarkers:
+          type: object
+          properties:
+            notes: *id010
+            bookmarks: *id010
+            reminders: *id010
+    FestivalSummary:
+      type: object
+      properties:
+        id: *id006
+        name: *id006
+        date: *id012
+        category: *id006
+        regions:
+          type: array
+          items:
+            type: string
+      required:
+      - id
+      - name
+      - date
+    FestivalList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FestivalSummary'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    MonthView:
+      type: object
+      properties:
+        year: *id010
+        month: *id010
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayCell'
+        festivals:
+          type: array
+          items:
+            $ref: '#/components/schemas/FestivalSummary'
+      required:
+      - cells
+    WeekView:
+      type: object
+      properties:
+        start: *id012
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayCell'
+      required:
+      - cells
+    YearView:
+      type: object
+      properties:
+        year: *id010
+        months:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonthView'
+      required:
+      - months
+    CalendarBundle:
+      type: object
+      properties:
+        generatedAt: *id011
+        months:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonthView'
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/PanchangDay'
+        etag: *id006
+      required:
+      - months
+    HighlightsCard:
+      type: object
+      properties:
+        tithi: *id006
+        nakshatra: *id006
+        festival:
+          type: string
+          nullable: true
+        muhurat:
+          $ref: '#/components/schemas/Interval'
+        rahuKalam:
+          $ref: '#/components/schemas/Interval'
+        suggestion: *id006
+        goodFor:
+          type: array
+          items:
+            type: string
+        avoid:
+          type: array
+          items:
+            type: string
+    Occurrence:
+      type: object
+      properties:
+        festivalRuleId: *id006
+        date: *id012
+        anchorInstantUtc: *id011
+        gridCell: *id006
+        year: *id010
+        explanation: *id006
+      required:
+      - festivalRuleId
+      - date
+    OccurrenceList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Occurrence'
+      required:
+      - items
+    FestivalRule:
+      type: object
+      properties:
+        id: *id006
+        name: *id006
+        version: *id010
+        type:
+          type: string
+          enum:
+          - lunar
+          - solar
+          - nakshatra_in_solar_month
+          - recurring
+        scheme:
+          type: string
+          enum:
+          - amanta
+          - purnimanta
+        month: *id006
+        paksha:
+          type: string
+          enum:
+          - shukla
+          - krishna
+          - both
+        tithi: *id010
+        rashi: *id006
+        nakshatra: *id006
+        anchor: *id006
+        tieBreak: *id006
+        preferNakshatra: *id006
+        regions:
+          type: array
+          items:
+            type: string
+        overrides:
+          type: array
+          items:
+            type: object
+        priority: *id010
+        reviewState: *id006
+      required:
+      - id
+      - name
+      - type
+      - anchor
+      - priority
+      description: See the-pandit-festival-rules-v1.json for the schema and full set
+    FestivalRuleList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FestivalRule'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    ContentItem:
+      type: object
+      properties:
+        id: *id006
+        type: *id006
+        locale: *id006
+        title: *id006
+        body: *id006
+        version: *id010
+        reviewState:
+          type: string
+          enum:
+          - draft
+          - in_review
+          - published
+          - archived
+        source: *id006
+        regions:
+          type: array
+          items:
+            type: string
+      required:
+      - id
+      - title
+    ContentList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentItem'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    FestivalDetail:
+      type: object
+      properties:
+        id: *id006
+        name: *id006
+        nextOccurrence:
+          $ref: '#/components/schemas/Occurrence'
+        content:
+          $ref: '#/components/schemas/ContentItem'
+        rule:
+          $ref: '#/components/schemas/FestivalRule'
+        serviceTypeIds:
+          type: array
+          items:
+            type: string
+      required:
+      - id
+      - name
+    RulePreviewRequest:
+      type: object
+      properties:
+        fromYear: *id010
+        toYear: *id010
+        lat: *id007
+        lon: *id007
+        tz: *id006
+      required:
+      - fromYear
+      - toYear
+      - lat
+      - lon
+      - tz
+    SamagriItem:
+      type: object
+      properties:
+        name: *id006
+        quantity: *id006
+        optional: *id009
+        regionNote: *id006
+        shopifyVariantId:
+          type: string
+          nullable: true
+      required:
+      - name
+    SamagriList:
+      type: object
+      properties:
+        festivalId: *id006
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SamagriItem'
+      required:
+      - items
+    PreparationTimeline:
+      type: object
+      properties:
+        festivalId: *id006
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              daysBefore: *id010
+              title: *id006
+              body: *id006
+    Vrat:
+      type: object
+      properties:
+        id: *id006
+        name: *id006
+        cycle: *id006
+    VratList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vrat'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    VratRecordCreate:
+      type: object
+      properties:
+        vratId: *id006
+        date: *id012
+        sankalp: *id006
+        notes: *id006
+      required:
+      - vratId
+      - date
+    VratRecordUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - planned
+          - observed
+          - missed
+          - completed
+        notes: *id006
+    VratRecord:
+      type: object
+      properties:
+        id: *id008
+        vratId: *id006
+        date: *id012
+        status: *id006
+        sankalp: *id006
+        notes: *id006
+    VratRecordList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VratRecord'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    MuhuratQuery:
+      type: object
+      properties:
+        eventType: *id006
+        from: *id012
+        to: *id012
+        lat: *id007
+        lon: *id007
+        tz: *id006
+        avoid:
+          type: array
+          items:
+            type: string
+            enum:
+            - rahuKalam
+            - yamaganda
+            - gulika
+            - durMuhurat
+            - varjyam
+        preferredWeekdays:
+          type: array
+          items:
+            type: integer
+        preferredNakshatras:
+          type: array
+          items:
+            type: string
+        preferredTithis:
+          type: array
+          items:
+            type: integer
+        region: *id006
+        familyMemberIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Uuid'
+      required:
+      - eventType
+      - from
+      - to
+      - lat
+      - lon
+      - tz
+    Uuid: *id008
+    MuhuratCandidate:
+      type: object
+      properties:
+        window:
+          $ref: '#/components/schemas/Interval'
+        grade:
+          type: string
+          enum:
+          - best
+          - good
+          - avoid
+        score: *id007
+        explanation:
+          type: array
+          items:
+            type: string
+    MuhuratResult:
+      type: object
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/MuhuratCandidate'
+        quotaRemaining: *id010
+    EventType:
+      type: object
+      properties:
+        id: *id006
+        name: *id006
+        serviceTypeIds:
+          type: array
+          items:
+            type: string
+    EventTypeList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    DailyPlan:
+      type: object
+      properties:
+        date: *id012
+        mantra: *id006
+        deity: *id006
+        dana: *id006
+        puja: *id006
+        japaWindow:
+          $ref: '#/components/schemas/Interval'
+        cautions:
+          type: array
+          items:
+            type: string
+    MonthlyPlan:
+      type: object
+      properties:
+        festivals:
+          type: array
+          items:
+            $ref: '#/components/schemas/FestivalSummary'
+        vrats:
+          type: array
+          items:
+            $ref: '#/components/schemas/Vrat'
+        goodPujaDays:
+          type: array
+          items:
+            type: string
+        sankalp: *id006
+    AnnualPlan:
+      type: object
+      properties:
+        year: *id010
+        months:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonthlyPlan'
+    RecurrenceRule:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+          - once
+          - gregorian_yearly
+          - gregorian_monthly
+          - weekday
+          - tithi
+          - nakshatra
+          - lunar_month
+          - solar_month
+          - festival_ref
+          - vrat_cycle
+        month: *id006
+        scheme: *id006
+        paksha: *id006
+        tithi: *id010
+        nakshatra: *id006
+        weekday: *id010
+        festivalId: *id006
+        vratCycle:
+          type: string
+          enum:
+          - ekadashi
+          - pradosham
+          - sankashti
+          - purnima
+          - amavasya
+          - masik_shivaratri
+          - sankranti
+        convention:
+          type: string
+          enum:
+          - udaya
+          - anchor
+          - first
+          - second
+      required:
+      - kind
+    DateRef:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+          - gregorian
+          - tithi
+        date: *id012
+        tithiRule:
+          $ref: '#/components/schemas/RecurrenceRule'
+      required:
+      - kind
+    NoteCreate:
+      type: object
+      properties:
+        dateRef:
+          $ref: '#/components/schemas/DateRef'
+        category: *id006
+        body: *id006
+      required:
+      - dateRef
+      - body
+    Note:
+      type: object
+      properties:
+        id: *id008
+        dateRef:
+          $ref: '#/components/schemas/DateRef'
+        category: *id006
+        body: *id006
+        createdAt: *id011
+    NoteList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    BookmarkCreate:
+      type: object
+      properties:
+        dateRef:
+          $ref: '#/components/schemas/DateRef'
+        category: *id006
+        label: *id006
+      required:
+      - dateRef
+      - category
+    Bookmark:
+      type: object
+      properties:
+        id: *id008
+        dateRef:
+          $ref: '#/components/schemas/DateRef'
+        category: *id006
+        label: *id006
+    BookmarkList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bookmark'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    ReminderCreate:
+      type: object
+      properties:
+        title: *id006
+        recurrence:
+          $ref: '#/components/schemas/RecurrenceRule'
+        offsetMinutes: *id010
+        anchor:
+          type: string
+          enum:
+          - exact
+          - sunrise
+          - sunset
+          - tithi_start
+          - tithi_end
+          - rahu_kalam_start
+        channels:
+          type: array
+          items:
+            type: string
+            enum:
+            - push
+            - email
+            - in_app
+        locationId: *id008
+      required:
+      - title
+      - recurrence
+    Reminder:
+      type: object
+      properties:
+        id: *id008
+        title: *id006
+        recurrence:
+          $ref: '#/components/schemas/RecurrenceRule'
+        nextFireTime: *id011
+        offsetMinutes: *id010
+        channels:
+          type: array
+          items:
+            type: string
+    ReminderList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reminder'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    FireTimeList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              fireAtUtc: *id011
+              localDate: *id012
+              fireKey: *id006
+              explanation: *id006
+    FamilyMemberCreate:
+      type: object
+      properties:
+        name: *id006
+        relation: *id006
+        gregorianBirthday: *id012
+        birthTithi:
+          $ref: '#/components/schemas/RecurrenceRule'
+        nakshatra: *id006
+        gotra: *id006
+        vratPreferences:
+          type: array
+          items:
+            type: string
+      required:
+      - name
+      - relation
+    FamilyMember:
+      type: object
+      properties:
+        id: *id008
+        name: *id006
+        relation: *id006
+        nextBirthday: *id012
+        nakshatra: *id006
+    FamilyMemberList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FamilyMember'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    JournalEntryCreate:
+      type: object
+      properties:
+        date: *id012
+        sankalp: *id006
+        body: *id006
+        mantraCount: *id010
+        gratitude: *id006
+        charity: *id006
+      required:
+      - date
+    JournalEntry:
+      type: object
+      properties:
+        id: *id008
+        date: *id012
+        sankalp: *id006
+        body: *id006
+    JournalEntryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/JournalEntry'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    JapaIncrement:
+      type: object
+      properties:
+        mantraId: *id006
+        count: *id010
+      required:
+      - mantraId
+      - count
+    JapaState:
+      type: object
+      properties:
+        mantraId: *id006
+        target: *id010
+        todayCount: *id010
+        streakDays: *id010
+    CalendarJobCreate:
+      type: object
+      properties:
+        templateId: *id006
+        startMonth: *id006
+        months:
+          type: integer
+          minimum: 12
+          maximum: 15
+        region: *id006
+        locale: *id006
+        locationId: *id008
+        festivalCategories:
+          type: array
+          items:
+            type: string
+        size:
+          type: string
+          enum:
+          - A4
+          - A3
+          - Letter
+          - Legal
+          - wall
+          - desk
+          - wallpaper
+          - poster
+          - custom
+        format:
+          type: string
+          enum:
+          - pdf
+          - png
+        branding:
+          type: object
+        commercial: *id009
+      required:
+      - templateId
+      - startMonth
+      - months
+      - locationId
+    Job:
+      type: object
+      properties:
+        id: *id008
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - done
+          - failed
+        outputUrl:
+          type: string
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required:
+      - id
+      - status
+    JobList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Job'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    Template:
+      type: object
+      properties:
+        id: *id006
+        name: *id006
+        style: *id006
+        tier: *id006
+        premium: *id009
+    TemplateList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Template'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    SearchResult:
+      type: object
+      properties:
+        intent:
+          type: string
+          description: Parsed smart-query intent, e.g. next_festival, next_vrat, muhurat
+        answer:
+          type: object
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              type: *id006
+              id: *id006
+              title: *id006
+              date: *id012
+              snippet: *id006
+    AskRequest:
+      type: object
+      properties:
+        question: *id006
+        date: *id012
+        locationId: *id008
+        mode:
+          type: string
+          enum:
+          - explainer
+          - festival
+          - planner
+          - children
+        conversationId: *id008
+      required:
+      - question
+    AskResponse:
+      type: object
+      properties:
+        answer: *id006
+        citations:
+          type: array
+          items:
+            type: object
+            properties:
+              contentId: *id006
+              title: *id006
+        toolCalls:
+          type: array
+          items:
+            type: string
+        disclaimer: *id006
+        quotaRemaining: *id010
+      required:
+      - answer
+      - disclaimer
+    DharmaCard:
+      type: object
+      properties:
+        date: *id012
+        tithi: *id006
+        deity: *id006
+        mantra: *id006
+        goodAction: *id006
+        festivalOrVrat: *id006
+        reflection: *id006
+        imageUrl: *id006
+    ShareRequest:
+      type: object
+      properties:
+        date: *id012
+        locationId: *id008
+        kind:
+          type: string
+          enum:
+          - day
+          - festival
+          - muhurat
+          - dharma_card
+        refId: *id006
+      required:
+      - kind
+    SignedUrl:
+      type: object
+      properties:
+        url: *id006
+        expiresAt: *id011
+      required:
+      - url
+    Link:
+      type: object
+      properties:
+        url: *id006
+        expiresAt: *id011
+      required:
+      - url
+    Subscription:
+      type: object
+      properties:
+        tier:
+          type: string
+          enum:
+          - basic
+          - silver
+          - gold
+        source:
+          type: string
+          enum:
+          - none
+          - apple
+          - google
+          - stripe_web
+          - promo
+        status: *id006
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        entitlements:
+          type: object
+          additionalProperties:
+            type: object
+      required:
+      - tier
+      - status
+    ReceiptSubmit:
+      type: object
+      properties:
+        payload: *id006
+        productId: *id006
+      required:
+      - payload
+    PlanSelect:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum:
+          - silver_monthly
+          - silver_yearly
+          - gold_monthly
+          - gold_yearly
+        promoCode: *id006
+      required:
+      - plan
+    CheckoutSession:
+      type: object
+      properties:
+        url: *id006
+        sessionId: *id006
+      required:
+      - url
+    PromoApply:
+      type: object
+      properties:
+        code: *id006
+      required:
+      - code
+    Money:
+      type: object
+      properties:
+        amount:
+          type: integer
+          description: minor units
+        currency:
+          type: string
+          enum:
+          - USD
+          - GBP
+          - EUR
+          - AED
+          - INR
+      required:
+      - amount
+      - currency
+    ServiceType:
+      type: object
+      properties:
+        id: *id006
+        name: *id006
+        category: *id006
+        festivalRefs:
+          type: array
+          items:
+            type: string
+        muhuratEventTypes:
+          type: array
+          items:
+            type: string
+        defaultDurationMin: *id010
+        active: *id009
+      required:
+      - id
+      - name
+    ServiceTypeList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceType'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    RankingFactors:
+      type: object
+      properties:
+        bayesianRating: *id007
+        completionRate: *id007
+        responseSpeed: *id007
+        proximity: *id007
+        priceIndex: *id007
+        coldStartBoost: *id007
+        score: *id007
+    PanditCard:
+      type: object
+      properties:
+        panditId: *id008
+        displayName: *id006
+        badges:
+          type: array
+          items:
+            type: string
+        rating: *id007
+        reviewCount: *id010
+        languages:
+          type: array
+          items:
+            type: string
+        traditions:
+          type: array
+          items:
+            type: string
+        distanceMiles:
+          type: number
+          nullable: true
+        fromPrice:
+          $ref: '#/components/schemas/Money'
+        modes:
+          type: array
+          items:
+            type: string
+        nextAvailable:
+          type: string
+          format: date-time
+          nullable: true
+        ranking:
+          $ref: '#/components/schemas/RankingFactors'
+      required:
+      - panditId
+      - displayName
+    PanditSearchResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PanditCard'
+        nextCursor:
+          type: string
+          nullable: true
+        tookMs: *id010
+      required:
+      - items
+    PanditServiceCreate:
+      type: object
+      properties:
+        serviceTypeId: *id006
+        mode:
+          type: string
+          enum:
+          - in_person
+          - remote
+          - both
+        basePrice:
+          $ref: '#/components/schemas/Money'
+        durationMin: *id010
+        samagriOption:
+          type: string
+          enum:
+          - none
+          - pandit_provides
+          - platform_shop
+        samagriFee:
+          $ref: '#/components/schemas/Money'
+        description: *id006
+      required:
+      - serviceTypeId
+      - mode
+      - basePrice
+      - durationMin
+    PanditService:
+      type: object
+      properties:
+        id: *id008
+        panditId: *id008
+        serviceTypeId: *id006
+        mode: *id006
+        basePrice:
+          $ref: '#/components/schemas/Money'
+        durationMin: *id010
+        samagriOption: *id006
+        active: *id009
+      required:
+      - id
+      - serviceTypeId
+    PanditServiceList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PanditService'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    TravelPolicy:
+      type: object
+      properties:
+        radiusMiles:
+          type: number
+          maximum: 100
+        feeModel:
+          type: string
+          enum:
+          - flat
+          - per_mile
+          - banded
+        flatFee:
+          $ref: '#/components/schemas/Money'
+        perMile:
+          $ref: '#/components/schemas/Money'
+        bands:
+          type: array
+          items:
+            type: object
+            properties:
+              uptoMiles: *id007
+              fee:
+                $ref: '#/components/schemas/Money'
+        requiresPickup: *id009
+      required:
+      - radiusMiles
+      - feeModel
+    PanditProfile:
+      type: object
+      properties:
+        panditId: *id008
+        displayName: *id006
+        bio: *id006
+        languages:
+          type: array
+          items:
+            type: string
+        traditions:
+          type: array
+          items:
+            type: string
+        badges:
+          type: array
+          items:
+            type: string
+        rating: *id007
+        reviewCount: *id010
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/PanditService'
+        travelPolicy:
+          $ref: '#/components/schemas/TravelPolicy'
+        approvalState: *id006
+      required:
+      - panditId
+      - displayName
+    PanditProfileUpdate:
+      type: object
+      properties:
+        displayName: *id006
+        bio: *id006
+        languages:
+          type: array
+          items:
+            type: string
+        traditions:
+          type: array
+          items:
+            type: string
+        homeLocationId: *id008
+    Availability:
+      type: object
+      properties:
+        tz: *id006
+        weeklyHours:
+          type: array
+          items:
+            type: object
+            properties:
+              weekday: *id010
+              start: *id006
+              end: *id006
+        blackoutDates:
+          type: array
+          items:
+            type: string
+        leadTimeHours: *id010
+        bufferMin: *id010
+        acceptanceMode:
+          type: string
+          enum:
+          - auto
+          - manual
+        responseWindowHours: *id010
+        externalCalendarSync: *id009
+      required:
+      - tz
+      - weeklyHours
+      - acceptanceMode
+    Blackout:
+      type: object
+      properties:
+        from: *id012
+        to: *id012
+        reason: *id006
+      required:
+      - from
+      - to
+    Slot:
+      type: object
+      properties:
+        startUtc: *id011
+        endUtc: *id011
+        available: *id009
+    SlotList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Slot'
+      required:
+      - items
+    QuoteRequest:
+      type: object
+      properties:
+        panditId: *id008
+        serviceId: *id008
+        startUtc: *id011
+        mode: *id006
+        ceremonyLocation:
+          $ref: '#/components/schemas/LocationCreate'
+        includeSamagri: *id009
+        currency: *id006
+      required:
+      - panditId
+      - serviceId
+      - startUtc
+      - mode
+    QuoteLine:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+          - base
+          - travel
+          - samagri
+          - platform_fee
+          - tax
+          - discount
+        label: *id006
+        amount:
+          $ref: '#/components/schemas/Money'
+        detail: *id006
+      required:
+      - kind
+      - amount
+    PolicySnapshot:
+      type: object
+      properties:
+        version: *id006
+        tiers:
+          type: array
+          items:
+            type: object
+            properties:
+              minHoursBefore: *id010
+              refundPct: *id007
+        noShowRule: *id006
+        holdbackHours: *id010
+      required:
+      - version
+      - tiers
+    Quote:
+      type: object
+      properties:
+        quoteId: *id008
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteLine'
+        total:
+          $ref: '#/components/schemas/Money'
+        providerNet:
+          $ref: '#/components/schemas/Money'
+        distanceMiles:
+          type: number
+          nullable: true
+        policySnapshot:
+          $ref: '#/components/schemas/PolicySnapshot'
+        expiresAt: *id011
+      required:
+      - quoteId
+      - lines
+      - total
+      - policySnapshot
+    Address:
+      type: object
+      properties:
+        line1: *id006
+        line2: *id006
+        city: *id006
+        region: *id006
+        postalCode: *id006
+        country: *id006
+        lat: *id007
+        lon: *id007
+        instructions: *id006
+      required:
+      - line1
+      - city
+      - country
+      description: Stored in Vault; revealed to pandit only after paid confirmation
+    BookingCreate:
+      type: object
+      properties:
+        quoteId: *id008
+        ceremonyAddress:
+          $ref: '#/components/schemas/Address'
+        notes: *id006
+        attendees: *id010
+        legalVersionAccepted: *id006
+        idempotencyKey: *id006
+      required:
+      - quoteId
+      - legalVersionAccepted
+      - idempotencyKey
+    Booking:
+      type: object
+      properties:
+        id: *id008
+        patronId: *id008
+        panditId: *id008
+        serviceId: *id008
+        serviceTypeId: *id006
+        mode: *id006
+        startUtc: *id011
+        endUtc: *id011
+        tz: *id006
+        state:
+          type: string
+          enum:
+          - requested
+          - confirmed
+          - reschedule_pending
+          - in_progress
+          - completed
+          - cancelled_by_patron
+          - cancelled_by_pandit
+          - no_show
+          - disputed
+          - refunded
+          - closed
+        quote:
+          $ref: '#/components/schemas/Quote'
+        policySnapshot:
+          $ref: '#/components/schemas/PolicySnapshot'
+        paymentStatus:
+          type: string
+          enum:
+          - authorized
+          - captured
+          - released
+          - refunded
+          - partially_refunded
+        clientSecret:
+          type: string
+          nullable: true
+          description: Stripe PaymentIntent client secret (creation only)
+        responseDeadline:
+          type: string
+          format: date-time
+          nullable: true
+        videoAvailable: *id009
+        linkedFestivalId:
+          type: string
+          nullable: true
+        linkedMuhuratId:
+          type: string
+          nullable: true
+        createdAt: *id011
+      required:
+      - id
+      - state
+      - startUtc
+    BookingList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    BookingEvent:
+      type: object
+      properties:
+        fromState: *id006
+        toState: *id006
+        actor: *id006
+        at: *id011
+        reason: *id006
+    BookingEventList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingEvent'
+      required:
+      - items
+    ReasonBody:
+      type: object
+      properties:
+        reason: *id006
+      required:
+      - reason
+    RescheduleProposal:
+      type: object
+      properties:
+        newStartUtc: *id011
+        reason: *id006
+      required:
+      - newStartUtc
+    RescheduleResponse:
+      type: object
+      properties:
+        accept: *id009
+        reason: *id006
+      required:
+      - accept
+    DisputeOpen:
+      type: object
+      properties:
+        category:
+          type: string
+          enum:
+          - no_show
+          - quality
+          - overcharge
+          - damage
+          - other
+        description: *id006
+        evidenceUrls:
+          type: array
+          items:
+            type: string
+      required:
+      - category
+      - description
+    EvidenceCreate:
+      type: object
+      properties:
+        description: *id006
+        fileUrl: *id006
+      required:
+      - description
+    Dispute:
+      type: object
+      properties:
+        id: *id008
+        bookingId:
+          type: string
+          format: uuid
+          nullable: true
+        orderId:
+          type: string
+          nullable: true
+        state:
+          type: string
+          enum:
+          - open
+          - evidence
+          - under_review
+          - decided
+          - closed
+        category: *id006
+        decision:
+          type: string
+          enum:
+          - refund_full
+          - refund_partial
+          - release
+          - dismissed
+          nullable: true
+        decisionAmount:
+          $ref: '#/components/schemas/Money'
+        openedAt: *id011
+        decidedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - id
+      - state
+    DisputeList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dispute'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    DisputeDecision:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+          - refund_full
+          - refund_partial
+          - release
+          - dismissed
+        amount:
+          $ref: '#/components/schemas/Money'
+        reason: *id006
+        standingImpact:
+          type: string
+          enum:
+          - none
+          - warning
+          - penalty
+          - suspend
+      required:
+      - decision
+      - reason
+    ReviewCreate:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        body: *id006
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+      - rating
+    Review:
+      type: object
+      properties:
+        id: *id008
+        bookingId: *id008
+        authorRole:
+          type: string
+          enum:
+          - patron
+          - pandit
+        rating: *id010
+        body: *id006
+        revealed: *id009
+        createdAt: *id011
+    ReviewList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    VideoToken:
+      type: object
+      properties:
+        provider:
+          type: string
+          enum:
+          - livekit
+          - agora
+          - twilio
+        roomId: *id006
+        token: *id006
+        joinWindowStart: *id011
+        joinWindowEnd: *id011
+        recordingEnabled: *id009
+      required:
+      - provider
+      - roomId
+      - token
+    ConsentBody:
+      type: object
+      properties:
+        consent: *id009
+      required:
+      - consent
+    ConversationCreate:
+      type: object
+      properties:
+        panditId: *id008
+        serviceTypeId: *id006
+        firstMessage: *id006
+      required:
+      - panditId
+      - firstMessage
+    Conversation:
+      type: object
+      properties:
+        id: *id008
+        bookingId:
+          type: string
+          format: uuid
+          nullable: true
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Uuid'
+        lastMessageAt: *id011
+        unread: *id010
+    ConversationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conversation'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    MessageCreate:
+      type: object
+      properties:
+        body: *id006
+        attachments:
+          type: array
+          items:
+            type: string
+      required:
+      - body
+    Message:
+      type: object
+      properties:
+        id: *id008
+        senderId: *id008
+        body:
+          type: string
+          description: PII-masked
+        masked: *id009
+        flags:
+          type: array
+          items:
+            type: string
+        sentAt: *id011
+    MessageList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    ProviderApplication:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - pandit
+          - seller
+        legalName: *id006
+        country: *id006
+        phone: *id006
+        email: *id006
+        businessType:
+          type: string
+          enum:
+          - individual
+          - company
+      required:
+      - type
+      - legalName
+      - country
+    ProviderUpdate:
+      type: object
+      properties:
+        phone: *id006
+        email: *id006
+        payoutSchedule:
+          type: string
+          enum:
+          - daily
+          - weekly
+          - monthly
+          - manual
+    ProviderAccount:
+      type: object
+      properties:
+        id: *id008
+        type: *id006
+        status:
+          type: string
+          enum:
+          - applied
+          - kyc_pending
+          - under_review
+          - approved
+          - rejected
+          - suspended
+        stripeAccountStatus:
+          type: string
+          enum:
+          - none
+          - pending
+          - restricted
+          - enabled
+        kycStatus: *id006
+        standingScore: *id007
+        legalVersionAccepted: *id006
+      required:
+      - id
+      - type
+      - status
+    ProviderList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderAccount'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    Verification:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum:
+          - identity
+          - background_check
+          - credentials
+          - address
+        provider: *id006
+        status: *id006
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+    VerificationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Verification'
+      required:
+      - items
+    LegalAccept:
+      type: object
+      properties:
+        documentId: *id006
+        version: *id006
+      required:
+      - documentId
+      - version
+    Payout:
+      type: object
+      properties:
+        id: *id008
+        amount:
+          $ref: '#/components/schemas/Money'
+        status:
+          type: string
+          enum:
+          - scheduled
+          - held
+          - in_transit
+          - paid
+          - failed
+        scheduledFor: *id011
+        stripePayoutId: *id006
+        bookingIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Uuid'
+    PayoutList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payout'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    Statement:
+      type: object
+      properties:
+        period: *id006
+        gross:
+          $ref: '#/components/schemas/Money'
+        commission:
+          $ref: '#/components/schemas/Money'
+        net:
+          $ref: '#/components/schemas/Money'
+        taxDocumentUrl:
+          type: string
+          nullable: true
+    StatementList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Statement'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    Standing:
+      type: object
+      properties:
+        score: *id007
+        completionRate: *id007
+        cancellationRate: *id007
+        medianResponseMin: *id007
+        complaints: *id010
+        tier: *id006
+    ProviderDecision:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum:
+          - approve
+          - reject
+          - suspend
+          - reinstate
+        reason: *id006
+      required:
+      - decision
+      - reason
+    StateOverride:
+      type: object
+      properties:
+        toState: *id006
+        reason: *id006
+      required:
+      - toState
+      - reason
+    CommissionConfig:
+      type: object
+      properties:
+        version: *id006
+        defaultPct: *id007
+        byCategory:
+          type: object
+          additionalProperties: *id007
+        goldTierPct: *id007
+        appliesTo:
+          type: array
+          items:
+            type: string
+            enum:
+            - base
+            - travel
+            - samagri
+        holdbackHours: *id010
+        listingFee:
+          $ref: '#/components/schemas/Money'
+      required:
+      - defaultPct
+      - appliesTo
+      - holdbackHours
+    RankingWeights:
+      type: object
+      properties:
+        bayesianRating: *id007
+        completionRate: *id007
+        responseSpeed: *id007
+        proximity: *id007
+        priceIndex: *id007
+        coldStartBoostMax: *id007
+        coldStartDecayDays: *id010
+    ReconciliationReport:
+      type: object
+      properties:
+        date: *id012
+        ledgerBalance:
+          type: object
+        stripeBalance:
+          type: object
+        variance:
+          type: object
+        balanced: *id009
+    ContentTransition:
+      type: object
+      properties:
+        to:
+          type: string
+          enum:
+          - in_review
+          - published
+          - archived
+          - draft
+        note: *id006
+      required:
+      - to
+    Flag:
+      type: object
+      properties:
+        id: *id008
+        entityType: *id006
+        entityId: *id006
+        reporter: *id006
+        reason: *id006
+        state: *id006
+    FlagList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Flag'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    WarmRequest:
+      type: object
+      properties:
+        gridCells:
+          type: array
+          items:
+            type: string
+        from: *id012
+        to: *id012
+      required:
+      - gridCells
+      - from
+      - to
+    HarnessRun:
+      type: object
+      properties:
+        id: *id008
+        ranAt: *id011
+        engineVersion: *id006
+        cases: *id010
+        passed: *id010
+        tithiMatchPct: *id007
+        sunriseMaxErrorSec: *id007
+        green: *id009
+    HarnessRunList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/HarnessRun'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    AuditEntry:
+      type: object
+      properties:
+        id: *id008
+        actor: *id006
+        action: *id006
+        entity: *id006
+        before:
+          type: object
+        after:
+          type: object
+        at: *id011
+    AuditList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEntry'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    Collection:
+      type: object
+      properties:
+        id: *id006
+        handle: *id006
+        title: *id006
+        festivalIds:
+          type: array
+          items:
+            type: string
+    CollectionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Collection'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    Product:
+      type: object
+      properties:
+        id: *id006
+        handle: *id006
+        title: *id006
+        description: *id006
+        images:
+          type: array
+          items:
+            type: string
+        variants:
+          type: array
+          items:
+            type: object
+            properties:
+              id: *id006
+              title: *id006
+              price:
+                $ref: '#/components/schemas/Money'
+              available: *id009
+        sellerId:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - id
+      - handle
+      - title
+    ProductList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    CartCreate:
+      type: object
+      properties:
+        currency: *id006
+    CartLines:
+      type: object
+      properties:
+        cartId: *id006
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              variantId: *id006
+              quantity: *id010
+      required:
+      - cartId
+      - lines
+    SamagriToCart:
+      type: object
+      properties:
+        festivalId: *id006
+        serviceId: *id008
+        region: *id006
+        includeOptional: *id009
+        cartId: *id006
+    Cart:
+      type: object
+      properties:
+        id: *id006
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              variantId: *id006
+              title: *id006
+              quantity: *id010
+              price:
+                $ref: '#/components/schemas/Money'
+        subtotal:
+          $ref: '#/components/schemas/Money'
+        checkoutUrl: *id006
+      required:
+      - id
+      - lines
+    CheckoutRequest:
+      type: object
+      properties:
+        cartId: *id006
+        returnUrl: *id006
+      required:
+      - cartId
+    Order:
+      type: object
+      properties:
+        id: *id006
+        shopifyOrderId: *id006
+        status:
+          type: string
+          enum:
+          - placed
+          - paid
+          - fulfilled
+          - partially_fulfilled
+          - delivered
+          - cancelled
+          - refunded
+        lines:
+          type: array
+          items:
+            type: object
+        total:
+          $ref: '#/components/schemas/Money'
+        tracking:
+          type: array
+          items:
+            type: object
+            properties:
+              carrier: *id006
+              number: *id006
+              url: *id006
+        placedAt: *id011
+      required:
+      - id
+      - status
+    OrderList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    Notification:
+      type: object
+      properties:
+        id: *id008
+        type: *id006
+        title: *id006
+        body: *id006
+        deepLink: *id006
+        read: *id009
+        at: *id011
+    NotificationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        nextCursor:
+          type: string
+          nullable: true
+      required:
+      - items
+    ComputeRequest:
+      type: object
+      properties:
+        dates:
+          type: array
+          items:
+            type: string
+        lat: *id007
+        lon: *id007
+        tz: *id006
+        ayanamsa: *id006
+        scheme: *id006
+      required:
+      - dates
+      - lat
+      - lon
+      - tz
+    ResolveRequest:
+      type: object
+      properties:
+        gridCell: *id006
+        year: *id010
+        ruleIds:
+          type: array
+          items:
+            type: string
+      required:
+      - gridCell
+      - year
+x-entitlement-matrix:
+  basic: Daily Panchang, day/month views, major festivals, up to 5 notes/bookmarks/reminders, 1 location
+  silver: All views, unlimited notes/reminders, Tithi recurrence, vrat tracker, basic muhurat, family up to 5, 12-month print,
+    Book a Pandit
+  gold: Advanced muhurat, AI, planners, HD 12–15-month print, unlimited family, samagri checklist, journal, reduced marketplace
+    fee
+x-payment-rails:
+  iap: Apple In-App Purchase — subscriptions only
+  play: Google Play Billing — subscriptions only
+  stripe_web: Stripe Checkout on web — subscriptions only
+  stripe_connect: Stripe Connect — pandit bookings only (escrow, payouts, refunds)
+  shopify_checkout: Shopify-hosted checkout — physical goods only

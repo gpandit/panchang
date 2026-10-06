@@ -1,0 +1,1121 @@
+{
+  "version": "1.0.0",
+  "generatedFor": "The Pandit — Festival & Vrat Rules Service (Architecture v2.0 §6.1)",
+  "conventions": {
+    "engine": "Drik Ganita via Swiss Ephemeris; Lahiri ayanamsa unless overridden",
+    "dayBoundary": "sunrise-to-sunrise, per gridCell",
+    "tithiNumbering": "1–14 within paksha, 15 = Purnima, 30 = Amavasya",
+    "schemeNote": "Each rule fixes its own scheme; the resolver maps to the user's scheme. Shukla-paksha rules are identical in both schemes.",
+    "adhikaMaas": "Rules resolve in the nija (pure) month only; recurring cycles also fire in adhika months.",
+    "regions": [
+      "default",
+      "north",
+      "south",
+      "east",
+      "west",
+      "tamil",
+      "telugu",
+      "kannada",
+      "malayalam",
+      "marathi",
+      "gujarati",
+      "bengali",
+      "odia",
+      "bihari",
+      "punjabi",
+      "assamese",
+      "nepali",
+      "konkani",
+      "sindhi",
+      "sikh",
+      "smarta",
+      "vaishnava"
+    ],
+    "anchorWindows": {
+      "arunodaya": "96 min before sunrise to sunrise",
+      "pratahkala": "sunrise to sunrise + dinamana/5",
+      "purvahna": "sunrise + dinamana/5 to + 2·dinamana/5",
+      "madhyahna": "sunrise + 2·dinamana/5 to + 3·dinamana/5",
+      "aparahna": "sunrise + 3·dinamana/5 to + 4·dinamana/5",
+      "pradosh": "sunset to sunset + 2 muhurta (~96 min)",
+      "nishita": "middle muhurta of the night (local midnight ± 24 min)",
+      "sandhi": "last 24 min of Ashtami + first 24 min of Navami"
+    }
+  },
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://thepandit.app/schemas/festival-rule-v1.json",
+    "title": "FestivalRule",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "type",
+      "anchor",
+      "tieBreak",
+      "regions",
+      "priority"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[a-z0-9_]+$"
+      },
+      "name": {
+        "type": "string"
+      },
+      "type": {
+        "enum": [
+          "lunar",
+          "solar",
+          "nakshatra_in_solar_month",
+          "recurring"
+        ]
+      },
+      "scheme": {
+        "enum": [
+          "amanta",
+          "purnimanta"
+        ],
+        "description": "Lunar month naming used by THIS rule; the resolver converts for users on the other scheme."
+      },
+      "month": {
+        "enum": [
+          "chaitra",
+          "vaishakha",
+          "jyeshtha",
+          "ashadha",
+          "shravana",
+          "bhadrapada",
+          "ashwina",
+          "kartika",
+          "margashirsha",
+          "pausha",
+          "magha",
+          "phalguna"
+        ]
+      },
+      "paksha": {
+        "enum": [
+          "shukla",
+          "krishna",
+          "both"
+        ]
+      },
+      "tithi": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 30,
+        "description": "1–14 within paksha; 15 = Purnima; 30 = Amavasya"
+      },
+      "rashi": {
+        "enum": [
+          "mesha",
+          "vrishabha",
+          "mithuna",
+          "karka",
+          "simha",
+          "kanya",
+          "tula",
+          "vrishchika",
+          "dhanu",
+          "makara",
+          "kumbha",
+          "meena"
+        ]
+      },
+      "nakshatra": {
+        "type": "string"
+      },
+      "preferNakshatra": {
+        "type": "string"
+      },
+      "anchor": {
+        "enum": [
+          "sunrise",
+          "arunodaya",
+          "pratahkala",
+          "purvahna",
+          "madhyahna",
+          "aparahna",
+          "sunset",
+          "pradosh",
+          "nishita",
+          "moonrise",
+          "sankranti",
+          "sandhi"
+        ],
+        "description": "Reference moment that decides which civil day carries the observance"
+      },
+      "tieBreak": {
+        "enum": [
+          "udaya_tithi",
+          "udaya_tithi_skip_if_kshaya_at_sunrise",
+          "udaya_tithi_prefer_hasta",
+          "tithi_at_anchor_else_next_day",
+          "tithi_at_anchor_else_prev_day",
+          "tithi_at_anchor_else_prev_day_if_more",
+          "tithi_at_anchor_strict",
+          "tithi_at_anchor_avoid_bhadra",
+          "tithi_at_moonrise_else_next_day",
+          "nakshatra_at_sunrise_else_greater_portion",
+          "ekadashi_smarta_vaishnava",
+          "ekadashi_vaishnava",
+          "vaishnava_udaya_prefer_rohini",
+          "sankranti_punya_kala"
+        ],
+        "description": "Deterministic resolution of kshaya/vriddhi and two-day spans. See tieBreakSemantics."
+      },
+      "cycle": {
+        "enum": [
+          "tithi",
+          "solar_ingress"
+        ]
+      },
+      "regions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1
+      },
+      "overrides": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "region"
+          ]
+        },
+        "description": "Per-region field overrides applied on top of the base rule"
+      },
+      "aliases": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "priority": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100,
+        "description": "Higher wins when two rules resolve to the same day for labelling"
+      },
+      "duration_days": {
+        "type": "integer"
+      },
+      "deity": {
+        "type": "string"
+      },
+      "notes": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "tieBreakSemantics": {
+    "udaya_tithi": "Observe on the civil day at whose sunrise the tithi prevails. Vriddhi: first such day. Kshaya: the day on which the tithi is current at any point after sunrise (never skip).",
+    "udaya_tithi_skip_if_kshaya_at_sunrise": "As udaya_tithi, but if the tithi begins after sunrise and ends before the next sunrise (kshaya), observe on the day it begins.",
+    "udaya_tithi_prefer_hasta": "udaya_tithi; if two candidate days, prefer the one with preferNakshatra.",
+    "tithi_at_anchor_else_next_day": "Observe on day 1 if the tithi prevails at the anchor moment; otherwise day 2 if it prevails there; if neither, the day the tithi covers more of the anchor window.",
+    "tithi_at_anchor_else_prev_day": "Mirror of the above favouring the earlier day.",
+    "tithi_at_anchor_else_prev_day_if_more": "If the tithi prevails at the anchor on both days, pick the day with the greater overlap of the anchor window; if only one, that day; if neither, the day whose anchor window it overlaps more.",
+    "tithi_at_anchor_strict": "Only the day on which the tithi prevails at the exact anchor instant; if none, fall back to udaya_tithi.",
+    "tithi_at_anchor_avoid_bhadra": "As tithi_at_anchor_else_prev_day_if_more, but the observance window excludes Vishti (Bhadra) karana; if Bhadra covers the whole anchor window, shift to the first Bhadra-free window after it on the same civil day (Bhadra puccha permitted per regional flag).",
+    "tithi_at_moonrise_else_next_day": "Day on which the tithi prevails at local moonrise; if not on day 1, day 2.",
+    "nakshatra_at_sunrise_else_greater_portion": "Day at whose sunrise the nakshatra prevails; otherwise the day in which it covers the greater portion of daytime.",
+    "ekadashi_smarta_vaishnava": "Smarta: if Dashami prevails at arunodaya (96 min before sunrise) the fast moves to the next day. Emits both smarta and vaishnava dates when they differ; region selects which is shown.",
+    "ekadashi_vaishnava": "Vaishnava-only variant.",
+    "vaishnava_udaya_prefer_rohini": "Observe when Ashtami prevails at sunrise; if Rohini nakshatra coincides on an adjacent day, prefer it (Jayanti yoga).",
+    "sankranti_punya_kala": "Observance day = day of the Sun's ingress instant; if ingress is after local sunset, the next day. Punya kala window per regional convention."
+  },
+  "rules": [
+    {
+      "id": "makar_sankranti",
+      "name": "Makar Sankranti",
+      "type": "solar",
+      "rashi": "makara",
+      "anchor": "sankranti",
+      "tieBreak": "sankranti_punya_kala",
+      "regions": [
+        "default",
+        "north",
+        "west",
+        "east"
+      ],
+      "priority": 95,
+      "notes": "Sun's sidereal ingress into Makara. Punya kala: if ingress occurs after sunset, observance moves to the next day.",
+      "aliases": {
+        "tamil": "Thai Pongal",
+        "gujarati": "Uttarayan",
+        "assamese": "Magh Bihu",
+        "punjabi": "Maghi"
+      },
+      "overrides": [
+        {
+          "region": "tamil",
+          "name": "Thai Pongal",
+          "notes": "First day of Thai; Bhogi is the previous day, Mattu Pongal the next."
+        }
+      ]
+    },
+    {
+      "id": "vasant_panchami",
+      "name": "Vasant Panchami (Saraswati Puja)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "magha",
+      "paksha": "shukla",
+      "tithi": 5,
+      "anchor": "purvahna",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default",
+        "north",
+        "east"
+      ],
+      "priority": 80,
+      "deity": "Saraswati"
+    },
+    {
+      "id": "maha_shivaratri",
+      "name": "Maha Shivaratri",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "phalguna",
+      "paksha": "krishna",
+      "tithi": 14,
+      "anchor": "nishita",
+      "tieBreak": "tithi_at_anchor_else_next_day",
+      "regions": [
+        "default"
+      ],
+      "priority": 95,
+      "deity": "Shiva",
+      "notes": "Amanta equivalent: Magha Krishna 14. Nishita = middle muhurta of the night straddling local midnight.",
+      "overrides": [
+        {
+          "region": "south",
+          "scheme": "amanta",
+          "month": "magha"
+        }
+      ]
+    },
+    {
+      "id": "holika_dahan",
+      "name": "Holika Dahan",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "phalguna",
+      "paksha": "shukla",
+      "tithi": 15,
+      "anchor": "pradosh",
+      "tieBreak": "tithi_at_anchor_avoid_bhadra",
+      "regions": [
+        "default",
+        "north",
+        "west"
+      ],
+      "priority": 85,
+      "deity": "Vishnu (Narasimha / Prahlad)",
+      "notes": "Purnima prevailing during pradosh; must avoid Bhadra (Vishti karana). If Bhadra covers pradosh, use Bhadra puccha or the window after Bhadra ends."
+    },
+    {
+      "id": "holi",
+      "name": "Holi (Dhulandi / Rangwali Holi)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "chaitra",
+      "paksha": "krishna",
+      "tithi": 1,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi",
+      "regions": [
+        "default",
+        "north",
+        "west"
+      ],
+      "priority": 90,
+      "notes": "Day after Holika Dahan. Amanta equivalent: Phalguna Krishna 1."
+    },
+    {
+      "id": "chaitra_navratri_ghatasthapana",
+      "name": "Chaitra Navratri begins (Ghatasthapana)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "chaitra",
+      "paksha": "shukla",
+      "tithi": 1,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi_skip_if_kshaya_at_sunrise",
+      "regions": [
+        "default",
+        "north"
+      ],
+      "priority": 85,
+      "duration_days": 9,
+      "deity": "Durga"
+    },
+    {
+      "id": "ugadi_gudi_padwa",
+      "name": "Ugadi / Gudi Padwa (Lunar New Year)",
+      "type": "lunar",
+      "scheme": "amanta",
+      "month": "chaitra",
+      "paksha": "shukla",
+      "tithi": 1,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi",
+      "regions": [
+        "telugu",
+        "kannada",
+        "marathi",
+        "konkani",
+        "sindhi"
+      ],
+      "priority": 90,
+      "aliases": {
+        "marathi": "Gudi Padwa",
+        "telugu": "Ugadi",
+        "kannada": "Yugadi",
+        "sindhi": "Cheti Chand"
+      }
+    },
+    {
+      "id": "ram_navami",
+      "name": "Rama Navami",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "chaitra",
+      "paksha": "shukla",
+      "tithi": 9,
+      "anchor": "madhyahna",
+      "tieBreak": "tithi_at_anchor_else_next_day",
+      "regions": [
+        "default"
+      ],
+      "priority": 90,
+      "deity": "Rama",
+      "notes": "Madhyahna = middle fifth of dinamana (sunrise to sunset)."
+    },
+    {
+      "id": "hanuman_jayanti",
+      "name": "Hanuman Jayanti",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "chaitra",
+      "paksha": "shukla",
+      "tithi": 15,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi",
+      "regions": [
+        "default",
+        "north"
+      ],
+      "priority": 80,
+      "deity": "Hanuman",
+      "overrides": [
+        {
+          "region": "tamil",
+          "scheme": "amanta",
+          "month": "margashirsha",
+          "paksha": "krishna",
+          "tithi": 30,
+          "preferNakshatra": "moola",
+          "notes": "Hanumath Jayanthi on Margazhi Amavasya with Moola nakshatra"
+        },
+        {
+          "region": "kannada",
+          "scheme": "amanta",
+          "month": "margashirsha",
+          "paksha": "krishna",
+          "tithi": 13,
+          "notes": "Hanuman Vratam"
+        }
+      ]
+    },
+    {
+      "id": "mesha_sankranti",
+      "name": "Mesha Sankranti (Solar New Year)",
+      "type": "solar",
+      "rashi": "mesha",
+      "anchor": "sankranti",
+      "tieBreak": "sankranti_punya_kala",
+      "regions": [
+        "punjabi",
+        "tamil",
+        "malayalam",
+        "bengali",
+        "odia",
+        "assamese",
+        "nepali"
+      ],
+      "priority": 85,
+      "aliases": {
+        "punjabi": "Baisakhi",
+        "tamil": "Puthandu",
+        "malayalam": "Vishu",
+        "bengali": "Pohela Boishakh",
+        "odia": "Pana Sankranti",
+        "assamese": "Bohag Bihu",
+        "nepali": "Nava Varsha"
+      }
+    },
+    {
+      "id": "akshaya_tritiya",
+      "name": "Akshaya Tritiya",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "vaishakha",
+      "paksha": "shukla",
+      "tithi": 3,
+      "anchor": "purvahna",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 80,
+      "deity": "Vishnu / Lakshmi"
+    },
+    {
+      "id": "narasimha_jayanti",
+      "name": "Narasimha Jayanti",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "vaishakha",
+      "paksha": "shukla",
+      "tithi": 14,
+      "anchor": "pradosh",
+      "tieBreak": "tithi_at_anchor_else_next_day",
+      "regions": [
+        "default",
+        "south"
+      ],
+      "priority": 70,
+      "deity": "Narasimha"
+    },
+    {
+      "id": "buddha_purnima",
+      "name": "Buddha Purnima / Vaishakha Purnima",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "vaishakha",
+      "paksha": "shukla",
+      "tithi": 15,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi",
+      "regions": [
+        "default"
+      ],
+      "priority": 70
+    },
+    {
+      "id": "vat_savitri",
+      "name": "Vat Savitri Vrat",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "jyeshtha",
+      "paksha": "krishna",
+      "tithi": 30,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi",
+      "regions": [
+        "north"
+      ],
+      "priority": 70,
+      "notes": "Amavasya (tithi 30) in the North (Purnimanta Jyeshtha). Maharashtra, Gujarat and the South observe on Jyeshtha Purnima.",
+      "overrides": [
+        {
+          "region": "marathi",
+          "paksha": "shukla",
+          "tithi": 15,
+          "name": "Vat Purnima"
+        },
+        {
+          "region": "gujarati",
+          "paksha": "shukla",
+          "tithi": 15,
+          "name": "Vat Purnima"
+        },
+        {
+          "region": "south",
+          "paksha": "shukla",
+          "tithi": 15
+        }
+      ]
+    },
+    {
+      "id": "ganga_dussehra",
+      "name": "Ganga Dussehra",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "jyeshtha",
+      "paksha": "shukla",
+      "tithi": 10,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi_prefer_hasta",
+      "regions": [
+        "north",
+        "east"
+      ],
+      "priority": 60,
+      "preferNakshatra": "hasta"
+    },
+    {
+      "id": "jagannath_rath_yatra",
+      "name": "Jagannath Rath Yatra",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "ashadha",
+      "paksha": "shukla",
+      "tithi": 2,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi",
+      "regions": [
+        "odia",
+        "default"
+      ],
+      "priority": 80,
+      "deity": "Jagannath"
+    },
+    {
+      "id": "devshayani_ekadashi",
+      "name": "Devshayani (Ashadhi) Ekadashi — Chaturmas begins",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "ashadha",
+      "paksha": "shukla",
+      "tithi": 11,
+      "anchor": "sunrise",
+      "tieBreak": "ekadashi_smarta_vaishnava",
+      "regions": [
+        "default"
+      ],
+      "priority": 85,
+      "deity": "Vishnu",
+      "overrides": [
+        {
+          "region": "vaishnava",
+          "tieBreak": "ekadashi_vaishnava"
+        }
+      ]
+    },
+    {
+      "id": "guru_purnima",
+      "name": "Guru Purnima (Vyasa Purnima)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "ashadha",
+      "paksha": "shukla",
+      "tithi": 15,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi",
+      "regions": [
+        "default"
+      ],
+      "priority": 80
+    },
+    {
+      "id": "nag_panchami",
+      "name": "Nag Panchami",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "shravana",
+      "paksha": "shukla",
+      "tithi": 5,
+      "anchor": "purvahna",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 70
+    },
+    {
+      "id": "raksha_bandhan",
+      "name": "Raksha Bandhan",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "shravana",
+      "paksha": "shukla",
+      "tithi": 15,
+      "anchor": "aparahna",
+      "tieBreak": "tithi_at_anchor_avoid_bhadra",
+      "regions": [
+        "default",
+        "north",
+        "west"
+      ],
+      "priority": 90,
+      "notes": "Aparahna preferred; must avoid Bhadra. If Bhadra covers aparahna, use pradosh after Bhadra ends."
+    },
+    {
+      "id": "krishna_janmashtami",
+      "name": "Krishna Janmashtami",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "bhadrapada",
+      "paksha": "krishna",
+      "tithi": 8,
+      "anchor": "nishita",
+      "tieBreak": "tithi_at_anchor_else_next_day",
+      "regions": [
+        "default"
+      ],
+      "priority": 95,
+      "deity": "Krishna",
+      "preferNakshatra": "rohini",
+      "notes": "Amanta equivalent: Shravana Krishna 8. Smarta: Ashtami at nishita on day 1, else day 2. Vaishnava: udaya-tithi / Rohini rule.",
+      "overrides": [
+        {
+          "region": "vaishnava",
+          "tieBreak": "vaishnava_udaya_prefer_rohini"
+        }
+      ]
+    },
+    {
+      "id": "hartalika_teej",
+      "name": "Hartalika Teej",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "bhadrapada",
+      "paksha": "shukla",
+      "tithi": 3,
+      "anchor": "pratahkala",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "north",
+        "west",
+        "nepali"
+      ],
+      "priority": 70,
+      "deity": "Parvati / Shiva"
+    },
+    {
+      "id": "ganesh_chaturthi",
+      "name": "Ganesh Chaturthi",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "bhadrapada",
+      "paksha": "shukla",
+      "tithi": 4,
+      "anchor": "madhyahna",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 95,
+      "deity": "Ganesha",
+      "duration_days": 10,
+      "notes": "Chaturthi prevailing at madhyahna; moon-sighting avoidance window flagged while Chaturthi prevails."
+    },
+    {
+      "id": "onam_thiruvonam",
+      "name": "Onam (Thiruvonam)",
+      "type": "nakshatra_in_solar_month",
+      "rashi": "simha",
+      "nakshatra": "shravana",
+      "anchor": "sunrise",
+      "tieBreak": "nakshatra_at_sunrise_else_greater_portion",
+      "regions": [
+        "malayalam"
+      ],
+      "priority": 90,
+      "notes": "Thiruvonam (Shravana) nakshatra in Chingam (Simha) solar month. Atham (Hasta) opens the 10-day festival."
+    },
+    {
+      "id": "anant_chaturdashi",
+      "name": "Anant Chaturdashi (Ganesh Visarjan)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "bhadrapada",
+      "paksha": "shukla",
+      "tithi": 14,
+      "anchor": "purvahna",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 80
+    },
+    {
+      "id": "sarva_pitru_amavasya",
+      "name": "Sarva Pitru Amavasya (Mahalaya)",
+      "type": "lunar",
+      "scheme": "amanta",
+      "month": "bhadrapada",
+      "paksha": "krishna",
+      "tithi": 30,
+      "anchor": "aparahna",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 85,
+      "notes": "Purnimanta equivalent: Ashwina Amavasya. Pitru Paksha = the 15 days from Bhadrapada Purnima."
+    },
+    {
+      "id": "sharad_navratri_ghatasthapana",
+      "name": "Sharad Navratri begins (Ghatasthapana)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "ashwina",
+      "paksha": "shukla",
+      "tithi": 1,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi_skip_if_kshaya_at_sunrise",
+      "regions": [
+        "default"
+      ],
+      "priority": 95,
+      "duration_days": 9,
+      "deity": "Durga",
+      "notes": "Ghatasthapana muhurat: first third of the day while Pratipada prevails; avoid Chitra nakshatra and Vaidhriti yoga where possible; Abhijit fallback."
+    },
+    {
+      "id": "durga_ashtami",
+      "name": "Durga Ashtami (Maha Ashtami)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "ashwina",
+      "paksha": "shukla",
+      "tithi": 8,
+      "anchor": "sunrise",
+      "tieBreak": "udaya_tithi",
+      "regions": [
+        "default",
+        "east"
+      ],
+      "priority": 85,
+      "deity": "Durga",
+      "overrides": [
+        {
+          "region": "bengali",
+          "anchor": "sandhi",
+          "notes": "Sandhi puja = last 24 min of Ashtami + first 24 min of Navami"
+        }
+      ]
+    },
+    {
+      "id": "vijayadashami",
+      "name": "Vijayadashami / Dussehra",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "ashwina",
+      "paksha": "shukla",
+      "tithi": 10,
+      "anchor": "aparahna",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 95,
+      "preferNakshatra": "shravana",
+      "deity": "Durga / Rama",
+      "notes": "Aparahna kala with Shravana nakshatra preferred; Vijay muhurat = 11th–13th muhurta of the day."
+    },
+    {
+      "id": "sharad_purnima",
+      "name": "Sharad Purnima (Kojagari)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "ashwina",
+      "paksha": "shukla",
+      "tithi": 15,
+      "anchor": "moonrise",
+      "tieBreak": "tithi_at_anchor_else_next_day",
+      "regions": [
+        "default",
+        "east",
+        "west"
+      ],
+      "priority": 70,
+      "aliases": {
+        "bengali": "Kojagari Lakshmi Puja",
+        "marathi": "Kojagiri Purnima"
+      }
+    },
+    {
+      "id": "karva_chauth",
+      "name": "Karva Chauth",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "kartika",
+      "paksha": "krishna",
+      "tithi": 4,
+      "anchor": "moonrise",
+      "tieBreak": "tithi_at_moonrise_else_next_day",
+      "regions": [
+        "north",
+        "west"
+      ],
+      "priority": 85,
+      "notes": "Amanta equivalent: Ashwina Krishna 4. Fast ends at moonrise; coincides with Sankashti Chaturthi."
+    },
+    {
+      "id": "dhanteras",
+      "name": "Dhanteras (Dhantrayodashi)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "kartika",
+      "paksha": "krishna",
+      "tithi": 13,
+      "anchor": "pradosh",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 90,
+      "deity": "Dhanvantari / Kubera / Lakshmi",
+      "notes": "Amanta equivalent: Ashwina Krishna 13. Puja during pradosh with Trayodashi prevailing; sthir lagna preferred."
+    },
+    {
+      "id": "naraka_chaturdashi",
+      "name": "Naraka Chaturdashi (Chhoti Diwali / Kali Chaudas)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "kartika",
+      "paksha": "krishna",
+      "tithi": 14,
+      "anchor": "arunodaya",
+      "tieBreak": "tithi_at_anchor_else_prev_day",
+      "regions": [
+        "default"
+      ],
+      "priority": 85,
+      "notes": "Abhyanga snan when Chaturdashi prevails at arunodaya."
+    },
+    {
+      "id": "diwali_lakshmi_puja",
+      "name": "Diwali — Lakshmi Puja",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "kartika",
+      "paksha": "krishna",
+      "tithi": 30,
+      "anchor": "pradosh",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 100,
+      "deity": "Lakshmi / Ganesha",
+      "notes": "Amanta equivalent: Ashwina Amavasya. Amavasya prevailing at pradosh; sthir lagna (Vrishabha) preferred. Festival-preparation timeline anchors here.",
+      "overrides": [
+        {
+          "region": "bengali",
+          "name": "Kali Puja",
+          "anchor": "nishita",
+          "deity": "Kali"
+        }
+      ]
+    },
+    {
+      "id": "govardhan_puja",
+      "name": "Govardhan Puja / Annakut / Bali Pratipada",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "kartika",
+      "paksha": "shukla",
+      "tithi": 1,
+      "anchor": "pratahkala",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default",
+        "north",
+        "west"
+      ],
+      "priority": 80,
+      "aliases": {
+        "gujarati": "Bestu Varas (Gujarati New Year)",
+        "marathi": "Bali Pratipada / Padwa"
+      }
+    },
+    {
+      "id": "bhai_dooj",
+      "name": "Bhai Dooj / Yama Dwitiya",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "kartika",
+      "paksha": "shukla",
+      "tithi": 2,
+      "anchor": "aparahna",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 80,
+      "aliases": {
+        "marathi": "Bhau Beej",
+        "bengali": "Bhai Phonta",
+        "nepali": "Bhai Tika"
+      }
+    },
+    {
+      "id": "chhath_puja",
+      "name": "Chhath Puja (Surya Shashthi)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "kartika",
+      "paksha": "shukla",
+      "tithi": 6,
+      "anchor": "sunset",
+      "tieBreak": "tithi_at_anchor_else_next_day",
+      "regions": [
+        "bihari",
+        "east",
+        "nepali"
+      ],
+      "priority": 90,
+      "deity": "Surya / Chhathi Maiya",
+      "duration_days": 4,
+      "notes": "Sandhya Arghya at sunset on Shashthi; Usha Arghya at sunrise the next day."
+    },
+    {
+      "id": "dev_uthani_ekadashi",
+      "name": "Dev Uthani (Prabodhini) Ekadashi — Chaturmas ends; Tulsi Vivah",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "kartika",
+      "paksha": "shukla",
+      "tithi": 11,
+      "anchor": "sunrise",
+      "tieBreak": "ekadashi_smarta_vaishnava",
+      "regions": [
+        "default"
+      ],
+      "priority": 80,
+      "deity": "Vishnu"
+    },
+    {
+      "id": "kartik_purnima",
+      "name": "Kartik Purnima / Dev Deepawali",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "kartika",
+      "paksha": "shukla",
+      "tithi": 15,
+      "anchor": "pradosh",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 85,
+      "aliases": {
+        "sikh": "Guru Nanak Jayanti (same day)"
+      }
+    },
+    {
+      "id": "gita_jayanti",
+      "name": "Gita Jayanti (Mokshada Ekadashi)",
+      "type": "lunar",
+      "scheme": "purnimanta",
+      "month": "margashirsha",
+      "paksha": "shukla",
+      "tithi": 11,
+      "anchor": "sunrise",
+      "tieBreak": "ekadashi_smarta_vaishnava",
+      "regions": [
+        "default"
+      ],
+      "priority": 70,
+      "deity": "Krishna"
+    }
+  ],
+  "recurringCycles": [
+    {
+      "id": "cycle_ekadashi",
+      "name": "Ekadashi (Shukla & Krishna)",
+      "type": "recurring",
+      "cycle": "tithi",
+      "tithi": 11,
+      "paksha": "both",
+      "anchor": "sunrise",
+      "tieBreak": "ekadashi_smarta_vaishnava",
+      "regions": [
+        "default"
+      ],
+      "priority": 60,
+      "notes": "Smarta: if Dashami prevails at arunodaya (viddha) the fast moves to the next day. Vaishnava: stricter arunodaya test. Parana after Dwadashi begins, avoiding Hari Vasara."
+    },
+    {
+      "id": "cycle_pradosham",
+      "name": "Pradosham",
+      "type": "recurring",
+      "cycle": "tithi",
+      "tithi": 13,
+      "paksha": "both",
+      "anchor": "pradosh",
+      "tieBreak": "tithi_at_anchor_else_prev_day",
+      "regions": [
+        "default",
+        "south"
+      ],
+      "priority": 50,
+      "notes": "Trayodashi prevailing during pradosh. Soma / Shani Pradosham flagged by weekday."
+    },
+    {
+      "id": "cycle_sankashti_chaturthi",
+      "name": "Sankashti Chaturthi",
+      "type": "recurring",
+      "cycle": "tithi",
+      "tithi": 4,
+      "paksha": "krishna",
+      "anchor": "moonrise",
+      "tieBreak": "tithi_at_moonrise_else_next_day",
+      "regions": [
+        "default",
+        "marathi"
+      ],
+      "priority": 50,
+      "notes": "Angarki when on Tuesday. Fast ends at moonrise."
+    },
+    {
+      "id": "cycle_purnima",
+      "name": "Purnima Vrat / Satyanarayan",
+      "type": "recurring",
+      "cycle": "tithi",
+      "tithi": 15,
+      "paksha": "shukla",
+      "anchor": "moonrise",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 40
+    },
+    {
+      "id": "cycle_amavasya",
+      "name": "Amavasya (Pitru tarpan)",
+      "type": "recurring",
+      "cycle": "tithi",
+      "tithi": 30,
+      "paksha": "krishna",
+      "anchor": "aparahna",
+      "tieBreak": "tithi_at_anchor_else_prev_day_if_more",
+      "regions": [
+        "default"
+      ],
+      "priority": 40,
+      "notes": "Somvati / Shani Amavasya flagged by weekday."
+    },
+    {
+      "id": "cycle_sankranti",
+      "name": "Sankranti (monthly solar ingress)",
+      "type": "recurring",
+      "cycle": "solar_ingress",
+      "anchor": "sankranti",
+      "tieBreak": "sankranti_punya_kala",
+      "regions": [
+        "default",
+        "tamil",
+        "malayalam",
+        "bengali",
+        "odia"
+      ],
+      "priority": 45,
+      "notes": "Twelve per year; drives Tamil, Malayalam, Bengali and Odia solar month starts."
+    }
+  ],
+  "reviewState": "draft",
+  "source": "Encoded from standard Drik Panchang conventions; each rule requires editorial review by a regional consultant before Published (CMS §9.4)."
+}

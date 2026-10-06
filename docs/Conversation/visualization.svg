@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="680" viewBox="0 0 680 640" xmlns="http://www.w3.org/2000/svg" style="font-family:var(--font-sans)" xmlns:xlink="http://www.w3.org/1999/xlink" height="640"><style>
+    :root { --color-text-primary: #1F2937;
+    --color-text-secondary: #6B7280;
+    --color-text-tertiary: #9CA3AF;
+    --color-text-info: #2563EB;
+    --color-text-success: #059669;
+    --color-text-warning: #D97706;
+    --color-text-danger: #DC2626;
+    --color-background-primary: rgb(255,255,255);
+    --color-background-secondary: rgb(247,247,247);
+    --color-background-tertiary: rgb(245,246,248);
+    --color-border-tertiary: rgba(0,0,0,0.15);
+    --color-border-secondary: rgba(0,0,0,0.3);
+    --ramp-purple-bg: #EEEDFE;
+    --ramp-purple-stroke: #534AB7;
+    --ramp-purple-text: #3C3489;
+    --ramp-purple-sub: #534AB7;
+    --ramp-teal-bg: #E1F5EE;
+    --ramp-teal-stroke: #0F6E56;
+    --ramp-teal-text: #085041;
+    --ramp-teal-sub: #0F6E56;
+    --ramp-coral-bg: #FAECE7;
+    --ramp-coral-stroke: #993C1D;
+    --ramp-coral-text: #712B13;
+    --ramp-coral-sub: #993C1D;
+    --ramp-gray-bg: #F1EFE8;
+    --ramp-gray-stroke: #5F5E5A;
+    --ramp-gray-text: #444441;
+    --ramp-gray-sub: #5F5E5A;
+    --ramp-blue-bg: #E6F1FB;
+    --ramp-blue-stroke: #185FA5;
+    --ramp-blue-text: #0C447C;
+    --ramp-blue-sub: #185FA5;
+    --ramp-amber-bg: #FAEEDA;
+    --ramp-amber-stroke: #854F0B;
+    --ramp-amber-text: #633806;
+    --ramp-amber-sub: #854F0B;
+      --font-sans: system-ui, -apple-system, sans-serif;
+      --font-mono: 'SF Mono', Menlo, monospace;
+      --border-radius-md: 8px; --border-radius-lg: 12px;
+    }
+    .t { font: 400 14px var(--font-sans); fill: var(--color-text-primary); }
+    .ts { font: 400 12px var(--font-sans); fill: var(--color-text-secondary); }
+    .th { font: 500 14px var(--font-sans); fill: var(--color-text-primary); }
+    .box { fill: var(--color-background-secondary); stroke: var(--color-border-tertiary); }
+    .node { cursor: pointer; } .node:hover { opacity: 0.85; }
+    .arr { stroke: var(--color-border-secondary); stroke-width: 1.5; fill: none; }
+    .leader { stroke: var(--color-text-tertiary); stroke-width: 0.5; stroke-dasharray: 3 2; fill: none; }
+    .c-purple &gt; rect, .c-purple &gt; circle, .c-purple &gt; ellipse { fill: var(--ramp-purple-bg); stroke: var(--ramp-purple-stroke); }
+    .c-purple &gt; .th { fill: var(--ramp-purple-text); } .c-purple &gt; .ts { fill: var(--ramp-purple-sub); }
+    .c-teal &gt; rect, .c-teal &gt; circle, .c-teal &gt; ellipse { fill: var(--ramp-teal-bg); stroke: var(--ramp-teal-stroke); }
+    .c-teal &gt; .th { fill: var(--ramp-teal-text); } .c-teal &gt; .ts { fill: var(--ramp-teal-sub); }
+    .c-coral &gt; rect, .c-coral &gt; circle, .c-coral &gt; ellipse { fill: var(--ramp-coral-bg); stroke: var(--ramp-coral-stroke); }
+    .c-coral &gt; .th { fill: var(--ramp-coral-text); } .c-coral &gt; .ts { fill: var(--ramp-coral-sub); }
+    .c-gray &gt; rect, .c-gray &gt; circle, .c-gray &gt; ellipse { fill: var(--ramp-gray-bg); stroke: var(--ramp-gray-stroke); }
+    .c-gray &gt; .th { fill: var(--ramp-gray-text); } .c-gray &gt; .ts { fill: var(--ramp-gray-sub); }
+    .c-blue &gt; rect, .c-blue &gt; circle, .c-blue &gt; ellipse { fill: var(--ramp-blue-bg); stroke: var(--ramp-blue-stroke); }
+    .c-blue &gt; .th { fill: var(--ramp-blue-text); } .c-blue &gt; .ts { fill: var(--ramp-blue-sub); }
+    .c-amber &gt; rect, .c-amber &gt; circle, .c-amber &gt; ellipse { fill: var(--ramp-amber-bg); stroke: var(--ramp-amber-stroke); }
+    .c-amber &gt; .th { fill: var(--ramp-amber-text); } .c-amber &gt; .ts { fill: var(--ramp-amber-sub); }
+    button { background: transparent; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 6px 14px; font-size: 13px; color: var(--color-text-primary); cursor: pointer; font-family: var(--font-sans); }
+    button:hover { background: var(--color-background-secondary); }
+    input[type="range"] { -webkit-appearance: none; height: 4px; background: var(--color-border-tertiary); border-radius: 2px; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); cursor: pointer; }
+    select { appearance: none; -webkit-appearance: none; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 6px 28px 6px 10px; font-size: 13px; color: var(--color-text-primary); font-family: var(--font-sans); cursor: pointer; outline: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+    select:hover { border-color: var(--color-border-secondary); background-color: var(--color-background-tertiary); }
+    * { box-sizing: border-box; margin: 0; font-family: var(--font-sans); }
+    html, body { overflow: hidden; min-height: 0 !important; height: auto !important; }
+    body { color: var(--color-text-primary); line-height: 1.5; }
+:root{--color-text-primary:#1F2937;--color-text-secondary:#6B7280;--color-text-tertiary:#9CA3AF;--color-text-info:#2563EB;--color-text-success:#059669;--color-text-warning:#D97706;--color-text-danger:#DC2626;--color-background-primary:rgb(255,255,255);--color-background-secondary:rgb(247,247,247);--color-background-tertiary:rgb(245,246,248);--color-border-tertiary:rgba(0,0,0,0.15);--color-border-secondary:rgba(0,0,0,0.3);--font-sans:system-ui, -apple-system, sans-serif;--font-mono:"SF Mono", Menlo, monospace;--border-radius-md:8px;--border-radius-lg:12px;--ramp-purple-bg:#EEEDFE;--ramp-purple-stroke:#534AB7;--ramp-purple-text:#3C3489;--ramp-purple-sub:#534AB7;--ramp-teal-bg:#E1F5EE;--ramp-teal-stroke:#0F6E56;--ramp-teal-text:#085041;--ramp-teal-sub:#0F6E56;--ramp-coral-bg:#FAECE7;--ramp-coral-stroke:#993C1D;--ramp-coral-text:#712B13;--ramp-coral-sub:#993C1D;--ramp-gray-bg:#F1EFE8;--ramp-gray-stroke:#5F5E5A;--ramp-gray-text:#444441;--ramp-gray-sub:#5F5E5A;--ramp-blue-bg:#E6F1FB;--ramp-blue-stroke:#185FA5;--ramp-blue-text:#0C447C;--ramp-blue-sub:#185FA5;--ramp-amber-bg:#FAEEDA;--ramp-amber-stroke:#854F0B;--ramp-amber-text:#633806;--ramp-amber-sub:#854F0B;}</style><rect x="0" y="0" width="680" height="640" fill="rgb(255, 255, 255)"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--color-text-tertiary)"/></marker></defs>
+<g class="c-gray"><rect x="20" y="16" width="640" height="70" rx="12" stroke-width="0.5"/><text class="th" x="40" y="34" dominant-baseline="central">Clients</text></g>
+<g class="c-blue"><rect x="36" y="44" width="140" height="34" rx="6" stroke-width="0.5"/><text class="ts" x="106" y="61" text-anchor="middle" dominant-baseline="central">iOS / Android (RN)</text></g>
+<g class="c-blue"><rect x="192" y="44" width="140" height="34" rx="6" stroke-width="0.5"/><text class="ts" x="262" y="61" text-anchor="middle" dominant-baseline="central">Web (Next.js)</text></g>
+<g class="c-blue"><rect x="348" y="44" width="140" height="34" rx="6" stroke-width="0.5"/><text class="ts" x="418" y="61" text-anchor="middle" dominant-baseline="central">Admin console</text></g>
+<g class="c-blue"><rect x="504" y="44" width="140" height="34" rx="6" stroke-width="0.5"/><text class="ts" x="574" y="61" text-anchor="middle" dominant-baseline="central">Seller portal</text></g>
+<path d="M340 86 L340 110" fill="none" stroke="var(--color-text-tertiary)" stroke-width="0.5" marker-end="url(#arrow)"/>
+<g class="c-teal"><rect x="20" y="112" width="640" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="128" text-anchor="middle" dominant-baseline="central">API Gateway (versioned REST /v1)</text><text class="ts" x="340" y="145" text-anchor="middle" dominant-baseline="central">auth · entitlement check · rate limit · tracing</text></g>
+<path d="M340 156 L340 180" fill="none" stroke="var(--color-text-tertiary)" stroke-width="0.5" marker-end="url(#arrow)"/>
+<g class="c-gray"><rect x="20" y="182" width="640" height="200" rx="12" stroke-width="0.5"/><text class="th" x="40" y="200" dominant-baseline="central">Domain services</text></g>
+<g class="c-purple"><rect x="36" y="214" width="146" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="109" y="229" text-anchor="middle" dominant-baseline="central">Identity &amp;</text><text class="ts" x="109" y="244" text-anchor="middle" dominant-baseline="central">Profile</text></g>
+<g class="c-purple"><rect x="194" y="214" width="146" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="267" y="229" text-anchor="middle" dominant-baseline="central">Calendar &amp;</text><text class="ts" x="267" y="244" text-anchor="middle" dominant-baseline="central">Festival Resolver</text></g>
+<g class="c-purple"><rect x="352" y="214" width="146" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="425" y="229" text-anchor="middle" dominant-baseline="central">Planner: notes,</text><text class="ts" x="425" y="244" text-anchor="middle" dominant-baseline="central">reminders, vrat, family</text></g>
+<g class="c-purple"><rect x="510" y="214" width="134" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="577" y="229" text-anchor="middle" dominant-baseline="central">Scheduler &amp;</text><text class="ts" x="577" y="244" text-anchor="middle" dominant-baseline="central">Notifications</text></g>
+<g class="c-purple"><rect x="36" y="270" width="146" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="109" y="285" text-anchor="middle" dominant-baseline="central">Muhurat</text><text class="ts" x="109" y="300" text-anchor="middle" dominant-baseline="central">Scoring</text></g>
+<g class="c-purple"><rect x="194" y="270" width="146" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="267" y="285" text-anchor="middle" dominant-baseline="central">CMS &amp; Editorial</text><text class="ts" x="267" y="300" text-anchor="middle" dominant-baseline="central">(versioned content)</text></g>
+<g class="c-purple"><rect x="352" y="270" width="146" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="425" y="285" text-anchor="middle" dominant-baseline="central">Subscription &amp;</text><text class="ts" x="425" y="300" text-anchor="middle" dominant-baseline="central">Entitlement</text></g>
+<g class="c-purple"><rect x="510" y="270" width="134" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="577" y="285" text-anchor="middle" dominant-baseline="central">Calendar Print</text><text class="ts" x="577" y="300" text-anchor="middle" dominant-baseline="central">(PDF workers)</text></g>
+<g class="c-purple"><rect x="36" y="326" width="146" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="109" y="341" text-anchor="middle" dominant-baseline="central">AI Guidance</text><text class="ts" x="109" y="356" text-anchor="middle" dominant-baseline="central">(RAG on Published)</text></g>
+<g class="c-purple"><rect x="194" y="326" width="146" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="267" y="341" text-anchor="middle" dominant-baseline="central">Search</text><text class="ts" x="267" y="356" text-anchor="middle" dominant-baseline="central">(intent + index)</text></g>
+<g class="c-amber"><rect x="352" y="326" width="292" height="44" rx="6" stroke-width="0.5"/><text class="ts" x="498" y="341" text-anchor="middle" dominant-baseline="central">Marketplace Service (Addendum B)</text><text class="ts" x="498" y="356" text-anchor="middle" dominant-baseline="central">sellers · KYC · splits · fulfillment · payouts</text></g>
+<path d="M120 382 L120 410" fill="none" stroke="var(--color-text-tertiary)" stroke-width="0.5" marker-end="url(#arrow)"/>
+<path d="M498 382 L498 410" fill="none" stroke="var(--color-text-tertiary)" stroke-width="0.5" marker-end="url(#arrow)"/>
+<g class="c-teal"><rect x="20" y="412" width="300" height="70" rx="8" stroke-width="0.5"/><text class="th" x="170" y="430" text-anchor="middle" dominant-baseline="central">Panchang Computation Service</text><text class="ts" x="170" y="448" text-anchor="middle" dominant-baseline="central">Swiss Ephemeris · Drik Ganita · Lahiri</text><text class="ts" x="170" y="465" text-anchor="middle" dominant-baseline="central">only producer of raw Panchang values</text></g>
+<g class="c-amber"><rect x="360" y="412" width="140" height="70" rx="8" stroke-width="0.5"/><text class="th" x="430" y="437" text-anchor="middle" dominant-baseline="central">Shopify</text><text class="ts" x="430" y="456" text-anchor="middle" dominant-baseline="central">catalog · checkout · tax</text></g>
+<g class="c-amber"><rect x="520" y="412" width="140" height="70" rx="8" stroke-width="0.5"/><text class="th" x="590" y="437" text-anchor="middle" dominant-baseline="central">Stripe Connect</text><text class="ts" x="590" y="456" text-anchor="middle" dominant-baseline="central">payouts (Addendum A)</text></g>
+<path d="M170 482 L170 510" fill="none" stroke="var(--color-text-tertiary)" stroke-width="0.5" marker-end="url(#arrow)"/>
+<g class="c-gray"><rect x="20" y="512" width="640" height="110" rx="12" stroke-width="0.5"/><text class="th" x="40" y="530" dominant-baseline="central">Data &amp; infrastructure</text></g>
+<g class="c-coral"><rect x="36" y="546" width="118" height="60" rx="6" stroke-width="0.5"/><text class="ts" x="95" y="566" text-anchor="middle" dominant-baseline="central">PanchangDay</text><text class="ts" x="95" y="582" text-anchor="middle" dominant-baseline="central">cache (PG+Redis)</text></g>
+<g class="c-coral"><rect x="166" y="546" width="118" height="60" rx="6" stroke-width="0.5"/><text class="ts" x="225" y="566" text-anchor="middle" dominant-baseline="central">Core Postgres</text><text class="ts" x="225" y="582" text-anchor="middle" dominant-baseline="central">users · rules · CMS</text></g>
+<g class="c-coral"><rect x="296" y="546" width="118" height="60" rx="6" stroke-width="0.5"/><text class="ts" x="355" y="566" text-anchor="middle" dominant-baseline="central">Sensitive Vault</text><text class="ts" x="355" y="582" text-anchor="middle" dominant-baseline="central">encrypted, region-pinned</text></g>
+<g class="c-coral"><rect x="426" y="546" width="108" height="60" rx="6" stroke-width="0.5"/><text class="ts" x="480" y="566" text-anchor="middle" dominant-baseline="central">Queue</text><text class="ts" x="480" y="582" text-anchor="middle" dominant-baseline="central">PDF · notify · webhooks</text></g>
+<g class="c-coral"><rect x="546" y="546" width="98" height="60" rx="6" stroke-width="0.5"/><text class="ts" x="595" y="566" text-anchor="middle" dominant-baseline="central">Object store</text><text class="ts" x="595" y="582" text-anchor="middle" dominant-baseline="central">PDFs · images</text></g>
+</svg>
