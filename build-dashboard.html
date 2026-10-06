@@ -58,13 +58,13 @@
 </head>
 <body>
   <h1>The Pandit — v3.0 Build Dashboard</h1>
-  <p class="sub">Generated 2026-10-07 · package status is scoped to the v3.0 acceptance criteria, not the existence of prototype code. One structural package is complete; no entire wave has passed its gate.</p>
+  <p class="sub">Updated 2026-10-07 · package status is scoped to the v3.0 acceptance criteria, not the existence of prototype code. S0 foundations passed their gated CI; S1–S7 remain open.</p>
 
   <div class="alert alert-red">
     <strong>Build position:</strong> the current source should be preserved and incrementally hardened, not discarded. Existing functionality is prototype/foundation quality. Marketplace, Vault, ledger, booking, Shopify, KYC, and tax work packages remain to be built.
   </div>
   <div class="alert alert-amber">
-    <strong>Evidence limit:</strong> the one complete package is only the repository scaffold, confirmed by its files and workspace manifests. No CI or project test result is asserted here; <span class="mono">uv</span> and <span class="mono">pnpm</span> were unavailable in this worker environment during the review. Counts are work-package dispositions, not percent of engineering effort completed.
+    <strong>Evidence limit:</strong> S0 CI run <span class="mono">37548797298</span> passed Python, TypeScript, accuracy, and disposable PostGIS/Redis integration checks. It does not establish production latency, commercial licensing, full client generation, or later stage gates. Counts are work-package dispositions, not percent of engineering effort completed.
   </div>
 
   <div class="grid" id="stats"></div>
@@ -113,7 +113,7 @@
   <section>
     <h2>Immediate critical path</h2>
     <ol>
-      <li>S0: accept ADRs, reconcile OpenAPI, add v3 migrations, outbox/idempotency, Vault boundary, and Postgres/Redis integration checks.</li>
+      <li>S0: foundation gate passed in CI run 37548797298; keep planned OpenAPI operations and generated-client deferral explicit.</li>
       <li>S1: expand four accuracy fixtures to at least 500 across ten locations; make the executable ±2/±5 tolerance policy and canonical interval payload pass.</li>
       <li>S2: replace profile/notes/reminders stubs, persist CMS/rules, reconcile mobile routes, and generate shared clients from the contract.</li>
       <li>S3: build the Commerce Core before any marketplace UI: quote policies, Stripe Connect, ledger, webhooks, payouts, refunds, disputes, and reconciliation.</li>
@@ -142,13 +142,13 @@
     const waves = [
       { id:'S0', title:'Foundations & contract reconciliation', gate:'ADRs accepted; migrations, OpenAPI, outbox, and integration smoke checks pass.', owner:'platform', items:[
       ['S0-00','Monorepo scaffold and toolchain manifests','platform','complete','apps/, services/, packages/, pnpm-workspace.yaml, package.json, and root pyproject.toml establish the requested monorepo shape.','No planned v3.0 change to this scoped scaffold; build checks and infrastructure wiring remain separate packages.'],
-         ['S0-01','ADRs and architecture decisions','platform','complete','Accepted ADRs 0001–0009 record the v3.0 backend, mobile, cache, accuracy, eventing, vendor, money, residency, and AI-retention decisions.','No planned v3.0 change; supersede an ADR explicitly if a future decision changes an invariant.'],
-        ['S0-02','FastAPI/OpenAPI reconciliation','contracts','update','Running FastAPI is only a subset of the aspirational OpenAPI; TS client types are hand-authored.','Reconcile the contract, mark planned routes, and generate clients from the agreed v1 schema.'],
-         ['S0-03','SQLAlchemy async/PostgreSQL foundation','platform','complete','Async session/repository conventions now normalize supported sync/async drivers; Alembic has an injectable connection seam and an isolated migration smoke test.','Local evidence is complete; run the real PostgreSQL/PostGIS integration job when that external test service is provisioned.'],
-         ['S0-04','v3 data-model migrations','data','complete','Additive revision 0002 registers 56 dependency-ordered v3 tables with privacy references, money constraints, PostGIS/range types, and portable SQLite fallbacks.','Local migration/model checks are complete; run the real PostgreSQL/PostGIS migration job before the S0 stage gate is declared passed.'],
-        ['S0-05','Outbox, idempotency, and Vault interfaces','platform','complete','Revision 0003 adds opaque-reference outbox envelopes and scoped idempotency records; provider-neutral Vault ports, deterministic fake reads, and payload-free audit sinks are covered.','Local contract evidence is complete; worker delivery, external Vault, and production queue integration remain downstream/operational gates.'],
+        ['S0-01','ADRs and architecture decisions','platform','complete','Accepted ADRs 0001–0009 record the v3.0 backend, mobile, cache, accuracy, eventing, vendor, money, residency, and AI-retention decisions.','Supersede an ADR explicitly if a future decision changes an invariant.'],
+        ['S0-02','FastAPI/OpenAPI reconciliation','contracts','complete','A machine-readable runtime inventory marks the 20 registered public operations as partial/planned against the canonical 145-path/172-operation target; a test guards route drift.','Keep generated clients deferred until the target and runtime converge; do not treat planned paths as working.'],
+        ['S0-03','SQLAlchemy async/PostgreSQL foundation','platform','complete','Async session/repository drivers and injectable Alembic migration seam pass local tests and disposable PostGIS CI.','Production deployment/database performance remain separate gates.'],
+        ['S0-04','v3 data-model migrations','data','complete','Additive revision 0002 registers 56 dependency-ordered v3 tables with privacy references, money constraints, PostGIS/range types, and portable SQLite fallbacks.','PostGIS migration smoke passes CI; future schema evolution requires new additive revisions.'],
+        ['S0-05','Outbox, idempotency, and Vault interfaces','platform','complete','Revision 0003 adds opaque-reference outbox envelopes and scoped idempotency records; provider-neutral Vault ports, deterministic fake reads, and payload-free audit sinks are covered.','Worker delivery, external Vault, and production queue integration remain downstream/operational gates.'],
         ['S0-06','Contract and authority checks','quality','complete','Offline Python/TypeScript/Swift/Kotlin authority checker and seven regression tests run in CI; the runtime-route inventory has a drift guard.','Source patterns are not a full data-flow proof; generated-client drift must be gated when the aspirational v1 spec and runtime converge.'],
-        ['S0-07','Postgres/Redis integration and observability','operations','update','Dedicated CI job now provisions ephemeral PostGIS/Redis for migration, user/outbox readback, cache/lock, and fixture query-latency evidence.','Verify a green remote integration run and retain the production SLO/load evidence gate; fixture latency is not a p95 claim.']
+        ['S0-07','Postgres/Redis integration and observability','operations','complete','CI run 37548797298 passed disposable PostGIS/Redis migration, user/outbox readback, cache/lock, and fixture query-latency checks.','Production SLO/load evidence remains a later gate; fixture latency is not a p95 claim.']
       ]},
       { id:'S1', title:'Panchang truth', gate:'At least 500 reference days across 10 locations; accuracy harness green.', owner:'panchang', items:[
         ['S1-01','PCS ephemeris boundary','panchang','update','engine.py provides a boundary, but compute.py/timeforms.py also import swisseph.','Centralise ephemeris access and document/correct approximation gaps.'],
@@ -216,7 +216,7 @@
       [''+counts.complete, 'Complete / no changes', 'var(--green)'],
       [''+counts.update, 'Require v3 updates', 'var(--amber)'],
       [''+counts.new, 'Yet to develop', 'var(--blue)'],
-      ['0/8', 'Wave gates passed', 'var(--red)']
+      ['1/8', 'Wave gates passed', 'var(--green)']
     ].map(([big,lbl,c]) => `<div class="card"><div class="big" style="color:${c}">${big}</div><div class="lbl">${lbl}</div></div>`).join('');
 
     const wavesEl = document.getElementById('waves');

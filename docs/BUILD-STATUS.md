@@ -10,12 +10,20 @@ vendor, and commercial-licence gates remain explicit until verified.
 | Package | Status | Evidence / next action |
 |---|---|---|
 | S0-01 ADRs and architecture decisions | done | `docs/adr/0001`–`0009`; documentation structure and link checks passed. |
-| S0-02 FastAPI/OpenAPI reconciliation | in-progress | Runtime inventory and drift guardrails added; generated-client/contract closure remains to be reviewed. |
+| S0-02 FastAPI/OpenAPI reconciliation | done | Canonical aspirational contract plus 20-operation runtime inventory and drift tests; generated clients remain deferred until target/runtime convergence, not claimed complete. |
 | S0-03 SQLAlchemy async/PostgreSQL foundation | done | Driver normalization, injectable Alembic seam, isolated migration smoke test, and URL coverage reviewed; live Postgres/PostGIS integration remains an external gate. |
 | S0-04 v3 data-model migrations | done | Additive revision `0002_v3_data_model` registers 56 tables with local privacy, uniqueness, money, ledger, and booking-overlap checks; live Postgres/PostGIS migration remains an external gate. |
 | S0-05 outbox/idempotency/Vault interfaces | done | Revision `0003_s005_outbox_idempotency`, opaque event refs, scoped replay guards, deterministic Vault fake, and payload-free access logging reviewed; workers/external Vault remain later gates. |
 | S0-06 contract and authority checks | done | Offline checker and 7 unit tests pass and run in Python CI; runtime-route inventory drift is guarded. Generated-client drift is deferred until S0-02 target/runtime convergence, not claimed complete. |
-| S0-07 Postgres/Redis integration | in-progress | Dedicated ephemeral PostGIS/Redis CI job and opt-in migration/readback/cache/lock tests added; local run skipped two tests without service URLs; remote integration evidence pending. |
+| S0-07 Postgres/Redis integration | done | CI run 37548797298 passed the ephemeral PostGIS/Redis job, migrations, user/outbox readback, cache/lock test, and fixture latency observation; production SLO evidence remains a later gate. |
+
+**S0 gate (2026-10-07):** Passed the defined foundation checks in
+`https://github.com/gpandit/panchang/actions/runs/37548797298` (Python,
+TypeScript, four-fixture accuracy regression, PostGIS/Redis integration, and
+all-checks-pass). The S1 accuracy dataset gate remains **not passed**: four
+fixtures are not 500 days across ten locations. The aspirational v1 OpenAPI is
+not a claim that its planned routes or generated clients are shipped. Production
+Vault, licensing, load/SLO and provider integrations remain open.
 
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,
