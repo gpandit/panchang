@@ -10,7 +10,10 @@ from __future__ import annotations
 from logging.config import fileConfig
 
 from alembic import context
+from sqlalchemy.engine import Connection
+
 from api.db import Base, get_engine
+from api.db.session import _sync_url
 
 # Import models for their side effect of registering tables on Base.metadata.
 from api.db import models as _models  # noqa: F401
@@ -28,7 +31,7 @@ def run_migrations_offline() -> None:
     from api.settings import get_settings
 
     context.configure(
-        url=get_settings().database_url,
+        url=_sync_url(get_settings().database_url),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -40,15 +43,29 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations against a live connection using the app's engine."""
+    # Supplying a connection through ``Config.attributes`` makes migration
+    # smoke tests deterministic and lets callers share an already configured
+    # connection/transaction.  Production still uses the application engine
+    # below, so Alembic and the API retain one database URL contract.
+    connection = config.attributes.get("connection")
+    if connection is not None:
+        _run_migrations(connection)
+        return
+
     engine = get_engine()
     with engine.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            compare_type=True,
-        )
-        with context.begin_transaction():
-            context.run_migrations()
+        _run_migrations(connection)
+
+
+def _run_migrations(connection: Connection) -> None:
+    """Configure and execute migrations on a SQLAlchemy connection."""
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
+    )
+    with context.begin_transaction():
+        context.run_migrations()
 
 
 if context.is_offline_mode():

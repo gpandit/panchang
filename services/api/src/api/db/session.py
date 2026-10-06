@@ -11,9 +11,9 @@ the spine the marketplace modules build on — every marketplace request gets an
 ``AsyncSession`` injected, scoped to the request and committed/rolled-back for it.
 
 Driver note: the project standardises on psycopg3, whose ``postgresql+psycopg://`` DSN
-serves *both* the sync and async engines, so the single ``database_url`` needs no
-translation for Postgres. Only the SQLite test URL is rewritten to its async driver
-(``sqlite+aiosqlite://``).
+serves *both* the sync and async engines. Bare PostgreSQL URLs and legacy ``asyncpg`` /
+``psycopg2`` driver names are normalized to psycopg3. SQLite test URLs are rewritten to
+their async driver (``sqlite+aiosqlite://``) for the async engine.
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 
 from sqlalchemy import Engine, create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -41,6 +42,7 @@ _AsyncSession: async_sessionmaker[AsyncSession] | None = None
 
 
 def _build_engine(url: str) -> Engine:
+    url = _sync_url(url)
     if url.startswith("sqlite"):
         # A single shared in-memory database for the whole test session.
         return create_engine(
@@ -55,22 +57,49 @@ def _build_engine(url: str) -> Engine:
 def _async_url(url: str) -> str:
     """Translate the configured sync DSN to its async-driver equivalent.
 
-    ``postgresql+psycopg://`` is already async-capable (psycopg3), so it passes
-    through untouched; a bare ``postgresql://`` gets the psycopg driver pinned. The
-    in-memory/file SQLite test URL is switched to the aiosqlite driver.
+    ``postgresql+psycopg://`` is already async-capable (psycopg3), while bare and
+    legacy PostgreSQL URLs are pinned to that driver. The in-memory/file SQLite test
+    URL is switched to the aiosqlite driver.
     """
-    if url.startswith("sqlite+"):
-        return url
-    if url.startswith("sqlite"):
-        return url.replace("sqlite", "sqlite+aiosqlite", 1)
-    if url.startswith("postgresql+"):
-        return url
-    if url.startswith("postgresql"):
-        return url.replace("postgresql", "postgresql+psycopg", 1)
+    parsed = make_url(url)
+    driver = parsed.drivername
+    if driver.startswith("sqlite"):
+        # Do not concatenate driver names (``sqlite+pysqlite`` would otherwise
+        # become the invalid ``sqlite+aiosqlite+pysqlite``).
+        return parsed.set(drivername="sqlite+aiosqlite").render_as_string(
+            hide_password=False
+        )
+    if driver in {"postgres", "postgresql", "postgresql+asyncpg", "postgresql+psycopg2"}:
+        # psycopg3 exposes both the synchronous and asynchronous SQLAlchemy
+        # dialects, so one configured DSN works for both engine factories.
+        return parsed.set(drivername="postgresql+psycopg").render_as_string(
+            hide_password=False
+        )
+    return url
+
+
+def _sync_url(url: str) -> str:
+    """Translate a configured DSN to the synchronous SQLAlchemy driver.
+
+    The application setting is intentionally a single URL shared by Alembic,
+    the synchronous temple store, and the async marketplace layer.  Normalising
+    the common async PostgreSQL/SQLite driver names here keeps that contract
+    usable by local smoke tests and by deployments that historically used
+    ``asyncpg``.
+    """
+    parsed = make_url(url)
+    driver = parsed.drivername
+    if driver == "postgres" or driver in {"postgresql+asyncpg", "postgresql+psycopg2"}:
+        return parsed.set(drivername="postgresql+psycopg").render_as_string(
+            hide_password=False
+        )
+    if driver == "sqlite+aiosqlite":
+        return parsed.set(drivername="sqlite").render_as_string(hide_password=False)
     return url
 
 
 def _build_async_engine(url: str) -> AsyncEngine:
+    url = _async_url(url)
     if url.startswith("sqlite"):
         # Mirror the sync engine: one shared in-memory DB across all connections.
         return create_async_engine(
@@ -127,7 +156,7 @@ def get_async_engine() -> AsyncEngine:
     """Return the process-wide async engine, building it on first use."""
     global _async_engine, _AsyncSession
     if _async_engine is None:
-        _async_engine = _build_async_engine(_async_url(get_settings().database_url))
+        _async_engine = _build_async_engine(get_settings().database_url)
         _AsyncSession = async_sessionmaker(
             bind=_async_engine, expire_on_commit=False, autoflush=False
         )

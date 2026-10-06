@@ -11,7 +11,7 @@ vendor, and commercial-licence gates remain explicit until verified.
 |---|---|---|
 | S0-01 ADRs and architecture decisions | done | `docs/adr/0001`–`0009`; documentation structure and link checks passed. |
 | S0-02 FastAPI/OpenAPI reconciliation | in-progress | Runtime inventory and drift guardrails added; generated-client/contract closure remains to be reviewed. |
-| S0-03 SQLAlchemy async/PostgreSQL foundation | in-progress | Driver normalization and injectable Alembic smoke seam added; foundation review and Postgres/PostGIS evidence remain. |
+| S0-03 SQLAlchemy async/PostgreSQL foundation | done | Driver normalization, injectable Alembic seam, isolated migration smoke test, and URL coverage reviewed; live Postgres/PostGIS integration remains an external gate. |
 
 Resumable progress manifest for the build defined in [`dev-plan-marketplace.md`](dev-plan-marketplace.md).
 Architecture context: [`architecture-marketplace.md`](architecture-marketplace.md).
