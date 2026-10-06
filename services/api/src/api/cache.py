@@ -14,9 +14,13 @@ at the PoP level as well.
 
 from __future__ import annotations
 
+import json
 import time
 from collections import OrderedDict
-from typing import Any
+from typing import Any, cast
+
+from redis import Redis
+from redis.lock import Lock
 
 from api.settings import get_settings
 
@@ -54,6 +58,33 @@ class LRUCache:
 
     def clear(self) -> None:
         self._store.clear()
+
+
+class RedisCache:
+    """Opt-in Redis cache/lock seam; the gateway still defaults to its local LRU.
+
+    This adapter is not a durable Panchang store or a production cache switch.
+    Callers provide an existing Redis connection and fully versioned cache keys.
+    """
+
+    def __init__(self, connection: Redis, default_ttl: int) -> None:
+        self._connection = connection
+        self._default_ttl = default_ttl
+
+    def get(self, key: str) -> tuple[Any, bool]:
+        raw = self._connection.get(key)
+        if raw is None:
+            return None, False
+        return json.loads(raw), True
+
+    def set(self, key: str, value: Any, ttl: int | None = None) -> None:
+        self._connection.set(
+            key, json.dumps(value), ex=ttl if ttl is not None else self._default_ttl
+        )
+
+    def lock(self, key: str, timeout: int = 30) -> Lock:
+        """Return a Redis per-key lock; the caller must release it."""
+        return cast(Lock, self._connection.lock(f"{key}:lock", timeout=timeout, blocking_timeout=0))
 
 
 _panchang_cache: LRUCache | None = None

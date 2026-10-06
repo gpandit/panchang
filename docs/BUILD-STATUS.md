@@ -15,6 +15,7 @@ vendor, and commercial-licence gates remain explicit until verified.
 | S0-04 v3 data-model migrations | done | Additive revision `0002_v3_data_model` registers 56 tables with local privacy, uniqueness, money, ledger, and booking-overlap checks; live Postgres/PostGIS migration remains an external gate. |
 | S0-05 outbox/idempotency/Vault interfaces | done | Revision `0003_s005_outbox_idempotency`, opaque event refs, scoped replay guards, deterministic Vault fake, and payload-free access logging reviewed; workers/external Vault remain later gates. |
 | S0-06 contract and authority checks | done | Offline checker and 7 unit tests pass and run in Python CI; runtime-route inventory drift is guarded. Generated-client drift is deferred until S0-02 target/runtime convergence, not claimed complete. |
+| S0-07 Postgres/Redis integration | in-progress | Dedicated ephemeral PostGIS/Redis CI job and opt-in migration/readback/cache/lock tests added; local run skipped two tests without service URLs; remote integration evidence pending. |
 
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,
