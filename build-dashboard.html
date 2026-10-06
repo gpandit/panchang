@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Pandit — v3.0 Build Dashboard</title>
+  <style>
+    :root { color-scheme: light dark; --bg:#f8fafc; --panel:#fff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --green:#16a34a; --amber:#d97706; --blue:#2563eb; --red:#dc2626; --purple:#7c3aed; }
+    * { box-sizing: border-box; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0; padding:2rem; background:var(--bg); color:var(--ink); }
+    @media (prefers-color-scheme: dark) { :root { --bg:#0b1220; --panel:#131c2e; --ink:#e2e8f0; --muted:#94a3b8; --line:#1e293b; } }
+    h1 { font-size:1.55rem; margin:0 0 .25rem; }
+    h2 { font-size:1.05rem; border-bottom:1px solid var(--line); padding-bottom:.5rem; margin:0 0 1rem; }
+    h3 { font-size:.95rem; margin:.2rem 0 .45rem; }
+    p { line-height:1.5; }
+    .sub { color:var(--muted); margin:0 0 1.5rem; font-size:.9rem; }
+    .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.84em; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+    .card, .panel, .wave, .keep-item { background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+    .card { padding:1rem 1.2rem; }
+    .card .big { font-size:1.8rem; font-weight:750; }
+    .card .lbl { color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; }
+    .alert { border-radius:12px; padding:1rem 1.2rem; margin-bottom:1.5rem; border:1px solid; }
+    .alert-red { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+    .alert-amber { background:#fffbeb; border-color:#fde68a; color:#92400e; }
+    @media (prefers-color-scheme: dark) { .alert-red { background:#2a1414; border-color:#7f1d1d; color:#fca5a5; } .alert-amber { background:#2a2110; border-color:#92400e; color:#fcd34d; } }
+    section { margin-bottom:2rem; }
+    .legend, .filters { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-bottom:1rem; }
+    .pill { display:inline-flex; align-items:center; gap:.3rem; font-size:.72rem; padding:.18rem .55rem; border-radius:999px; font-weight:650; white-space:nowrap; }
+    .pill-complete { background:#dcfce7; color:#166534; } .pill-update { background:#fef3c7; color:#92400e; } .pill-new { background:#dbeafe; color:#1d4ed8; } .pill-critical { background:#fee2e2; color:#991b1b; }
+    @media (prefers-color-scheme: dark) { .pill-complete { background:#12351e; color:#86efac; } .pill-update { background:#3b2a0b; color:#fcd34d; } .pill-new { background:#102a55; color:#93c5fd; } .pill-critical { background:#42191b; color:#fca5a5; } }
+    .dot { width:8px; height:8px; border-radius:50%; display:inline-block; } .dot-complete { background:var(--green); } .dot-update { background:var(--amber); } .dot-new { background:var(--blue); }
+    .wave { padding:1rem 1.1rem; margin-bottom:.7rem; }
+    .wave-head { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-bottom:.55rem; }
+    .wave-id { font:700 .9rem ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .wave-title { flex:1; font-weight:650; }
+    .wave-count { color:var(--muted); font-size:.82rem; }
+    .bar { display:flex; height:8px; border-radius:5px; background:var(--line); overflow:hidden; margin:.55rem 0 .65rem; }
+    .bar > span { height:100%; } .bar .complete { background:var(--green); } .bar .update { background:var(--amber); } .bar .new { background:var(--blue); }
+    .wave-meta { display:flex; justify-content:space-between; gap:1rem; color:var(--muted); font-size:.78rem; }
+    select, input { border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:8px; padding:.5rem .65rem; font:inherit; }
+    input { min-width:240px; flex:1; }
+    .board { overflow:auto; border:1px solid var(--line); border-radius:10px; }
+    table { width:100%; border-collapse:collapse; min-width:960px; background:var(--panel); font-size:.84rem; }
+    th, td { text-align:left; vertical-align:top; padding:.65rem .75rem; border-bottom:1px solid var(--line); }
+    th { color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; position:sticky; top:0; background:var(--panel); }
+    tr:last-child td { border-bottom:0; }
+    .wp { font-weight:700; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:nowrap; }
+    .note { color:var(--muted); font-size:.78rem; line-height:1.4; margin-top:.2rem; }
+    .critical { color:var(--red); font-weight:700; }
+    .keep-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.7rem; }
+    .keep-item { padding:.8rem 1rem; }
+    .keep-item p { margin:.3rem 0 0; color:var(--muted); font-size:.82rem; }
+    .source-list { columns:2 300px; padding-left:1.2rem; color:var(--muted); font-size:.85rem; line-height:1.65; }
+    footer { color:var(--muted); font-size:.78rem; margin-top:2rem; }
+    .empty { padding:1rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <h1>The Pandit — v3.0 Build Dashboard</h1>
+  <p class="sub">Generated 2026-10-07 · package status is scoped to the v3.0 acceptance criteria, not the existence of prototype code. One structural package is complete; no entire wave has passed its gate.</p>
+
+  <div class="alert alert-red">
+    <strong>Build position:</strong> the current source should be preserved and incrementally hardened, not discarded. Existing functionality is prototype/foundation quality. Marketplace, Vault, ledger, booking, Shopify, KYC, and tax work packages remain to be built.
+  </div>
+  <div class="alert alert-amber">
+    <strong>Evidence limit:</strong> the one complete package is only the repository scaffold, confirmed by its files and workspace manifests. No CI or project test result is asserted here; <span class="mono">uv</span> and <span class="mono">pnpm</span> were unavailable in this worker environment during the review. Counts are work-package dispositions, not percent of engineering effort completed.
+  </div>
+
+  <div class="grid" id="stats"></div>
+
+  <section>
+    <h2>Status definitions</h2>
+    <div class="legend">
+      <span class="pill pill-complete"><span class="dot dot-complete"></span>Complete — v3 gate met; no planned change</span>
+      <span class="pill pill-update"><span class="dot dot-update"></span>Needs update — reusable code exists but v3 contract/gate is incomplete</span>
+      <span class="pill pill-new"><span class="dot dot-new"></span>Yet to develop — no usable implementation found</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Waves / stage overview</h2>
+    <div id="waves"></div>
+  </section>
+
+  <section>
+    <h2>Work package board</h2>
+    <div class="filters">
+      <label>Wave <select id="waveFilter"><option value="all">All waves</option></select></label>
+      <label>Status <select id="statusFilter"><option value="all">All statuses</option><option value="complete">Complete</option><option value="update">Needs update</option><option value="new">Yet to develop</option></select></label>
+      <input id="search" type="search" placeholder="Search work packages, evidence, or action…" aria-label="Search work packages">
+    </div>
+    <div class="board">
+      <table>
+        <thead><tr><th>WP</th><th>Work package</th><th>Owner / area</th><th>Status</th><th>Evidence and required action</th></tr></thead>
+        <tbody id="board"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Reusable code inventory</h2>
+    <div class="keep-grid">
+      <div class="keep-item"><h3>Keep: Panchang package structure</h3><p><span class="mono">services/panchang/src/panchang/engine.py</span>, models, constants, time handling, cache protocols, and edge-case tests. Rework the ephemeris boundary, approximations, fallback semantics, and production adapters.</p></div>
+      <div class="keep-item"><h3>Keep: gateway seams</h3><p><span class="mono">services/api/src/api/main.py</span>, auth, tier dependencies, error envelopes, routing, and rate-limit patterns. Replace stubs and reconcile routes with the v1 contract.</p></div>
+      <div class="keep-item"><h3>Keep: persistence patterns</h3><p>SQLAlchemy async session, repository conventions, Alembic setup, and the existing migration shape. Extend them with the v3 schema and real PostgreSQL integration tests.</p></div>
+      <div class="keep-item"><h3>Keep: admin, CMS, audit, PDF</h3><p>Admin workflow/reporting/audit patterns and queued PDF worker interfaces are useful seams. Replace in-memory stores, local-only outputs, and placeholder content.</p></div>
+      <div class="keep-item"><h3>Keep: clients and offline structure</h3><p>Web today/calendar/festival flows, iOS/Android repositories and caches, and design-token generation are reusable. Fix stale endpoints, generated types, persistence, and accessibility/contract coverage.</p></div>
+      <div class="keep-item"><h3>Keep: operations scaffolding</h3><p>Docker Compose, observability configuration, accuracy harness structure, and launch-readiness checks should remain and become real gate evidence.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Immediate critical path</h2>
+    <ol>
+      <li>S0: accept ADRs, reconcile OpenAPI, add v3 migrations, outbox/idempotency, Vault boundary, and Postgres/Redis integration checks.</li>
+      <li>S1: expand four accuracy fixtures to at least 500 across ten locations; make the executable ±2/±5 tolerance policy and canonical interval payload pass.</li>
+      <li>S2: replace profile/notes/reminders stubs, persist CMS/rules, reconcile mobile routes, and generate shared clients from the contract.</li>
+      <li>S3: build the Commerce Core before any marketplace UI: quote policies, Stripe Connect, ledger, webhooks, payouts, refunds, disputes, and reconciliation.</li>
+      <li>S4–S5: build Pandit Services and Shopify Pooja Items against those frozen contracts; prove concurrency, entitlement, webhook, and money invariants.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Evidence sources</h2>
+    <ul class="source-list">
+      <li><span class="mono">docs/requirements-v3.0.md</span></li>
+      <li><span class="mono">docs/architecture-v3.0.md</span></li>
+      <li><span class="mono">docs/data-model-v3.0.md</span></li>
+      <li><span class="mono">docs/design-development-plan-v3.0.md</span></li>
+      <li><span class="mono">docs/ai-prompts-v3.0.md</span></li>
+      <li><span class="mono">docs/BUILD-STATUS.md</span></li>
+      <li><span class="mono">services/api/alembic/versions/0001_initial_temple.py</span></li>
+      <li><span class="mono">tools/accuracy_harness/data/reference_panchang.json</span></li>
+      <li><span class="mono">services/api/src/api/routers/v1/notes.py</span>, <span class="mono">reminders.py</span>, <span class="mono">profile.py</span></li>
+    </ul>
+  </section>
+
+  <footer>Static, dependency-free dashboard. Open this file directly or serve the repository root with a local HTTP server for browser preview.</footer>
+
+  <script>
+    const waves = [
+      { id:'S0', title:'Foundations & contract reconciliation', gate:'ADRs accepted; migrations, OpenAPI, outbox, and integration smoke checks pass.', owner:'platform', items:[
+      ['S0-00','Monorepo scaffold and toolchain manifests','platform','complete','apps/, services/, packages/, pnpm-workspace.yaml, package.json, and root pyproject.toml establish the requested monorepo shape.','No planned v3.0 change to this scoped scaffold; build checks and infrastructure wiring remain separate packages.'],
+        ['S0-01','ADRs and architecture decisions','platform','update','v3 decisions are documented, but an accepted ADR set is not present.','Create and accept ADRs for stack, mobile, grid, accuracy, eventing, vendors, money policy, residency, and AI retention.'],
+        ['S0-02','FastAPI/OpenAPI reconciliation','contracts','update','Running FastAPI is only a subset of the aspirational OpenAPI; TS client types are hand-authored.','Reconcile the contract, mark planned routes, and generate clients from the agreed v1 schema.'],
+        ['S0-03','SQLAlchemy async/PostgreSQL foundation','platform','update','Async session/repository patterns exist; the migration/model set is temple-only.','Add production Postgres/PostGIS wiring, migration smoke tests, and repository conventions.'],
+        ['S0-04','v3 data-model migrations','data','new','User, Panchang, CMS, reminder, commerce, booking, ledger, and order tables are absent.','Implement dependency-ordered migrations from data-model-v3.0.'],
+        ['S0-05','Outbox, idempotency, and Vault interfaces','platform','new','No transactional outbox, Vault boundary, or idempotency tables/interfaces were found.','Add durable event envelope, replay-safe keys, Vault refs, and access logging.'],
+        ['S0-06','Contract and authority checks','quality','update','CI exists, but direct ephemeris imports and client-authority checks remain.','Add forbidden-import, generated-contract, and no-client-calculation checks.'],
+        ['S0-07','Postgres/Redis integration and observability','operations','update','Compose and observability scaffolding exist; tests mainly use SQLite/in-memory stores.','Add real service integration jobs and record SLO evidence.']
+      ]},
+      { id:'S1', title:'Panchang truth', gate:'At least 500 reference days across 10 locations; accuracy harness green.', owner:'panchang', items:[
+        ['S1-01','PCS ephemeris boundary','panchang','update','engine.py provides a boundary, but compute.py/timeforms.py also import swisseph.','Centralise ephemeris access and document/correct approximation gaps.'],
+        ['S1-02','Canonical PanchangDay interval contract','panchang','update','Typed models and edge tests exist, but UTC/offset/hoursFromSunrise/flags are incomplete.','Make the v3 interval schema canonical and derive display formats at the edge.'],
+        ['S1-03','Accuracy harness and reference dataset','quality','update','Harness exists with 4 fixtures and 3 locations, not the 500/10 gate.','Expand independently sourced fixtures and retain the executable ±2/±5 policy.'],
+        ['S1-04','Redis/Postgres cache, grid, and locks','panchang','update','Cache protocols and 0.1° grid exist; production adapters and distributed locks are not wired.','Wire durable Redis/Postgres stores, timezone keying, and per-key locking.'],
+        ['S1-05','15-month cache warmer','panchang','update','Synchronous warmer exists for illustrative cities; scheduled production integration is missing.','Add queue scheduling, popular-location prioritisation, and engine-version invalidation.'],
+        ['S1-06','Festival rule DSL and resolver','rules','update','Rule JSON exists; occurrence persistence/resolution is incomplete and filters discard year/month.','Implement versioned rule resolution, occurrence storage, regional overrides, and snapshots.']
+      ]},
+      { id:'S2', title:'Core product', gate:'Auth/profile/Vault, calendar, content, reminders, subscriptions, PDF, and 3-client E2E pass.', owner:'platform + clients', items:[
+        ['S2-01','Identity, profiles, locations, and Vault lifecycle','platform','update','JWT/tier dependencies exist; profile/location writes return 501 and no user/Vault persistence exists.','Implement persistent identity/profile/location flows, roles, Vault refs, export, and delete.'],
+        ['S2-02','Calendar assembly and client views','clients','update','Web/iOS/Android day/month flows exist; week/year/range, canonical persistence, and 3-client E2E are missing.','Complete server assembly, offline bundles, route alignment, and E2E checks.'],
+        ['S2-03','CMS workflow and provenance','cms','update','Draft/review/publish/admin patterns exist, but CMS/audit stores are explicitly in-memory.','Persist published versions, provenance, regional fallback, flags, and invalidation events.'],
+        ['S2-04','Notes, bookmarks, reminders, and vrat tracking','platform','update','Local-first UI/cache prototypes exist; notes/reminders APIs are empty/501 and no scheduler exists.','Add persistent CRUD, limits, Gregorian scheduling, and the frozen lunar recurrence contract; full lunar resolution is S6.'],
+        ['S2-05','Subscription receipt reconciliation','billing','update','JWT claims and gateway tier checks exist; provider receipt adapters and server records are absent.','Implement Apple/Google/Stripe adapters and authoritative entitlement reconciliation.'],
+        ['S2-06','PDF jobs and signed exports','platform','update','Queue/worker/local storage/S3 seams exist; jobs are not persisted and output is not production-backed.','Persist calendar jobs, use object storage adapters, signed URLs, and retry state.'],
+        ['S2-07','Notifications and delivery tracking','notifications','update','Mobile push clients exist; server delivery, retries, idempotency, and tracking are absent.','Build event-driven APNs/FCM/email fan-out and delivery state.'],
+        ['S2-08','Client contract and design-token compliance','clients','update','Multiple clients and tests exist; shared types are hand-authored and design values are placeholders.','Generate clients, reconcile routes, and preserve token-only visual implementation.']
+      ]},
+      { id:'S3', title:'Commerce Core', gate:'Sandbox money flows pass; ledger balances; reconciliation variance is zero.', owner:'commerce', items:[
+        ['S3-01','Commerce schema and provider/KYC interfaces','commerce','new','No commerce/provider/KYC/Vault implementation exists.','Build provider accounts, verification refs, Stripe Connect/KYC interfaces, and migrations.'],
+        ['S3-02','Quote, commission, tax, and immutable snapshots','commerce','new','No server-authoritative quote or tax/commission policy module exists.','Implement minor-unit calculations, pass-through rules, jurisdiction tax, and snapshots.'],
+        ['S3-03','Stripe Connect payments and escrow','commerce','new','No Stripe Connect, PaymentIntent, holdback, refund, or transfer implementation exists.','Implement signed/idempotent adapters and test authorise/capture/hold/release flows.'],
+        ['S3-04','Ledger, payouts, and reconciliation','commerce','new','No ledger, payout, or reconciliation modules/tables exist.','Add append-only double-entry journals, payout scheduler, statements, and reconciliation.'],
+        ['S3-05','Webhooks, disputes, and finance operations','commerce','new','No signed webhook pipeline, dispute lifecycle, or finance console exists.','Add verification, replay safety, dead letters, payout freeze, evidence, and admin views.']
+      ]},
+      { id:'S4', title:'Pandit Services marketplace', gate:'In-person booking works with no double-booking, immutable policy snapshots, and operations console.', owner:'marketplace', items:[
+        ['S4-01','Pandit onboarding and verification','marketplace','new','No marketplace modules; all related build-status items remain todo.','Build agreements, profile, KYC status, approval queue, and discoverability gate.'],
+        ['S4-02','Services, travel, availability, and discovery','marketplace','new','No catalogue, PostGIS search, availability, blackout, or ranking implementation exists.','Build service taxonomy, travel fees, lead/buffer rules, search, and availability APIs.'],
+        ['S4-03','Quote and booking state machine','marketplace','new','No booking tables, range constraints, Vault address access, or concurrency implementation exists.','Build server quote, atomic slot reservation, FSM, payment link, and address disclosure rules.'],
+        ['S4-04','Messaging, reviews, and booking notifications','marketplace','new','No marketplace conversation, masking, review, or booking-notification service exists.','Add persistent WebSocket-ready messaging, PII masking, verified reviews, and events.'],
+        ['S4-05','Provider, patron, and operations clients','clients','new','Existing clients contain no Pandit marketplace flow.','Build clients only after S3/S4 contracts freeze; cover Silver/Gold gating and deep links.']
+      ]},
+      { id:'S5', title:'Pooja Items marketplace', gate:'Signed Shopify webhook → order mirror → ledger/seller split → payout trace passes.', owner:'marketplace', items:[
+        ['S5-01','Shopify catalogue, cart, and hosted checkout','shop','new','No Shopify integration or checkout flow exists.','Build provider interface, Storefront catalogue/cart, server gate, and hosted checkout URL.'],
+        ['S5-02','Seller onboarding and samagri mapping','shop','new','No seller/KYC overlay or CMS-to-Shopify mapping implementation exists.','Build seller approval, product refs, and festival/service SamagriList links.'],
+        ['S5-03','Signed webhooks, order mirrors, and seller splits','shop','new','No Shopify webhook/order pipeline exists.','Verify/deduplicate webhooks and create order/split/ledger records.'],
+        ['S5-04','Fulfilment, returns, reviews, and payouts','shop','new','No goods fulfilment or commerce-accounting integration exists.','Add Shopify write-back, returns, reviews, disputes, holdback, and reconciliation.']
+      ]},
+      { id:'S6', title:'Deferred intelligence and experience', gate:'AI/planner/video/widgets/advanced reminders meet their privacy and SLO evidence.', owner:'product + clients', items:[
+        ['S6-01','Ask The Pandit RAG assistant','ai','new','No AI/RAG, citations, grounding, metering, or retention implementation exists.','Build provider-neutral retrieval, CMS-only grounding, Panchang tools, citations, and refusal rules.'],
+        ['S6-02','Full Tithi reminders','platform','new','Current reminder endpoints are stubs; no rolling recurrence resolver or fire records exists.','Implement kshaya/vriddhi, location re-resolution, idempotent fan-out, and regional conventions.'],
+        ['S6-03','Muhurat and Hindu life planner','planner','update','PCS emits basic periods, but no event-type planner/search API, scoring, explanations, or saved plans exist.','Retain PCS windows; add server scoring, explanations, persistence, and deep links.'],
+        ['S6-04','Family groups and conflict UX','platform','new','No family-group persistence, Vault birth-data handling, or shared-edit conflict flow exists.','Build invitations, admin/member permissions, derived dates, versioned edits, and deletion.'],
+        ['S6-05','Video, widgets, ranking, group/gift bookings','clients + marketplace','new','Explicitly deferred; no implementation was found.','Evaluate vendors and build only after core marketplace gates.'],
+        ['S6-06','HD/branded PDFs and temple/community features','platform + clients','update','PDF and temple display/admin prototypes exist, but functionality remains placeholder/deferred.','Retain rendering seams; add templates, branding, temple admin, and production output.']
+      ]},
+      { id:'S7', title:'Launch hardening', gate:'Commercial licence, security/compliance, DR, SLO, and canary sign-off.', owner:'quality + operations', items:[
+        ['S7-01','Commercial Swiss Ephemeris licensing','compliance','update','Launch checker exists, but production remains blocked until commercial licensing is configured.','Set approved commercial mode and prove promotion is refused otherwise.'],
+        ['S7-02','Security, privacy, and compliance','security','update','Auth/RBAC/rate-limit/audit patterns exist; Vault, deletion/export, and privacy controls are incomplete.','Complete sensitive-data review, penetration/privacy checks, masking, and legal acceptance logs.'],
+        ['S7-03','Load, SLO, and observability hardening','operations','update','Load scripts, alerts, and dashboards are scaffolded; no v3 gate evidence exists.','Run representative Postgres/Redis/load workloads and record latency/availability evidence.'],
+        ['S7-04','Backups, restore, DR, and runbooks','operations','new','No verified restore drill, RPO/RTO evidence, or complete operational runbooks were found.','Implement backups, restore tests, incident/reconciliation runbooks, and ownership.'],
+        ['S7-05','Store, legal, tax, and payment compliance','compliance','new','Required legal/store/tax sign-offs and regional finance configuration are absent.','Complete IAP/payment-rail review, tax setup, terms, privacy, residency, and market sign-off.'],
+        ['S7-06','Canary deployment and launch readiness','operations','update','CI/staging workflows and launch script exist; full licence/compliance/gate evidence is incomplete.','Add canary promotion checks, rollback, smoke tests, and final evidence bundle.']
+      ]}
+    ];
+
+    const allItems = waves.flatMap(w => w.items.map(item => ({ wave:w.id, waveTitle:w.title, gate:w.gate, id:item[0], title:item[1], owner:item[2], status:item[3], evidence:item[4], action:item[5] })));
+    const label = { complete:'Complete', update:'Needs update', new:'Yet to develop' };
+    const color = { complete:'var(--green)', update:'var(--amber)', new:'var(--blue)' };
+    const stats = document.getElementById('stats');
+    const counts = allItems.reduce((a, x) => { a[x.status]++; return a; }, {complete:0, update:0, new:0});
+    stats.innerHTML = [
+      [''+allItems.length, 'Total work packages', 'var(--ink)'],
+      [''+counts.complete, 'Complete / no changes', 'var(--green)'],
+      [''+counts.update, 'Require v3 updates', 'var(--amber)'],
+      [''+counts.new, 'Yet to develop', 'var(--blue)'],
+      ['0/8', 'Wave gates passed', 'var(--red)']
+    ].map(([big,lbl,c]) => `<div class="card"><div class="big" style="color:${c}">${big}</div><div class="lbl">${lbl}</div></div>`).join('');
+
+    const wavesEl = document.getElementById('waves');
+    wavesEl.innerHTML = waves.map(w => {
+      const c = w.items.reduce((a, x) => { a[x[3]]++; return a; }, {complete:0,update:0,new:0});
+      const total = w.items.length;
+      return `<div class="wave"><div class="wave-head"><span class="wave-id">${w.id}</span><span class="wave-title">${w.title}</span><span class="wave-count">${c.complete}/${total} gate-complete</span></div><div class="bar"><span class="complete" style="width:${c.complete/total*100}%"></span><span class="update" style="width:${c.update/total*100}%"></span><span class="new" style="width:${c.new/total*100}%"></span></div><div class="wave-meta"><span>${c.update} require updates · ${c.new} yet to develop</span><span>${w.gate}</span></div></div>`;
+    }).join('');
+
+    const waveFilter = document.getElementById('waveFilter');
+    waves.forEach(w => waveFilter.insertAdjacentHTML('beforeend', `<option value="${w.id}">${w.id} — ${w.title}</option>`));
+    const board = document.getElementById('board');
+    function renderBoard() {
+      const waveValue = waveFilter.value;
+      const statusValue = document.getElementById('statusFilter').value;
+      const query = document.getElementById('search').value.toLowerCase().trim();
+      const rows = allItems.filter(x => (waveValue === 'all' || x.wave === waveValue) && (statusValue === 'all' || x.status === statusValue) && (!query || [x.id,x.title,x.owner,x.evidence,x.action,x.waveTitle].join(' ').toLowerCase().includes(query)));
+      board.innerHTML = rows.length ? rows.map(x => `<tr><td class="wp">${x.id}</td><td><strong>${x.title}</strong><div class="note">${x.wave} · ${x.waveTitle}</div></td><td><span class="mono">${x.owner}</span></td><td><span class="pill pill-${x.status}"><span class="dot" style="background:${color[x.status]}"></span>${label[x.status]}</span></td><td><div>${x.evidence}</div><div class="note"><strong>Next:</strong> ${x.action}</div></td></tr>`).join('') : '<tr><td colspan="5" class="empty">No work packages match the current filters.</td></tr>';
+    }
+    [waveFilter, document.getElementById('statusFilter'), document.getElementById('search')].forEach(el => el.addEventListener('input', renderBoard));
+    renderBoard();
+  </script>
+</body>
+</html>
