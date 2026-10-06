@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-07",
+  "status": "runtime-inventory",
+  "aspirational_source": "docs/Conversation/the-pandit-openapi-v1.yaml",
+  "runtime_source": "services/api/src/api/main.py",
+  "legacy_snapshot": "docs/openapi.json",
+  "reconciliation_document": "docs/openapi-v1-reconciliation.md",
+  "aspirational_counts": {
+    "paths": 145,
+    "operations": 172
+  },
+  "rule": "An aspirational path/operation is planned unless it is listed in runtime_operations.",
+  "runtime_operations": [
+    {"path": "/v1/panchang/daily", "method": "GET", "status": "partial"},
+    {"path": "/v1/panchang/month", "method": "GET", "status": "partial"},
+    {"path": "/v1/festivals", "method": "GET", "status": "partial"},
+    {"path": "/v1/festivals/{festival_id}", "method": "GET", "status": "partial"},
+    {"path": "/v1/notes", "method": "GET", "status": "partial"},
+    {"path": "/v1/notes", "method": "POST", "status": "planned"},
+    {"path": "/v1/notes/{note_id}", "method": "GET", "status": "planned"},
+    {"path": "/v1/notes/{note_id}", "method": "PUT", "status": "planned"},
+    {"path": "/v1/notes/{note_id}", "method": "DELETE", "status": "planned"},
+    {"path": "/v1/reminders", "method": "GET", "status": "partial"},
+    {"path": "/v1/reminders", "method": "POST", "status": "planned"},
+    {"path": "/v1/reminders/{reminder_id}", "method": "DELETE", "status": "planned"},
+    {"path": "/v1/profile", "method": "GET", "status": "partial"},
+    {"path": "/v1/profile", "method": "PUT", "status": "planned"},
+    {"path": "/v1/profile/locations", "method": "GET", "status": "partial"},
+    {"path": "/v1/profile/locations", "method": "POST", "status": "planned"},
+    {"path": "/v1/subscription", "method": "GET", "status": "partial"},
+    {"path": "/v1/pdf/jobs", "method": "POST", "status": "partial"},
+    {"path": "/v1/pdf/jobs/{job_id}", "method": "GET", "status": "partial"},
+    {"path": "/v1/temple/{temple_id}", "method": "GET", "status": "partial"}
+  ],
+  "out_of_contract_runtime_prefixes": ["/admin/v1/", "/temple/v1/"]
+}

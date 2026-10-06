@@ -1,3 +1,5 @@
+# Aspirational product target. Reconcile against the running FastAPI surface before treating a
+# path as available: ../openapi-v1-reconciliation.md (machine-readable inventory beside it).
 openapi: 3.1.0
 info:
   title: The Pandit API
