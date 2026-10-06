@@ -47,6 +47,8 @@ def test_alembic_upgrade_head_on_isolated_database(tmp_path: Path) -> None:
             "ledger_journals",
             "bookings",
             "order_refs",
+            "idempotency_keys",
+            "outbox_events",
         } <= tables
         with engine.connect() as connection:
             assert connection.execute(text("SELECT COUNT(*) FROM temples")).scalar_one() == 1

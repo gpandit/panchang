@@ -28,6 +28,10 @@ depends_on: str | Sequence[str] | None = None
 
 
 _LEGACY_TABLES = {"temples", "temple_admin_accounts"}
+# Keep this historical revision stable when later model modules are imported by
+# Alembic.  S0-05 owns these tables in revision 0003; a fresh checkout must not
+# silently backdate them into 0002.
+_S005_TABLES = {"idempotency_keys", "outbox_events"}
 
 
 def upgrade() -> None:
@@ -41,7 +45,7 @@ def upgrade() -> None:
     tables = [
         table
         for table in Base.metadata.sorted_tables
-        if table.name not in _LEGACY_TABLES
+        if table.name not in _LEGACY_TABLES | _S005_TABLES
     ]
     Base.metadata.create_all(bind=bind, tables=tables, checkfirst=True)
 
@@ -51,6 +55,6 @@ def downgrade() -> None:
     tables = [
         table
         for table in reversed(Base.metadata.sorted_tables)
-        if table.name not in _LEGACY_TABLES
+        if table.name not in _LEGACY_TABLES | _S005_TABLES
     ]
     Base.metadata.drop_all(bind=bind, tables=tables, checkfirst=True)

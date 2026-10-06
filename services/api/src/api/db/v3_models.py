@@ -183,6 +183,80 @@ class VaultAccessLogRow(Base):
     __table_args__ = (Index("ix_vault_access_log_ref_time", "vault_ref_id", "occurred_at"),)
 
 
+class IdempotencyKeyRow(Base):
+    """A replay record containing references and hashes, never a response body.
+
+    ``scope`` separates keys used by different commands/tenants.  The unique
+    scope/key pair is the database-level replay guard; response and resource
+    references point at durable data owned by the calling domain.
+    """
+
+    __tablename__ = "idempotency_keys"
+    id = _id()
+    scope: Mapped[str] = mapped_column(String(255), nullable=False)
+    key: Mapped[str] = mapped_column(String(255), nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    state: Mapped[str] = mapped_column(String(16), nullable=False, server_default="pending")
+    response_ref: Mapped[str | None] = mapped_column(String(512))
+    resource_ref: Mapped[str | None] = mapped_column(String(512))
+    response_status: Mapped[int | None] = mapped_column(Integer)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    last_error: Mapped[str | None] = mapped_column(Text)
+    expires_at: Mapped[datetime | None] = mapped_column(UTC)
+    completed_at: Mapped[datetime | None] = mapped_column(UTC)
+    created_at = _created()
+    updated_at = _updated()
+    __table_args__ = (
+        UniqueConstraint("scope", "key", name="uq_idempotency_scope_key"),
+        CheckConstraint("state IN ('pending','completed','failed')", name="ck_idempotency_state"),
+        CheckConstraint("attempts >= 0", name="ck_idempotency_attempts"),
+        Index("ix_idempotency_expiry", "state", "expires_at"),
+    )
+
+
+class OutboxEventRow(Base):
+    """Durable event envelope for publication after its source transaction commits.
+
+    The envelope intentionally has no JSON payload column.  ``payload_ref`` is
+    an opaque object-store/database reference and is the only payload handle a
+    worker receives from this table.
+    """
+
+    __tablename__ = "outbox_events"
+    id = _id()
+    aggregate_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    aggregate_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    payload_ref: Mapped[str] = mapped_column(String(512), nullable=False)
+    # Producers can supply a stable command/event key.  It is nullable so two
+    # legitimate events of the same type may coexist when no dedupe contract
+    # exists; the event id remains unique in all cases.
+    dedupe_key: Mapped[str | None] = mapped_column(String(255), unique=True)
+    idempotency_key_id: Mapped[str | None] = mapped_column(
+        UUID, ForeignKey("idempotency_keys.id", ondelete="SET NULL")
+    )
+    state: Mapped[str] = mapped_column(String(16), nullable=False, server_default="pending")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    available_at: Mapped[datetime | None] = mapped_column(UTC)
+    claimed_at: Mapped[datetime | None] = mapped_column(UTC)
+    claimed_by: Mapped[str | None] = mapped_column(String(255))
+    last_error: Mapped[str | None] = mapped_column(Text)
+    processed_at: Mapped[datetime | None] = mapped_column(UTC)
+    created_at = _created()
+    updated_at = _updated()
+    __table_args__ = (
+        CheckConstraint(
+            "state IN ('pending','claimed','failed','published','dead_letter')",
+            name="ck_outbox_event_state",
+        ),
+        CheckConstraint("schema_version > 0", name="ck_outbox_schema_version"),
+        CheckConstraint("attempts >= 0", name="ck_outbox_attempts"),
+        Index("ix_outbox_claimable", "state", "available_at", "created_at"),
+        Index("ix_outbox_aggregate", "aggregate_type", "aggregate_id"),
+    )
+
+
 class DeviceRow(Base):
     __tablename__ = "devices"
     id = _id()

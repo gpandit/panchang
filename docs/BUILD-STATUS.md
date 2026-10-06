@@ -13,6 +13,7 @@ vendor, and commercial-licence gates remain explicit until verified.
 | S0-02 FastAPI/OpenAPI reconciliation | in-progress | Runtime inventory and drift guardrails added; generated-client/contract closure remains to be reviewed. |
 | S0-03 SQLAlchemy async/PostgreSQL foundation | done | Driver normalization, injectable Alembic seam, isolated migration smoke test, and URL coverage reviewed; live Postgres/PostGIS integration remains an external gate. |
 | S0-04 v3 data-model migrations | done | Additive revision `0002_v3_data_model` registers 56 tables with local privacy, uniqueness, money, ledger, and booking-overlap checks; live Postgres/PostGIS migration remains an external gate. |
+| S0-05 outbox/idempotency/Vault interfaces | done | Revision `0003_s005_outbox_idempotency`, opaque event refs, scoped replay guards, deterministic Vault fake, and payload-free access logging reviewed; workers/external Vault remain later gates. |
 
 Resumable progress manifest for the build defined in [`dev-plan-marketplace.md`](dev-plan-marketplace.md).
 Architecture context: [`architecture-marketplace.md`](architecture-marketplace.md).
