@@ -13,7 +13,8 @@ a published reference Panchang is the explicit job of the accuracy harness
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import TypedDict
 from zoneinfo import ZoneInfo
 
 from panchang import constants as C  # noqa: N812
@@ -32,6 +33,17 @@ from panchang.timeforms import jd_to_local_datetime, to_time_value
 
 _DEG = 360.0
 _SYNODIC_MONTH = 29.530588853  # mean length of a lunar month, days
+
+
+class IntervalFields(TypedDict):
+    startUtc: datetime
+    endUtc: datetime
+    localOffsetMinutes: int
+    hoursFromSunrise: float
+    flags: list[str]
+
+
+IntervalFn = Callable[[float, float, list[str] | None], IntervalFields]
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -84,6 +96,9 @@ def _anga_spans(
     search_back: float,
     search_fwd: float,
     tv: Callable[[float], TimeValue],
+    interval: IntervalFn,
+    tithi_flags: bool = False,
+    previous_sunrise: float | None = None,
 ) -> list[AngaSpan]:
     """Enumerate every occurrence of this anga overlapping [day_start, day_end)."""
     angle_at_start = angle_fn(day_start) % _DEG
@@ -107,12 +122,25 @@ def _anga_spans(
             cur_end = horizon
 
         index1 = cur_index + 1  # 1-based, within its 360°-cycle of `step_deg`
+        flags: list[str] = []
+        if tithi_flags and cur_start >= day_start and cur_end < day_end:
+            flags.append("kshaya")
+        if tithi_flags and (
+            (cur_start < day_start and cur_end > day_end)
+            or (
+                previous_sunrise is not None
+                and cur_start < previous_sunrise
+                and cur_end > day_start
+            )
+        ):
+            flags.append("vriddhi")
         spans.append(
             AngaSpan(
                 index=index1,
                 name=name_fn(cur_index),
                 start=None if cur_start < day_start else tv(cur_start),
                 end=None if cur_end > day_end else tv(cur_end),
+                **interval(cur_start, cur_end, flags),
             )
         )
 
@@ -161,6 +189,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
         sunset = engine.sun_set(sunrise, request.lon, request.lat)
         next_sunrise = engine.sun_rise(sunrise + 0.2, request.lon, request.lat)
 
+    fallback_flags: list[str] = []
     if sunrise is None or sunset is None or next_sunrise is None:
         # Polar day/night: the sun does not rise (or set) on this civil date at
         # this latitude, so no genuine sunrise-to-sunrise span exists. Fall back
@@ -170,6 +199,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
         sunrise = jd_midnight
         sunset = jd_midnight + 0.5
         next_sunrise = jd_midnight + 1.0
+        fallback_flags = ["sunriseFallback"]
 
     moonrise = engine.moon_rise(sunrise, request.lon, request.lat)
     moonset = engine.moon_set(sunrise, request.lon, request.lat)
@@ -184,6 +214,28 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
 
     def tv(jd: float) -> TimeValue:
         return to_time_value(jd, request.tz, day_start_local)
+
+    sunrise_utc = day_start_local.astimezone(UTC)
+    previous_sunrise = (
+        None if fallback_flags else engine.sun_rise(day_start - 1.5, request.lon, request.lat)
+    )
+
+    def interval(start: float, end: float, flags: list[str] | None = None) -> IntervalFields:
+        start_local = jd_to_local_datetime(start, request.tz)
+        end_utc = jd_to_local_datetime(end, request.tz).astimezone(UTC)
+        offset = start_local.utcoffset()
+        assert offset is not None
+        return {
+            "startUtc": start_local.astimezone(UTC),
+            "endUtc": end_utc,
+            "localOffsetMinutes": int(offset.total_seconds() / 60),
+            "hoursFromSunrise": (end_utc - sunrise_utc).total_seconds() / 3600,
+            "flags": [
+                *fallback_flags,
+                *(["carriesOver"] if start < day_start or end > day_end else []),
+                *(flags or []),
+            ],
+        }
 
     # ── Reference longitudes (at sunrise — the moment the Panchang day opens) ──
     sun_lon = _sun(day_start)
@@ -221,6 +273,9 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
         search_back=1.3,
         search_fwd=1.3,
         tv=tv,
+        interval=interval,
+        tithi_flags=True,
+        previous_sunrise=previous_sunrise,
     )
     nakshatra = _anga_spans(
         nakshatra_angle,
@@ -231,6 +286,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
         search_back=1.3,
         search_fwd=1.3,
         tv=tv,
+        interval=interval,
     )
     yoga = _anga_spans(
         yoga_angle,
@@ -241,6 +297,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
         search_back=1.3,
         search_fwd=1.3,
         tv=tv,
+        interval=interval,
     )
     karana = _anga_spans(
         tithi_angle,
@@ -251,6 +308,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
         search_back=0.7,
         search_fwd=0.7,
         tv=tv,
+        interval=interval,
     )
 
     weekday_index = (request.date.weekday() + 1) % 7  # 0 = Sunday
@@ -259,6 +317,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
         name=C.VARA_NAMES[weekday_index],
         start=tv(day_start),
         end=tv(day_end),
+        **interval(day_start, day_end, None),
     )
 
     day_events = DayEvents(
@@ -266,12 +325,13 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
         sunset=tv(sunset),
         moonrise=tv(moonrise) if moonrise is not None else None,
         moonset=tv(moonset) if moonset is not None else None,
+        flags=fallback_flags,
     )
 
     # ── Muhurat / period values ─────────────────────────────────────────────
-    muhurat = _compute_muhurat(sunrise, sunset, next_sunrise, tv)
-    choghadiya = _compute_choghadiya(sunrise, sunset, next_sunrise, weekday_index, tv)
-    hora = _compute_hora(sunrise, sunset, next_sunrise, weekday_index, tv)
+    muhurat = _compute_muhurat(sunrise, sunset, next_sunrise, tv, interval)
+    choghadiya = _compute_choghadiya(sunrise, sunset, next_sunrise, weekday_index, tv, interval)
+    hora = _compute_hora(sunrise, sunset, next_sunrise, weekday_index, tv, interval)
 
     # ── Samvat & calendrical fields ─────────────────────────────────────────
     is_adhika_month, is_kshaya_month = _detect_adhika_kshaya(tithi_angle, day_start, tithi[0].index)
@@ -281,6 +341,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
 
     return PanchangResult(
         request=request,
+        flags=fallback_flags,
         sun_longitude=sun_lon,
         moon_longitude=moon_lon,
         ayanamsa_value=ayanamsa_value,
@@ -303,7 +364,11 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
 
 
 def _compute_muhurat(
-    sunrise: float, sunset: float, next_sunrise: float, tv: Callable[[float], TimeValue]
+    sunrise: float,
+    sunset: float,
+    next_sunrise: float,
+    tv: Callable[[float], TimeValue],
+    interval: IntervalFn,
 ) -> list[MuhuratPeriod]:
     day_dur = sunset - sunrise
     night_dur = next_sunrise - sunset
@@ -312,7 +377,7 @@ def _compute_muhurat(
     def seg_period(name: str, seg_index: int) -> MuhuratPeriod:
         start = sunrise + segment * seg_index
         end = start + segment
-        return MuhuratPeriod(name=name, start=tv(start), end=tv(end))
+        return MuhuratPeriod(name=name, start=tv(start), end=tv(end), **interval(start, end, None))
 
     weekday_index = _weekday_from_jd(sunrise)
     periods = [
@@ -326,20 +391,29 @@ def _compute_muhurat(
     midday = sunrise + day_dur / 2.0
     periods.append(
         MuhuratPeriod(
-            name="Abhijit Muhurat", start=tv(midday - 24 * minute), end=tv(midday + 24 * minute)
+            name="Abhijit Muhurat",
+            start=tv(midday - 24 * minute),
+            end=tv(midday + 24 * minute),
+            **interval(midday - 24 * minute, midday + 24 * minute, None),
         )
     )
 
     periods.append(
         MuhuratPeriod(
-            name="Brahma Muhurat", start=tv(sunrise - 96 * minute), end=tv(sunrise - 48 * minute)
+            name="Brahma Muhurat",
+            start=tv(sunrise - 96 * minute),
+            end=tv(sunrise - 48 * minute),
+            **interval(sunrise - 96 * minute, sunrise - 48 * minute, None),
         )
     )
 
     midnight = sunset + night_dur / 2.0
     periods.append(
         MuhuratPeriod(
-            name="Nishita Muhurat", start=tv(midnight - 24 * minute), end=tv(midnight + 24 * minute)
+            name="Nishita Muhurat",
+            start=tv(midnight - 24 * minute),
+            end=tv(midnight + 24 * minute),
+            **interval(midnight - 24 * minute, midnight + 24 * minute, None),
         )
     )
 
@@ -352,6 +426,7 @@ def _compute_choghadiya(
     next_sunrise: float,
     weekday_index: int,
     tv: Callable[[float], TimeValue],
+    interval: IntervalFn,
 ) -> list[Choghadiya]:
     result: list[Choghadiya] = []
 
@@ -359,13 +434,21 @@ def _compute_choghadiya(
     for i, name in enumerate(C.CHOGHADIYA_DAY_SEQUENCE[weekday_index]):
         start = sunrise + day_segment * i
         end = start + day_segment
-        result.append(Choghadiya(name=name, start=tv(start), end=tv(end), is_day=True))
+        result.append(
+            Choghadiya(
+                name=name, start=tv(start), end=tv(end), is_day=True, **interval(start, end, None)
+            )
+        )
 
     night_segment = (next_sunrise - sunset) / 8.0
     for i, name in enumerate(C.CHOGHADIYA_NIGHT_SEQUENCE[weekday_index]):
         start = sunset + night_segment * i
         end = start + night_segment
-        result.append(Choghadiya(name=name, start=tv(start), end=tv(end), is_day=False))
+        result.append(
+            Choghadiya(
+                name=name, start=tv(start), end=tv(end), is_day=False, **interval(start, end, None)
+            )
+        )
 
     return result
 
@@ -376,6 +459,7 @@ def _compute_hora(
     next_sunrise: float,
     weekday_index: int,
     tv: Callable[[float], TimeValue],
+    interval: IntervalFn,
 ) -> list[MuhuratPeriod]:
     result: list[MuhuratPeriod] = []
     start_idx = C.HORA_START_INDEX[weekday_index]
@@ -387,13 +471,21 @@ def _compute_hora(
         lord = C.HORA_LORDS[(start_idx + i) % 7]
         start = sunrise + day_segment * i
         end = start + day_segment
-        result.append(MuhuratPeriod(name=f"Hora — {lord}", start=tv(start), end=tv(end)))
+        result.append(
+            MuhuratPeriod(
+                name=f"Hora — {lord}", start=tv(start), end=tv(end), **interval(start, end, None)
+            )
+        )
 
     for i in range(12):
         lord = C.HORA_LORDS[(start_idx + 12 + i) % 7]
         start = sunset + night_segment * i
         end = start + night_segment
-        result.append(MuhuratPeriod(name=f"Hora — {lord}", start=tv(start), end=tv(end)))
+        result.append(
+            MuhuratPeriod(
+                name=f"Hora — {lord}", start=tv(start), end=tv(end), **interval(start, end, None)
+            )
+        )
 
     return result
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from panchang import engine
@@ -40,7 +40,10 @@ def to_time_value(jd_ut: float, tz: str, day_start_local: datetime) -> TimeValue
     hour_12 = local.strftime("%I:%M:%S %p")
 
     civil_midnight = day_start_local.replace(hour=0, minute=0, second=0, microsecond=0)
-    elapsed = local - civil_midnight
+    # Aware datetimes sharing an IANA tz subtract in wall time in Python, which
+    # goes backwards at a fall-back fold. 24-plus display uses elapsed instants;
+    # civil labels remain available separately in hour_24/hour_12/iso.
+    elapsed = local.astimezone(UTC) - civil_midnight.astimezone(UTC)
     total_seconds = int(elapsed.total_seconds())
     plus_hour = total_seconds // 3600
     remainder = total_seconds % 3600

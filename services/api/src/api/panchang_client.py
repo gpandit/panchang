@@ -56,5 +56,5 @@ async def fetch_daily_panchang(
     request_fields = payload.pop("request")
     result = DailyPanchangOut.model_validate({**request_fields, **payload, "cached": False})
     # Store the dict so it's JSON-serialisable in the cache
-    cache.set(key, result.model_dump())
+    cache.set(key, result.model_dump(mode="json", by_alias=True))
     return result

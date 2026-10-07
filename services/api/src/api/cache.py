@@ -105,4 +105,6 @@ def panchang_cache_key(
     date: str, lat: float, lon: float, tz: str, ayanamsa: str, month_scheme: str
 ) -> str:
     # Round lat/lon to 4 decimal places (~11 m grid) for cache key stability
-    return f"panchang:{date}:{lat:.4f}:{lon:.4f}:{tz}:{ayanamsa}:{month_scheme}"
+    # The gateway's prototype LRU must not reuse pre-interval-contract results.
+    # S1-04 will reconcile this with the PCS canonical grid/versioned cache key.
+    return f"panchang:canonical-v2:{date}:{lat:.4f}:{lon:.4f}:{tz}:{ayanamsa}:{month_scheme}"

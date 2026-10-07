@@ -70,7 +70,7 @@ async def compute_single(req: ComputeRequest) -> JSONResponse:
         month_scheme=req.month_scheme,
     )
     result = cache.get(preq)
-    return JSONResponse(result.model_dump(mode="json"))
+    return JSONResponse(result.model_dump(mode="json", by_alias=True))
 
 
 @app.post("/compute/month")
@@ -91,6 +91,6 @@ async def compute_month(req: MonthRequest) -> JSONResponse:
             month_scheme=req.month_scheme,
         )
         result = cache.get(preq)
-        results.append(result.model_dump(mode="json"))
+        results.append(result.model_dump(mode="json", by_alias=True))
 
     return JSONResponse({"days": results})

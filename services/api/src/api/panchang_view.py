@@ -78,6 +78,7 @@ def _calendrical_elements(out: DailyPanchangOut) -> list[PanchangElementOut]:
 
 def to_daily_panchang_view(out: DailyPanchangOut) -> DailyPanchangViewOut:
     """Build the Today-screen view payload from a computed DailyPanchangOut."""
+    fallback = "sunriseFallback" in out.flags or "sunriseFallback" in out.day_events.flags
     elements = [
         _anga_element("tithi", "Tithi", out.tithi),
         _anga_element("nakshatra", "Nakshatra", out.nakshatra),
@@ -104,6 +105,7 @@ def to_daily_panchang_view(out: DailyPanchangOut) -> DailyPanchangViewOut:
 
     return DailyPanchangViewOut(
         date=out.date,
+        flags=["sunriseFallback"] if fallback else out.flags,
         lat=out.lat,
         lon=out.lon,
         tz=out.tz,
@@ -111,8 +113,8 @@ def to_daily_panchang_view(out: DailyPanchangOut) -> DailyPanchangViewOut:
         summaryTitle=f"{out.vara.name} · {out.tithi[0].name}",
         panchangHindiDate=f"{out.calendrical.lunar_month} · {out.calendrical.paksha} Paksha",
         elements=elements,
-        sunrise=out.day_events.sunrise.iso,
-        sunset=out.day_events.sunset.iso,
+        sunrise=None if fallback else out.day_events.sunrise.iso,
+        sunset=None if fallback else out.day_events.sunset.iso,
         moonrise=out.day_events.moonrise.iso if out.day_events.moonrise else None,
         moonset=out.day_events.moonset.iso if out.day_events.moonset else None,
         muhurats=muhurats,

@@ -28,6 +28,7 @@ Vault, licensing, load/SLO and provider integrations remain open.
 | Package | Status | Evidence / next action |
 |---|---|---|
 | S1-01 PCS ephemeris boundary | done | `services/panchang/src/panchang/engine.py` is the sole library importer; CI guard and regressions pass. Local Ruff/format/mypy and 165 tests passed; four accuracy fixtures passed. Calibration, flagged polar fallback, and 500-day/10-location gate remain S1 work. |
+| S1-02 canonical interval contract | done | PCS adds validated UTC interval fields and flags, gateway/OpenAPI/TS expose them, synthetic fallback is flagged and withheld in the Today view, and cache namespaces are bumped. DST/cross-date/24-plus tests pass; S1-03 owns the fallback method and S1-04 owns durable cache adapters. |
 
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,
