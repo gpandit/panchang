@@ -8,7 +8,7 @@ from tools.check_contract_authority import check_client, check_python, scan
 
 
 class EphemerisBoundaryTests(unittest.TestCase):
-    def test_import_forms_and_dynamic_imports_are_rejected_outside_pcs(self):
+    def test_import_forms_and_dynamic_imports_are_rejected_outside_engine(self):
         for source in (
             "import swisseph as swe\n",
             "from swisseph import calc_ut\n",
@@ -17,19 +17,54 @@ class EphemerisBoundaryTests(unittest.TestCase):
             "importlib.import_module('swisseph')\n",
         ):
             with self.subTest(source=source):
-                self.assertEqual(check_python(source, "services/api/src/api/new.py")[0].rule,
-                                 "ephemeris-boundary")
-                self.assertEqual(check_python(source, "services/panchang/src/panchang/engine.py"), [])
+                self.assertEqual(
+                    check_python(source, "services/api/src/api/new.py")[0].rule,
+                    "ephemeris-boundary",
+                )
+                self.assertEqual(
+                    check_python(source, "services/panchang/src/panchang/engine.py"), []
+                )
+                for path in (
+                    "services/panchang/src/panchang/compute.py",
+                    "services/panchang/src/panchang/timeforms.py",
+                    "services/panchang/tests/test_engine.py",
+                ):
+                    self.assertEqual(check_python(source, path)[0].rule, "ephemeris-boundary")
 
     def test_text_is_not_an_import(self):
-        self.assertEqual(check_python('"""import swisseph"""\n# import swisseph\n',
-                                      "services/api/src/api/new.py"), [])
+        self.assertEqual(
+            check_python(
+                '"""import swisseph"""\n# import swisseph\n', "services/api/src/api/new.py"
+            ),
+            [],
+        )
 
     def test_python_312_generic_syntax_on_older_host_still_checks_imports(self):
         source = "class Result[T]:\n    pass\nimport swisseph as swe\n"
         self.assertTrue(check_python(source, "services/api/src/api/result.py"))
         unrelated_symbol = "class Result[T]:\n    pass\nfrom api import swisseph\n"
         self.assertEqual(check_python(unrelated_symbol, "services/api/src/api/result.py"), [])
+
+    def test_token_fallback_also_checks_pcs_and_ignores_comments(self):
+        source = "class Result[T]:\n    pass\n# import swisseph\nfrom swisseph import calc_ut\n"
+        self.assertEqual(
+            check_python(source, "services/panchang/src/panchang/timeforms.py")[0].line, 4
+        )
+        self.assertEqual(check_python(source, "services/panchang/src/panchang/engine.py"), [])
+
+    def test_scan_rejects_direct_pcs_import_but_accepts_engine(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for path in (
+                "services/panchang/src/panchang/engine.py",
+                "services/panchang/src/panchang/compute.py",
+            ):
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("import swisseph\n")
+            self.assertEqual(
+                [v.path for v in scan(root)], ["services/panchang/src/panchang/compute.py"]
+            )
 
 
 class ClientAuthorityTests(unittest.TestCase):
@@ -43,7 +78,7 @@ class ClientAuthorityTests(unittest.TestCase):
             (self.IOS, "let commission = price * rate"),
             (self.ANDROID, "val tithi = moonLongitude - sunLongitude"),
             (self.WEB, "function calculateNakshatra(moonLongitude: number) {}"),
-            (self.IOS, "func computePanchang() -> String { return \"\" }"),
+            (self.IOS, 'func computePanchang() -> String { return "" }'),
             (self.ANDROID, "booking.state = confirmed"),
             (self.WEB, 'const canCheckout = tier === "gold";'),
             (self.WEB, 'import { calc } from "swisseph";'),
@@ -56,20 +91,24 @@ class ClientAuthorityTests(unittest.TestCase):
 
     def test_rendering_cached_data_and_formatting_are_allowed(self):
         for path, source in (
-            (self.WEB, 'const tithi = day.tithi;\nconst time = hours + 24;'),
-            (self.WEB, 'const price = quote.price;\nconst status = booking.state;'),
+            (self.WEB, "const tithi = day.tithi;\nconst time = hours + 24;"),
+            (self.WEB, "const price = quote.price;\nconst status = booking.state;"),
             (self.WEB, 'const isGold = tier === "gold"; // UI badge'),
             (self.IOS, "let cached = try await cache.fetchPanchang(date: date)"),
-            (self.ANDROID, "Text(data.tithi.firstOrNull()?.name ?: \"—\")"),
+            (self.ANDROID, 'Text(data.tithi.firstOrNull()?.name ?: "—")'),
         ):
             with self.subTest(path=path):
                 self.assertEqual(check_client(source, path), [])
 
     def test_comments_strings_and_server_are_excluded(self):
-        source = "// const tax = price * rate;\n" \
-                 "const message = 'calculateTithi()'; /* booking.state = confirmed */\n"
+        source = (
+            "// const tax = price * rate;\n"
+            "const message = 'calculateTithi()'; /* booking.state = confirmed */\n"
+        )
         self.assertEqual(check_client(source, self.WEB), [])
-        self.assertEqual(check_client("const tax = price * rate;", "services/api/src/api/server.ts"), [])
+        self.assertEqual(
+            check_client("const tax = price * rate;", "services/api/src/api/server.ts"), []
+        )
 
     def test_source_discovery_ignores_docs_tests_and_generated_artifacts(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -84,10 +123,13 @@ class ClientAuthorityTests(unittest.TestCase):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(source)
-            self.assertEqual([(v.path, v.rule) for v in scan(root)], [
-                ("apps/web/src/features/quote.ts", "client-arithmetic"),
-                ("services/api/src/api/unsafe.py", "ephemeris-boundary"),
-            ])
+            self.assertEqual(
+                [(v.path, v.rule) for v in scan(root)],
+                [
+                    ("apps/web/src/features/quote.ts", "client-arithmetic"),
+                    ("services/api/src/api/unsafe.py", "ephemeris-boundary"),
+                ],
+            )
 
 
 if __name__ == "__main__":

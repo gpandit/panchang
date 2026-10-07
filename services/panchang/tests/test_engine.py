@@ -1,7 +1,7 @@
 """Tests for the Swiss Ephemeris engine (Step 0.2).
 
 Verifies:
-  - pyswisseph imports successfully
+  - the engine exposes named solar/lunar event and longitude operations
   - The ephemeris data path resolves to an existing directory
   - A known date returns a plausible Sun longitude
 """
@@ -10,9 +10,7 @@ import os
 
 import pytest
 
-
-def test_swisseph_importable() -> None:
-    import swisseph as swe  # noqa: F401 — import is the assertion
+from panchang import engine
 
 
 def test_ephemeris_path_exists() -> None:
@@ -56,3 +54,34 @@ def test_sun_longitude_plausible(
     assert expected_min <= lon <= expected_max, (
         f"{description}: Sun longitude {lon:.4f}° not in [{expected_min}, {expected_max}]"
     )
+
+
+def test_named_longitudes_and_julian_calendar_round_trip() -> None:
+    jd = engine.julday(2024, 1, 15, 12.0)
+    assert engine.revjul(jd) == (2024, 1, 15, 12.0)
+    engine.set_ayanamsa("lahiri")
+    assert 0 <= engine.sidereal_sun_longitude(jd) < 360
+    assert 0 <= engine.sidereal_moon_longitude(jd) < 360
+    assert engine.sidereal_sun_longitude(jd) == engine.sidereal_longitude(jd)
+    assert engine.sidereal_moon_longitude(jd) != engine.sidereal_sun_longitude(jd)
+
+
+def test_named_events_return_ut_julian_days_in_expected_order() -> None:
+    jd = engine.julday(2024, 1, 15, 0.0)
+    lon, lat = 77.2090, 28.6139
+    sunrise = engine.sun_rise(jd, lon, lat)
+    assert sunrise is not None
+    sunset = engine.sun_set(sunrise, lon, lat)
+    next_sunrise = engine.sun_rise(sunrise + 0.2, lon, lat)
+    assert sunset is not None and next_sunrise is not None
+    assert sunrise < sunset < next_sunrise
+    moonrise = engine.moon_rise(sunrise, lon, lat)
+    moonset = engine.moon_set(sunrise, lon, lat)
+    assert moonrise is not None and moonset is not None
+    assert sunrise < moonrise < sunset < moonset < next_sunrise
+
+
+def test_named_events_preserve_no_event_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(engine, "rise_trans", lambda *args: None)
+    for event in (engine.sun_rise, engine.sun_set, engine.moon_rise, engine.moon_set):
+        assert event(2460324.5, 15.6, 78.2) is None

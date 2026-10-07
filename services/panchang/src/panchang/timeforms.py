@@ -5,13 +5,12 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-import swisseph as swe
-
+from panchang import engine
 from panchang.models import TimeValue
 
 
 def jd_to_local_datetime(jd_ut: float, tz: str) -> datetime:
-    y, m, d, h = swe.revjul(jd_ut)
+    y, m, d, h = engine.revjul(jd_ut)
     hour = int(h)
     minute = int((h - hour) * 60)
     second = round((((h - hour) * 60) - minute) * 60)

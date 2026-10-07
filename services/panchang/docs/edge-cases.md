@@ -27,13 +27,13 @@ window around a mean-tithi-length estimate of where each one should fall
 is then compared; `diff = (rashi_next − rashi_prev) mod 12` gives the count
 above (0 → Adhika, 2 → Kshaya, else ordinary).
 
-**Why the estimate-then-bisect approach is safe.** Sankranti and lunar-month
-boundaries are separated by multiple days in all but contrived inputs, and
-the ±2-day bisection window is comfortably inside one synodic month
-(~29.53 days) without overlapping the *other* bounding new moon. The bisected
-crossing is exact to the root-finder's tolerance (80 bisections); only the
-*window placement* is an estimate, and it only needs to contain the true
-crossing, not predict it precisely.
+**Calibration caveat.** The ±2-day bisection window is placed using a mean
+synodic month (~29.53 days), not an independently verified new-moon bracket.
+When the crossing is not found, the implementation silently uses the estimate;
+the resulting Adhika/Kshaya label may be wrong. The root-finder's 80 iterations
+do not prove that the search window contains the intended crossing. Independent
+fixtures, including rare Kshaya months, are still needed for the v3.0 accuracy
+gate.
 
 **Surfaced as.** `Calendrical.is_adhika_month` / `Calendrical.is_kshaya_month`
 — booleans on every result, so downstream festival resolution (Stage 1,
@@ -106,11 +106,12 @@ civil-midnight-to-midnight Panchang day**:
 
 This keeps every downstream computation (angas, muhurat, choghadiya, hora,
 calendrical fields, time-form rendering) running against a well-defined,
-deterministic 24-hour window — no crash, no NaNs, no silently-wrong
-sunrise-anchored values — while staying recognisable: `day_events.sunrise`
+deterministic 24-hour window — avoiding a crash or NaNs but not producing
+observed sunrise-anchored values — while staying recognisable: `day_events.sunrise`
 reads exactly `00:00:00` and `day_events.sunset` reads exactly `12:00:00`
-local time, which a client can use as a tell that this is the synthetic
-fallback rather than an observed event. Moonrise/moonset retain their normal
+local time. This is **not** a reliable machine-readable fallback indicator:
+the current response lacks the v3.0 `sunriseFallback` flag. Consumers must not
+treat either placeholder as an observed event. Moonrise/moonset retain their normal
 "`None` if not found within the window" semantics.
 
 **Why civil midnight, not the previous valid sunrise.** Carrying forward a

@@ -47,10 +47,9 @@ exclude = ["tests/"]
 module = ["swisseph", "boto3", "botocore.*", "fpdf"]
 ignore_missing_imports = true
 
-# panchang engine files call swisseph C extension directly; the extension
-# has no stubs and returns untyped values — suppress errors in these modules.
+# Only the engine calls the untyped swisseph C extension directly.
 [[tool.mypy.overrides]]
-module = ["panchang.engine", "panchang.compute", "panchang.timeforms"]
+module = ["panchang.engine"]
 ignore_errors = true
 
 # ─── Pytest ───────────────────────────────────────────────────────────────────

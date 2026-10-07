@@ -1,6 +1,6 @@
 """Swiss Ephemeris engine — the single point of contact with pyswisseph.
 
-Only this module (and tests that import it) may call swisseph directly.
+Only this module may import or call swisseph directly.
 All other panchang code must go through functions defined here.
 """
 
@@ -54,6 +54,16 @@ def sidereal_longitude(jd_ut: float, planet: int = swe.SUN) -> float:
     return float(result[0]) % 360.0
 
 
+def sidereal_sun_longitude(jd_ut: float) -> float:
+    """Return the Sun's sidereal longitude in degrees at UT Julian Day."""
+    return sidereal_longitude(jd_ut, swe.SUN)
+
+
+def sidereal_moon_longitude(jd_ut: float) -> float:
+    """Return the Moon's sidereal longitude in degrees at UT Julian Day."""
+    return sidereal_longitude(jd_ut, swe.MOON)
+
+
 def julday(year: int, month: int, day: int, hour: float = 12.0) -> float:
     """Thin wrapper around swe.julday for calendar → JD conversion."""
     _init()
@@ -79,3 +89,23 @@ def rise_trans(jd_ut_start: float, planet: int, lon: float, lat: float, rsmi: in
     if ret != 0:
         return None
     return float(tret[0])
+
+
+def sun_rise(jd_ut_start: float, lon: float, lat: float) -> float | None:
+    """Next observed sunrise (UT Julian Day), or None when unavailable."""
+    return rise_trans(jd_ut_start, swe.SUN, lon, lat, swe.CALC_RISE)
+
+
+def sun_set(jd_ut_start: float, lon: float, lat: float) -> float | None:
+    """Next observed sunset (UT Julian Day), or None when unavailable."""
+    return rise_trans(jd_ut_start, swe.SUN, lon, lat, swe.CALC_SET)
+
+
+def moon_rise(jd_ut_start: float, lon: float, lat: float) -> float | None:
+    """Next observed moonrise (UT Julian Day), or None when unavailable."""
+    return rise_trans(jd_ut_start, swe.MOON, lon, lat, swe.CALC_RISE)
+
+
+def moon_set(jd_ut_start: float, lon: float, lat: float) -> float | None:
+    """Next observed moonset (UT Julian Day), or None when unavailable."""
+    return rise_trans(jd_ut_start, swe.MOON, lon, lat, swe.CALC_SET)

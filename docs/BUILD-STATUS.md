@@ -25,6 +25,10 @@ fixtures are not 500 days across ten locations. The aspirational v1 OpenAPI is
 not a claim that its planned routes or generated clients are shipped. Production
 Vault, licensing, load/SLO and provider integrations remain open.
 
+| Package | Status | Evidence / next action |
+|---|---|---|
+| S1-01 PCS ephemeris boundary | done | `services/panchang/src/panchang/engine.py` is the sole library importer; CI guard and regressions pass. Local Ruff/format/mypy and 165 tests passed; four accuracy fixtures passed. Calibration, flagged polar fallback, and 500-day/10-location gate remain S1 work. |
+
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,
 `uv run ruff format --check services/`, `uv run mypy services/ --config-file

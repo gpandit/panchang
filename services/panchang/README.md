@@ -38,3 +38,23 @@ uv run pytest tests/ -v
 
 The accuracy harness (Step 1.3) validates computed Panchang values against
 reference data and runs in CI, gating all merges.
+
+## S1-01 ephemeris boundary and calibration status
+
+`src/panchang/engine.py` is the only module permitted to import/call Swiss
+Ephemeris. `compute.py` uses named solar/lunar longitude and rise/set operations;
+`timeforms.py` uses the engine's Julian Day conversion. The offline source guard
+(`tools/check_contract_authority.py`) enforces the single-module import boundary.
+This isolates the library; it does **not** establish calendrical accuracy.
+
+Known gaps remain in `compute.py`: the mean-synodic-month estimate and ±2-day
+search for bounding new moons may degrade to estimated instants when roots are
+not found; lunar-month naming and Adhika/Kshaya labels need independent reference
+calibration; Shaka/Vikram/Gujarati year changes use an approximate Gregorian
+March 22 cutoff; and the polar sunrise/sunset placeholders are synthetic and
+not yet flagged in the public response (the fixed 24-hour fallback also needs
+DST-transition review). See `docs/edge-cases.md` for the current
+fallback behavior. The current four-fixture accuracy harness passing is **not**
+the v3.0 S1 exit gate (≥500 independently sourced days, ≥10 locations, ±2-minute
+rise/set, ±5-minute anga boundaries, exact names/labels). No production accuracy
+or commercial licensing approval is implied.

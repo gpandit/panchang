@@ -62,6 +62,19 @@ def test_golden_values_2024_01_15_delhi() -> None:
     assert result.calendrical.sun_rashi == "Makara"
 
 
+def test_sunrise_and_anga_boundary_regression_2024_01_15_delhi() -> None:
+    """Existing-engine regression values, not independent accuracy references."""
+    result = compute_panchang(_request(date(2024, 1, 15)))
+    assert result.day_events.sunrise.iso == "2024-01-15T07:14:49+05:30"
+    assert result.day_events.sunset.iso == "2024-01-15T17:46:02+05:30"
+    assert result.tithi[0].name == "Shukla Panchami"
+    assert result.tithi[0].end is not None
+    assert result.tithi[0].end.iso == "2024-01-16T02:17:04+05:30"
+    assert result.nakshatra[0].name == "Shatabhisha"
+    assert result.nakshatra[0].end is not None
+    assert result.nakshatra[0].end.iso == "2024-01-15T08:06:56+05:30"
+
+
 def test_anga_spans_cover_the_full_day_contiguously() -> None:
     result = compute_panchang(_request(date(2024, 1, 15)))
 

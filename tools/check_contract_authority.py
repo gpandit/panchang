@@ -18,33 +18,56 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKIP_DIRS = {
-    ".git", ".opencode", ".omnirush", ".venv", "node_modules", "build", "dist",
-    ".next", ".gradle", "__pycache__", "tmp-panchang", "generated", "docs", "__tests__",
+    ".git",
+    ".opencode",
+    ".omnirush",
+    ".venv",
+    "node_modules",
+    "build",
+    "dist",
+    ".next",
+    ".gradle",
+    "__pycache__",
+    "tmp-panchang",
+    "generated",
+    "docs",
+    "__tests__",
 }
 SOURCE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".swift", ".kt"}
 CLIENT_SUFFIXES = SOURCE_SUFFIXES - {".py"}
-CLIENT_ROOTS = ("apps/web/src", "apps/admin/src", "apps/temple-admin/src",
-                "apps/ios/ThePandit/Sources", "apps/android/app/src/main")
+CLIENT_ROOTS = (
+    "apps/web/src",
+    "apps/admin/src",
+    "apps/temple-admin/src",
+    "apps/ios/ThePandit/Sources",
+    "apps/android/app/src/main",
+)
 EPHEMERIS = re.compile(r"^(?:swisseph|pyswisseph)(?:\.|$)", re.I)
+EPHEMERIS_OWNER = "services/panchang/src/panchang/engine.py"
 JS_IMPORT = re.compile(
     r"\b(?:from\s*|import\s*\(?|require\s*\()\s*['\"](?:swisseph|pyswisseph)(?:/[^'\"]*)?['\"]",
     re.I,
 )
 NATIVE_IMPORT = re.compile(r"\bimport\s+(?:swisseph|pyswisseph)(?:\b|\.)", re.I)
-DOMAIN = r"(?:tithi|nakshatra|yoga|karana|paksha|muhurat|ayanamsa|sunrise|sunset|moonrise|" \
-         r"lunarMonth|panchang|price|subtotal|totalPrice|totalAmount|commission|tax|payout|" \
-         r"quote|refund|bookingAmount|amountMinor|feeMinor|entitlement)"
+DOMAIN = (
+    r"(?:tithi|nakshatra|yoga|karana|paksha|muhurat|ayanamsa|sunrise|sunset|moonrise|"
+    r"lunarMonth|panchang|price|subtotal|totalPrice|totalAmount|commission|tax|payout|"
+    r"quote|refund|bookingAmount|amountMinor|feeMinor|entitlement)"
+)
 CALCULATOR = re.compile(
-    rf"\b(?:calc(?:ulate)?|compute|derive|resolve)\w*{DOMAIN}\w*\s*\(", re.I,
+    rf"\b(?:calc(?:ulate)?|compute|derive|resolve)\w*{DOMAIN}\w*\s*\(",
+    re.I,
 )
 DOMAIN_MATH = re.compile(
     rf"\b\w*{DOMAIN}\w*\b\s*(?:\?\.|\.)?\s*(?:\+|\-|\*|/|%)\s*"
     rf"(?:\d|\b[a-zA-Z_$])|(?:\d|\b[a-zA-Z_$]\w*)\s*(?:\+|\-|\*|/|%)\s*"
-    rf"\b\w*{DOMAIN}\w*\b", re.I,
+    rf"\b\w*{DOMAIN}\w*\b",
+    re.I,
 )
 DOMAIN_ASSIGN_MATH = re.compile(
     rf"\b(?:const|let|var|val)\s+\w*{DOMAIN}\w*\s*(?::[^=\n]+)?="
-    r"[^;\n]*\b[a-zA-Z_$]\w*\s*(?:\+|\-|\*|/|%)\s*\b[a-zA-Z_$0-9]\w*", re.I,
+    r"[^;\n]*\b[a-zA-Z_$]\w*\s*(?:\+|\-|\*|/|%)\s*\b[a-zA-Z_$0-9]\w*",
+    re.I,
 )
 # State-machine changes belong to the gateway; assignment to a client-side
 # booking/payout field is suspicious even without arithmetic.
@@ -53,7 +76,8 @@ TIER_DECISION = re.compile(
     r"\b(?:canBook|canCheckout|isEntitled|hasEntitlement|eligibleForCheckout)\w*\s*="
     r"[^;\n]*\b(?:tier|subscription|entitlement)\b[^;\n]*(?:===?|!==?|>=?|<=?)|"
     r"\b(?:canBook|canCheckout|isEntitled|hasEntitlement|eligibleForCheckout)\w*\s*="
-    r"[^;\n]*(?:===?|!==?|>=?|<=?)[^;\n]*\b(?:tier|subscription|entitlement)\b", re.I,
+    r"[^;\n]*(?:===?|!==?|>=?|<=?)[^;\n]*\b(?:tier|subscription|entitlement)\b",
+    re.I,
 )
 
 
@@ -95,7 +119,7 @@ def check_python(source: str, relative: str) -> list[Violation]:
         # generic classes. Tokenize imports instead; the project typecheck owns
         # syntax validation. Ignore docstrings/comments, including fake imports.
         return _check_python_tokens(source, relative)
-    allowed = relative.startswith("services/panchang/")
+    allowed = relative == EPHEMERIS_OWNER
     violations = []
     for node in ast.walk(tree):
         modules: list[str] = []
@@ -106,19 +130,23 @@ def check_python(source: str, relative: str) -> list[Violation]:
         elif isinstance(node, ast.Call) and node.args and isinstance(node.args[0], ast.Constant):
             fn = node.func
             if (isinstance(fn, ast.Name) and fn.id == "__import__") or (
-                isinstance(fn, ast.Attribute) and fn.attr == "import_module"
-                and isinstance(fn.value, ast.Name) and fn.value.id == "importlib"
+                isinstance(fn, ast.Attribute)
+                and fn.attr == "import_module"
+                and isinstance(fn.value, ast.Name)
+                and fn.value.id == "importlib"
             ):
                 modules = [node.args[0].value] if isinstance(node.args[0].value, str) else []
         if not allowed:
             for module in modules:
                 if EPHEMERIS.match(module):
-                    violations.append(Violation(relative, node.lineno, "ephemeris-boundary", module))
+                    violations.append(
+                        Violation(relative, node.lineno, "ephemeris-boundary", module)
+                    )
     return violations
 
 
 def _check_python_tokens(source: str, relative: str) -> list[Violation]:
-    if relative.startswith("services/panchang/"):
+    if relative == EPHEMERIS_OWNER:
         return []
     tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
     violations = []
@@ -127,22 +155,37 @@ def _check_python_tokens(source: str, relative: str) -> list[Violation]:
             continue
         if token.string == "from":
             # Only the module after `from` counts, not an imported symbol.
-            following = next((part for part in tokens[i + 1:]
-                              if part.type not in {tokenize.NL, tokenize.COMMENT}), None)
+            following = next(
+                (
+                    part
+                    for part in tokens[i + 1 :]
+                    if part.type not in {tokenize.NL, tokenize.COMMENT}
+                ),
+                None,
+            )
             if following and following.type == tokenize.NAME and EPHEMERIS.match(following.string):
-                violations.append(Violation(relative, token.start[0],
-                                            "ephemeris-boundary", following.string))
+                violations.append(
+                    Violation(relative, token.start[0], "ephemeris-boundary", following.string)
+                )
         elif token.string == "import" and not any(
-            part.string == "from" for part in tokens[max(0, i - 5):i]
+            part.string == "from"
+            for part in tokens[max(0, i - 5) : i]
             if part.start[0] == token.start[0]
         ):
             # Covers `import foo, swisseph`; comments/strings cannot match.
-            until = next((j for j in range(i + 1, len(tokens))
-                          if tokens[j].type in {tokenize.NEWLINE, tokenize.ENDMARKER}), len(tokens))
-            for part in tokens[i + 1:until]:
+            until = next(
+                (
+                    j
+                    for j in range(i + 1, len(tokens))
+                    if tokens[j].type in {tokenize.NEWLINE, tokenize.ENDMARKER}
+                ),
+                len(tokens),
+            )
+            for part in tokens[i + 1 : until]:
                 if part.type == tokenize.NAME and EPHEMERIS.match(part.string):
-                    violations.append(Violation(relative, token.start[0],
-                                                "ephemeris-boundary", part.string))
+                    violations.append(
+                        Violation(relative, token.start[0], "ephemeris-boundary", part.string)
+                    )
         if token.string == "__import__" or token.string == "import_module":
             if i + 2 < len(tokens) and tokens[i + 1].string == "(":
                 value = tokens[i + 2]
@@ -152,8 +195,9 @@ def _check_python_tokens(source: str, relative: str) -> list[Violation]:
                     except (ValueError, SyntaxError):
                         continue
                     if isinstance(module, str) and EPHEMERIS.match(module):
-                        violations.append(Violation(relative, token.start[0],
-                                                    "ephemeris-boundary", module))
+                        violations.append(
+                            Violation(relative, token.start[0], "ephemeris-boundary", module)
+                        )
     return violations
 
 
@@ -205,17 +249,35 @@ def check_client(source: str, relative: str) -> list[Violation]:
     violations = []
     # Import literals must remain visible; find these in original text, then
     # require that their import/require token is not in a comment or string.
-    imports = JS_IMPORT if Path(relative).suffix in {".ts", ".tsx", ".js", ".jsx"} else NATIVE_IMPORT
+    imports = (
+        JS_IMPORT if Path(relative).suffix in {".ts", ".tsx", ".js", ".jsx"} else NATIVE_IMPORT
+    )
     for match in imports.finditer(source):
-        if masked[match.start():match.start() + 6].strip():
-            violations.append(Violation(relative, source.count("\n", 0, match.start()) + 1,
-                                        "ephemeris-boundary", "client ephemeris import"))
-    for rule, pattern in (("client-calculation", CALCULATOR), ("client-arithmetic", DOMAIN_MATH),
-                          ("client-arithmetic", DOMAIN_ASSIGN_MATH),
-                          ("client-state", STATE_WRITE), ("client-entitlement", TIER_DECISION)):
+        if masked[match.start() : match.start() + 6].strip():
+            violations.append(
+                Violation(
+                    relative,
+                    source.count("\n", 0, match.start()) + 1,
+                    "ephemeris-boundary",
+                    "client ephemeris import",
+                )
+            )
+    for rule, pattern in (
+        ("client-calculation", CALCULATOR),
+        ("client-arithmetic", DOMAIN_MATH),
+        ("client-arithmetic", DOMAIN_ASSIGN_MATH),
+        ("client-state", STATE_WRITE),
+        ("client-entitlement", TIER_DECISION),
+    ):
         for match in pattern.finditer(masked):
-            violations.append(Violation(relative, masked.count("\n", 0, match.start()) + 1,
-                                        rule, source[match.start():match.end()].strip()))
+            violations.append(
+                Violation(
+                    relative,
+                    masked.count("\n", 0, match.start()) + 1,
+                    rule,
+                    source[match.start() : match.end()].strip(),
+                )
+            )
     # A named assignment may also contain a domain operand: one diagnostic
     # per line/rule is enough to direct the reviewer to the source expression.
     return list({(v.path, v.line, v.rule): v for v in violations}.values())
