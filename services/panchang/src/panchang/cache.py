@@ -38,9 +38,9 @@ from panchang.models import PanchangRequest, PanchangResult
 # mismatch is treated as a miss, deterministically invalidating stale data
 # without needing to enumerate or scan keys.
 # ──────────────────────────────────────────────────────────────────────────
-# v2 changes the cached payload contract: intervals now require UTC instants,
-# offsets, hoursFromSunrise and flags. Never serve a v1 entry as a v2 day.
-ENGINE_VERSION = "2"
+# v3 replaces flagged civil-midnight/noon placeholders with the named
+# nearest-valid-latitude policy. Never reuse a v2 polar day's computed angas.
+ENGINE_VERSION = "3"
 
 # Location grid resolution, in degrees of latitude/longitude.
 #

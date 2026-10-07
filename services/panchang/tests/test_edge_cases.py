@@ -124,26 +124,25 @@ def test_vriddhi_tithi_spans_two_consecutive_sunrises() -> None:
 # ──────────────────────────────────────────────────────────────────────────
 
 
-def test_polar_day_degrades_gracefully_with_synthetic_day_boundary() -> None:
-    """At high latitude during the polar-day season, the Sun never sets/rises
-    on the civil date, so no genuine sunrise-to-sunrise span exists. The
-    engine must not crash or emit nonsense — it falls back to a synthetic
-    civil-midnight-to-midnight day (documented in docs/edge-cases.md) with
-    sunrise/sunset placeholders at local 00:00 / 12:00."""
+def test_polar_day_uses_marked_proxy_sunrise() -> None:
+    """The same-longitude lower-latitude day supplies a marked approximation."""
     result = compute_panchang(PanchangRequest(date=date(2024, 6, 21), **SVALBARD))
 
-    assert result.day_events.sunrise.hour_24 == "00:00:00"
-    assert result.day_events.sunset.hour_24 == "12:00:00"
+    assert result.day_events.sunrise.hour_24 != "00:00:00"
+    assert result.day_events.sunset.hour_24 != "12:00:00"
+    assert "polarDay" in result.flags
+    assert "sunriseFallback" in result.day_events.flags
     assert len(result.tithi) >= 1
     assert result.vara.name
 
 
-def test_polar_night_also_degrades_gracefully() -> None:
-    """Mirror case in the polar-night season — same fallback, no crash."""
+def test_polar_night_also_uses_marked_proxy_sunrise() -> None:
+    """Mirror case in the polar-night season — same marked approximation."""
     result = compute_panchang(PanchangRequest(date=date(2024, 12, 21), **SVALBARD))
 
-    assert result.day_events.sunrise.hour_24 == "00:00:00"
-    assert result.day_events.sunset.hour_24 == "12:00:00"
+    assert result.day_events.sunrise.hour_24 != "00:00:00"
+    assert result.day_events.sunset.hour_24 != "12:00:00"
+    assert "polarNight" in result.flags
     assert len(result.tithi) >= 1
 
 

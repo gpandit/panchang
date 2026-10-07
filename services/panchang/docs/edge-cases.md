@@ -96,36 +96,49 @@ Sun does not cross the horizon on a given civil date — `rise_trans` returns
 `None` for sunrise and/or sunset, so no genuine sunrise-to-sunrise span
 exists to anchor the Panchang day.
 
-**Fallback strategy (documented decision).** When sunrise, sunset or the
-next sunrise cannot be found, the engine substitutes a **synthetic
-civil-midnight-to-midnight Panchang day**:
+**Named policy: `sunriseFallbackNearestValidLatitude`.** First search for a
+sunrise on the requested local date at the actual coordinates, with a sunset
+later **on that date**, then the next sunrise on the following local date.
+When that triplet cannot be established, move towards the equator at the same
+longitude in deterministic 1° latitude steps (plus 0°), keeping the original
+IANA timezone and requested date. The first candidate with all three events
+in the correct local-day order supplies the proxy sunrise, sunset, and next
+sunrise. Search is bounded by 91 candidate latitudes. The reference latitude
+is deliberately not interpreted as the location of the requester; these are
+**approximate anchors**, not observed sunrise/sunset at the original site.
+The choice of 1° resolution is a reproducibility policy, not an accuracy
+claim. This policy does not substitute events from another civil date and
+does not carry forward a weeks-old polar sunrise. Sunrise-relative angas,
+muhurat, choghadiya and hora are therefore approximate too.
 
-- `sunrise  := local civil midnight` (the requested date, 00:00 local)
-- `sunset   := civil midnight + 12h` (local 12:00, a neutral midpoint)
-- `next_sunrise := civil midnight + 24h`
+**Flags and failure.** Successful proxy results carry `sunriseFallback` and
+`sunriseFallbackNearestValidLatitude` in the result and day-event flags, and
+`sunriseFallback` on every canonical interval. At ≥66° latitude, the
+seasonal sign of solar declination additionally supplies `polarDay` or
+`polarNight`; this is an approximate seasonal classification, not measured
+local daylight. The Today view withholds rise/set when `sunriseFallback` is
+present, rather than calling a proxy time observed. Event timestamps and
+interval endpoints still denote real **UTC instants**, with local offsets
+computed independently across DST. Moonrise/moonset are still searched at
+the original coordinates within the resulting window.
 
-This keeps every downstream computation (angas, muhurat, choghadiya, hora,
-calendrical fields, time-form rendering) running against a well-defined,
-deterministic 24-hour window — avoiding a crash or NaNs but not producing
-observed sunrise-anchored values — while staying recognisable: `day_events.sunrise`
-reads exactly `00:00:00` and `day_events.sunset` reads exactly `12:00:00`
-local time. This is **not** a reliable machine-readable fallback indicator:
-the current response lacks the v3.0 `sunriseFallback` flag. Consumers must not
-treat either placeholder as an observed event. Moonrise/moonset retain their normal
-"`None` if not found within the window" semantics.
+If the local date (including the following civil date) has no representable
+midnight, or is out of range, computation fails with
+`SunriseFallbackError(reason="impossibleLocalDate")`. If no inward latitude
+produces a valid triplet, it fails with reason `noValidLatitude`; no bogus
+Panchang is returned. The PCS `/compute` endpoint responds with HTTP 422 and
+`{"reason": ..., "flags": ["sunriseFallback", "sunriseFallbackUnavailable", reason]}`.
+For example, Samoa's skipped local date 2011-12-30 is rejected. The daily
+gateway propagates that structured failure as HTTP 422 `detail`, rather than
+relabelling it as a computed day; the existing monthly gateway skips failed
+dates in its partial-result response (it does not emit false day entries).
+PCS and gateway in-process cache namespaces were advanced to v3 for this
+policy. External CDN entries keyed only by URL must still expire (or be
+purged) at deployment; the current daily edge TTL is one hour.
 
-**Why civil midnight, not the previous valid sunrise.** Carrying forward a
-stale sunrise time would silently drift the Panchang day's anchor by
-multiple days during an extended polar night/day, corrupting every
-sunrise-relative computation far more than a clean, predictable substitute
-does. Civil midnight is location- and date-local, trivially reproducible,
-and matches how diaspora users in these latitudes already think about "the
-day" in the absence of a visible sunrise.
-
-**Reference behaviour tested.** Longyearbyen, Svalbard (78.2°N) on
-2024-06-21 (polar day) and 2024-12-21 (polar night): both compute without
-error, `day_events.sunrise.hour_24 == "00:00:00"`,
-`day_events.sunset.hour_24 == "12:00:00"`, and the angas list is non-empty.
+**Reference behaviour tested.** Longyearbyen (78.2°N), June/December 2024,
+Southern polar dates and DST-boundary dates: triplet order, local-day identity,
+UTC interval identity, approximation flags and explicit failure paths.
 
 ---
 
@@ -137,11 +150,11 @@ clock springs forward (loses an hour) or falls back (repeats an hour). The
 across such a transition — it must not jump backwards, repeat a value, or
 skip an hour purely because the civil clock did.
 
-**Why the existing implementation already gets this right.**
-`timeforms.to_time_value` computes `hour_24_plus` as
-`(local − civil_midnight)` using **timezone-aware `datetime` subtraction**,
-which Python resolves via each instant's UTC offset — i.e. it is **elapsed
-real time**, not a wall-clock arithmetic difference. A spring-forward
+**Why the implementation gets this right.** `timeforms.to_time_value`
+converts both the event and local civil midnight to UTC before subtracting;
+subtracting two datetimes with the **same IANA timezone object** would instead
+use wall-clock arithmetic across DST. The UTC difference is **elapsed real
+time**, not wall-clock arithmetic. A spring-forward
 ("2:00 → 3:00" never occurs on the wall clock, but one hour of real time
 still passes) and a fall-back (the wall clock reads "1:30" twice, 3600
 real seconds apart) both produce a strictly increasing `hour_24_plus`

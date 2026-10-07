@@ -105,7 +105,7 @@ def to_daily_panchang_view(out: DailyPanchangOut) -> DailyPanchangViewOut:
 
     return DailyPanchangViewOut(
         date=out.date,
-        flags=["sunriseFallback"] if fallback else out.flags,
+        flags=list(dict.fromkeys([*out.flags, *out.day_events.flags])) if fallback else out.flags,
         lat=out.lat,
         lon=out.lon,
         tz=out.tz,

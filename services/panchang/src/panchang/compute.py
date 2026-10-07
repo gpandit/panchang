@@ -15,7 +15,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TypedDict
-from zoneinfo import ZoneInfo
 
 from panchang import constants as C  # noqa: N812
 from panchang import engine
@@ -29,6 +28,7 @@ from panchang.models import (
     PanchangResult,
     TimeValue,
 )
+from panchang.sunrise_policy import sunrise_interval
 from panchang.timeforms import jd_to_local_datetime, to_time_value
 
 _DEG = 360.0
@@ -161,45 +161,10 @@ def _anga_spans(
 
 
 def compute_panchang(request: PanchangRequest) -> PanchangResult:
-    tz = ZoneInfo(request.tz)
     engine.set_ayanamsa(request.ayanamsa.value)
-
-    # Local midnight at the start of the requested date -> UT Julian Day,
-    # used purely as a search anchor for the sunrise that opens this Panchang day.
-    local_midnight = datetime(
-        request.date.year, request.date.month, request.date.day, 0, 0, 0, tzinfo=tz
+    sunrise, sunset, next_sunrise, fallback_flags = sunrise_interval(
+        request.date, request.lon, request.lat, request.tz
     )
-    midnight_utc = local_midnight.astimezone(ZoneInfo("UTC"))
-    jd_midnight = engine.julday(
-        midnight_utc.year,
-        midnight_utc.month,
-        midnight_utc.day,
-        midnight_utc.hour + midnight_utc.minute / 60 + midnight_utc.second / 3600,
-    )
-
-    # Sunrise-to-sunrise day logic (Architecture §5).
-    search_from = jd_midnight - 1.0
-    sunrise = engine.sun_rise(search_from, request.lon, request.lat)
-    if sunrise is None or sunrise < jd_midnight:
-        sunrise = engine.sun_rise(jd_midnight - 0.6, request.lon, request.lat)
-
-    sunset: float | None = None
-    next_sunrise: float | None = None
-    if sunrise is not None:
-        sunset = engine.sun_set(sunrise, request.lon, request.lat)
-        next_sunrise = engine.sun_rise(sunrise + 0.2, request.lon, request.lat)
-
-    fallback_flags: list[str] = []
-    if sunrise is None or sunset is None or next_sunrise is None:
-        # Polar day/night: the sun does not rise (or set) on this civil date at
-        # this latitude, so no genuine sunrise-to-sunrise span exists. Fall back
-        # to a synthetic civil-midnight-to-midnight Panchang day, anchored at
-        # local midnight, with sunrise/sunset placeholders at 00:00 / 12:00
-        # local civil time. Documented in docs/edge-cases.md.
-        sunrise = jd_midnight
-        sunset = jd_midnight + 0.5
-        next_sunrise = jd_midnight + 1.0
-        fallback_flags = ["sunriseFallback"]
 
     moonrise = engine.moon_rise(sunrise, request.lon, request.lat)
     moonset = engine.moon_set(sunrise, request.lon, request.lat)

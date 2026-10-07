@@ -17,12 +17,12 @@ def _compute(day: date, tz: str = "Asia/Kolkata") -> PanchangResult:
     return compute_panchang(PanchangRequest(date=day, lat=lat, lon=lon, tz=tz))
 
 
-def test_interval_contract_invalidates_v1_pcs_cache_key() -> None:
-    assert ENGINE_VERSION == "2"
+def test_new_fallback_invalidates_v2_pcs_cache_key() -> None:
+    assert ENGINE_VERSION == "3"
     key = cache_key_for(
         PanchangRequest(date=date(2024, 1, 15), lat=28.6, lon=77.2, tz="Asia/Kolkata")
     )
-    assert key.as_string().startswith("panchang:2:")
+    assert key.as_string().startswith("panchang:3:")
 
 
 def test_all_intervals_have_valid_utc_identity_even_when_display_is_clipped() -> None:
@@ -79,7 +79,7 @@ def test_24_plus_display_does_not_move_backward_during_repeated_local_hour() -> 
     assert first.hour_24_plus < second.hour_24_plus  # elapsed instant display does not
 
 
-def test_polar_placeholders_are_explicitly_marked_until_fallback_is_replaced() -> None:
+def test_polar_proxy_is_explicitly_marked() -> None:
     result = compute_panchang(
         PanchangRequest(date=date(2024, 6, 21), lat=78.2, lon=15.6, tz="Arctic/Longyearbyen")
     )

@@ -35,6 +35,8 @@ def test_view_does_not_claim_synthetic_sunrise_is_observed() -> None:
     out = DailyPanchangOut.model_validate({**payload.pop("request"), **payload})
     view = to_daily_panchang_view(out)
     assert "sunriseFallback" in view.flags
+    assert "sunriseFallbackNearestValidLatitude" in view.flags
+    assert "polarDay" in view.flags
     assert view.sunrise is None
     assert view.sunset is None
 
@@ -61,6 +63,6 @@ def test_public_openapi_exposes_camel_case_interval_fields() -> None:
         assert "flags" in schema["properties"]
 
 
-def test_gateway_cache_key_does_not_reuse_pre_interval_contract_entries() -> None:
+def test_gateway_cache_key_does_not_reuse_pre_fallback_policy_entries() -> None:
     key = panchang_cache_key("2024-01-15", 28.6, 77.2, "Asia/Kolkata", "lahiri", "amanta")
-    assert key.startswith("panchang:canonical-v2:")
+    assert key.startswith("panchang:canonical-v3:")
