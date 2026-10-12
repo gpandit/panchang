@@ -58,13 +58,13 @@
 </head>
 <body>
   <h1>The Pandit — v3.0 Build Dashboard</h1>
-  <p class="sub">Updated 2026-10-07 · package status is scoped to the v3.0 acceptance criteria, not the existence of prototype code. S0 foundations passed their gated CI; S1–S7 remain open.</p>
+  <p class="sub">Generated 2026-10-07 · package status is scoped to the v3.0 acceptance criteria, not the existence of prototype code. One structural package is complete; no entire wave has passed its gate.</p>
 
   <div class="alert alert-red">
     <strong>Build position:</strong> the current source should be preserved and incrementally hardened, not discarded. Existing functionality is prototype/foundation quality. Marketplace, Vault, ledger, booking, Shopify, KYC, and tax work packages remain to be built.
   </div>
   <div class="alert alert-amber">
-    <strong>Evidence limit:</strong> S0 CI run <span class="mono">37548797298</span> passed Python, TypeScript, accuracy, and disposable PostGIS/Redis integration checks. It does not establish production latency, commercial licensing, full client generation, or later stage gates. Counts are work-package dispositions, not percent of engineering effort completed.
+    <strong>Evidence limit:</strong> the one complete package is only the repository scaffold, confirmed by its files and workspace manifests. No CI or project test result is asserted here; <span class="mono">uv</span> and <span class="mono">pnpm</span> were unavailable in this worker environment during the review. Counts are work-package dispositions, not percent of engineering effort completed.
   </div>
 
   <div class="grid" id="stats"></div>
@@ -113,7 +113,7 @@
   <section>
     <h2>Immediate critical path</h2>
     <ol>
-      <li>S0: foundation gate passed in CI run 37548797298; keep planned OpenAPI operations and generated-client deferral explicit.</li>
+      <li>S0: accept ADRs, reconcile OpenAPI, add v3 migrations, outbox/idempotency, Vault boundary, and Postgres/Redis integration checks.</li>
       <li>S1: expand four accuracy fixtures to at least 500 across ten locations; make the executable ±2/±5 tolerance policy and canonical interval payload pass.</li>
       <li>S2: replace profile/notes/reminders stubs, persist CMS/rules, reconcile mobile routes, and generate shared clients from the contract.</li>
       <li>S3: build the Commerce Core before any marketplace UI: quote policies, Stripe Connect, ledger, webhooks, payouts, refunds, disputes, and reconciliation.</li>
@@ -142,18 +142,18 @@
     const waves = [
       { id:'S0', title:'Foundations & contract reconciliation', gate:'ADRs accepted; migrations, OpenAPI, outbox, and integration smoke checks pass.', owner:'platform', items:[
       ['S0-00','Monorepo scaffold and toolchain manifests','platform','complete','apps/, services/, packages/, pnpm-workspace.yaml, package.json, and root pyproject.toml establish the requested monorepo shape.','No planned v3.0 change to this scoped scaffold; build checks and infrastructure wiring remain separate packages.'],
-        ['S0-01','ADRs and architecture decisions','platform','complete','Accepted ADRs 0001–0009 record the v3.0 backend, mobile, cache, accuracy, eventing, vendor, money, residency, and AI-retention decisions.','Supersede an ADR explicitly if a future decision changes an invariant.'],
-        ['S0-02','FastAPI/OpenAPI reconciliation','contracts','complete','A machine-readable runtime inventory marks the 20 registered public operations as partial/planned against the canonical 145-path/172-operation target; a test guards route drift.','Keep generated clients deferred until the target and runtime converge; do not treat planned paths as working.'],
-        ['S0-03','SQLAlchemy async/PostgreSQL foundation','platform','complete','Async session/repository drivers and injectable Alembic migration seam pass local tests and disposable PostGIS CI.','Production deployment/database performance remain separate gates.'],
-        ['S0-04','v3 data-model migrations','data','complete','Additive revision 0002 registers 56 dependency-ordered v3 tables with privacy references, money constraints, PostGIS/range types, and portable SQLite fallbacks.','PostGIS migration smoke passes CI; future schema evolution requires new additive revisions.'],
-        ['S0-05','Outbox, idempotency, and Vault interfaces','platform','complete','Revision 0003 adds opaque-reference outbox envelopes and scoped idempotency records; provider-neutral Vault ports, deterministic fake reads, and payload-free audit sinks are covered.','Worker delivery, external Vault, and production queue integration remain downstream/operational gates.'],
-        ['S0-06','Contract and authority checks','quality','complete','Offline Python/TypeScript/Swift/Kotlin authority checker and seven regression tests run in CI; the runtime-route inventory has a drift guard.','Source patterns are not a full data-flow proof; generated-client drift must be gated when the aspirational v1 spec and runtime converge.'],
-        ['S0-07','Postgres/Redis integration and observability','operations','complete','CI run 37548797298 passed disposable PostGIS/Redis migration, user/outbox readback, cache/lock, and fixture query-latency checks.','Production SLO/load evidence remains a later gate; fixture latency is not a p95 claim.']
+        ['S0-01','ADRs and architecture decisions','platform','update','v3 decisions are documented, but an accepted ADR set is not present.','Create and accept ADRs for stack, mobile, grid, accuracy, eventing, vendors, money policy, residency, and AI retention.'],
+        ['S0-02','FastAPI/OpenAPI reconciliation','contracts','update','Running FastAPI is only a subset of the aspirational OpenAPI; TS client types are hand-authored.','Reconcile the contract, mark planned routes, and generate clients from the agreed v1 schema.'],
+        ['S0-03','SQLAlchemy async/PostgreSQL foundation','platform','update','Async session/repository patterns exist; the migration/model set is temple-only.','Add production Postgres/PostGIS wiring, migration smoke tests, and repository conventions.'],
+        ['S0-04','v3 data-model migrations','data','new','User, Panchang, CMS, reminder, commerce, booking, ledger, and order tables are absent.','Implement dependency-ordered migrations from data-model-v3.0.'],
+        ['S0-05','Outbox, idempotency, and Vault interfaces','platform','new','No transactional outbox, Vault boundary, or idempotency tables/interfaces were found.','Add durable event envelope, replay-safe keys, Vault refs, and access logging.'],
+        ['S0-06','Contract and authority checks','quality','update','CI exists, but direct ephemeris imports and client-authority checks remain.','Add forbidden-import, generated-contract, and no-client-calculation checks.'],
+        ['S0-07','Postgres/Redis integration and observability','operations','update','Compose and observability scaffolding exist; tests mainly use SQLite/in-memory stores.','Add real service integration jobs and record SLO evidence.']
       ]},
       { id:'S1', title:'Panchang truth', gate:'At least 500 reference days across 10 locations; accuracy harness green.', owner:'panchang', items:[
-        ['S1-01','PCS ephemeris boundary','panchang','complete','Only engine.py imports Swiss Ephemeris; compute/timeforms use named wrappers, and a named nearest-valid-latitude high-latitude proxy is marked and fails closed when no local-day anchor exists.','Calibration is still open; the four-fixture harness does not satisfy the S1 accuracy gate.'],
-        ['S1-02','Canonical PanchangDay interval contract','panchang','complete','PCS intervals and derived windows now carry validated UTC endpoints, offset, hoursFromSunrise and flags; the gateway/OpenAPI/TS types expose the additive shape, with DST, 24-plus, and fallback tests.','Legacy gateway cache reads are temporarily optional; PCS/gateway cache namespaces were bumped to avoid reusing old payloads, and S1-04 will unify production adapters.'],
-        ['S1-03','Accuracy harness and reference dataset','quality','update','Harness now includes the original four accuracy fixtures plus 10 user-supplied timezone-conversion records across 10 locations for one date.','Expand with authorized independent expected values across at least 500 days and 10 locations; the supplied records validate UTC normalization but do not satisfy the full accuracy gate.'],
+        ['S1-01','PCS ephemeris boundary','panchang','update','engine.py provides a boundary, but compute.py/timeforms.py also import swisseph.','Centralise ephemeris access and document/correct approximation gaps.'],
+        ['S1-02','Canonical PanchangDay interval contract','panchang','update','Typed models and edge tests exist, but UTC/offset/hoursFromSunrise/flags are incomplete.','Make the v3 interval schema canonical and derive display formats at the edge.'],
+        ['S1-03','Accuracy harness and reference dataset','quality','update','Harness exists with 4 fixtures and 3 locations, not the 500/10 gate.','Expand independently sourced fixtures and retain the executable ±2/±5 policy.'],
         ['S1-04','Redis/Postgres cache, grid, and locks','panchang','update','Cache protocols and 0.1° grid exist; production adapters and distributed locks are not wired.','Wire durable Redis/Postgres stores, timezone keying, and per-key locking.'],
         ['S1-05','15-month cache warmer','panchang','update','Synchronous warmer exists for illustrative cities; scheduled production integration is missing.','Add queue scheduling, popular-location prioritisation, and engine-version invalidation.'],
         ['S1-06','Festival rule DSL and resolver','rules','update','Rule JSON exists; occurrence persistence/resolution is incomplete and filters discard year/month.','Implement versioned rule resolution, occurrence storage, regional overrides, and snapshots.']
@@ -216,7 +216,7 @@
       [''+counts.complete, 'Complete / no changes', 'var(--green)'],
       [''+counts.update, 'Require v3 updates', 'var(--amber)'],
       [''+counts.new, 'Yet to develop', 'var(--blue)'],
-      ['1/8', 'Wave gates passed', 'var(--green)']
+      ['0/8', 'Wave gates passed', 'var(--red)']
     ].map(([big,lbl,c]) => `<div class="card"><div class="big" style="color:${c}">${big}</div><div class="lbl">${lbl}</div></div>`).join('');
 
     const wavesEl = document.getElementById('waves');
