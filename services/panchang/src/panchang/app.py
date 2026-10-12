@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -22,6 +22,7 @@ from panchang.cache import PanchangCache
 from panchang.compute import compute_panchang
 from panchang.models import Ayanamsa, MonthScheme, PanchangRequest
 from panchang.settings import get_settings
+from panchang.sunrise_policy import SunriseFallbackError
 
 settings = get_settings()
 cache = PanchangCache(compute=compute_panchang)
@@ -33,6 +34,13 @@ app = FastAPI(
     redoc_url=None,
     openapi_url="/openapi.json" if settings.debug else None,
 )
+
+
+@app.exception_handler(SunriseFallbackError)
+async def sunrise_fallback_unavailable(
+    _request: Request, exc: SunriseFallbackError
+) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"reason": exc.reason, "flags": exc.flags})
 
 
 class ComputeRequest(BaseModel):
@@ -70,7 +78,7 @@ async def compute_single(req: ComputeRequest) -> JSONResponse:
         month_scheme=req.month_scheme,
     )
     result = cache.get(preq)
-    return JSONResponse(result.model_dump(mode="json"))
+    return JSONResponse(result.model_dump(mode="json", by_alias=True))
 
 
 @app.post("/compute/month")
@@ -91,6 +99,6 @@ async def compute_month(req: MonthRequest) -> JSONResponse:
             month_scheme=req.month_scheme,
         )
         result = cache.get(preq)
-        results.append(result.model_dump(mode="json"))
+        results.append(result.model_dump(mode="json", by_alias=True))
 
     return JSONResponse({"days": results})

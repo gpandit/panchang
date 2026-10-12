@@ -1,5 +1,44 @@
 # Build Status — Pandit Services Marketplace
 
+## v3.0 orchestrator progress
+
+This section records the ordered v3.0 build-dashboard implementation run. It is
+kept separate from the legacy marketplace workstream below. A package is marked
+done only after its focused checks and code review have completed; real service,
+vendor, and commercial-licence gates remain explicit until verified.
+
+| Package | Status | Evidence / next action |
+|---|---|---|
+| S0-01 ADRs and architecture decisions | done | `docs/adr/0001`–`0009`; documentation structure and link checks passed. |
+| S0-02 FastAPI/OpenAPI reconciliation | done | Canonical aspirational contract plus 20-operation runtime inventory and drift tests; generated clients remain deferred until target/runtime convergence, not claimed complete. |
+| S0-03 SQLAlchemy async/PostgreSQL foundation | done | Driver normalization, injectable Alembic seam, isolated migration smoke test, and URL coverage reviewed; live Postgres/PostGIS integration remains an external gate. |
+| S0-04 v3 data-model migrations | done | Additive revision `0002_v3_data_model` registers 56 tables with local privacy, uniqueness, money, ledger, and booking-overlap checks; live Postgres/PostGIS migration remains an external gate. |
+| S0-05 outbox/idempotency/Vault interfaces | done | Revision `0003_s005_outbox_idempotency`, opaque event refs, scoped replay guards, deterministic Vault fake, and payload-free access logging reviewed; workers/external Vault remain later gates. |
+| S0-06 contract and authority checks | done | Offline checker and 7 unit tests pass and run in Python CI; runtime-route inventory drift is guarded. Generated-client drift is deferred until S0-02 target/runtime convergence, not claimed complete. |
+| S0-07 Postgres/Redis integration | done | CI run 37548797298 passed the ephemeral PostGIS/Redis job, migrations, user/outbox readback, cache/lock test, and fixture latency observation; production SLO evidence remains a later gate. |
+
+**S0 gate (2026-10-07):** Passed the defined foundation checks in
+`https://github.com/gpandit/panchang/actions/runs/37548797298` (Python,
+TypeScript, four-fixture accuracy regression, PostGIS/Redis integration, and
+all-checks-pass). The S1 accuracy dataset gate remains **not passed**: four
+fixtures are not 500 days across ten locations. The aspirational v1 OpenAPI is
+not a claim that its planned routes or generated clients are shipped. Production
+Vault, licensing, load/SLO and provider integrations remain open.
+
+| Package | Status | Evidence / next action |
+|---|---|---|
+| S1-01 PCS ephemeris boundary | done | `services/panchang/src/panchang/engine.py` is the sole library importer; CI guard and regressions pass. Local Ruff/format/mypy and 165 tests passed; four accuracy fixtures passed. Calibration, flagged polar fallback, and 500-day/10-location gate remain S1 work. |
+| S1-02 canonical interval contract | done | PCS adds validated UTC interval fields and flags, gateway/OpenAPI/TS expose them, fallback proxy is flagged and withheld in the Today view, and cache namespaces are bumped. DST/cross-date/24-plus tests pass; S1-04 owns durable cache adapters. |
+| S1 high-latitude fallback (development-plan §4 item 3) | done | Named `sunriseFallbackNearestValidLatitude` policy, bounded 1° inward search, marked UTC proxy instants, impossible-date/no-reference structured failures, and gateway 422 propagation tested. This is not the dashboard's S1-03 accuracy-dataset package; independent calibration remains open. |
+| S1-03 accuracy harness/reference dataset | in-progress | Added `tools/accuracy_harness/data/timezone_conversion_20261007.json` with 10 user-supplied global timezone records and 2 UTC-normalization tests. This validates timezone conversion only; the ≥500 independently sourced days/≥10 locations accuracy gate remains open. |
+
+**S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
+format, mypy, and pytest import-path fixes: `uv run ruff check services/`,
+`uv run ruff format --check services/`, `uv run mypy services/ --config-file
+pyproject.toml`, and `uv run pytest services/ tools/ -v --tb=short` (159 tests,
+21 subtests). Remote CI and real PostgreSQL/PostGIS/Redis checks still require
+independent evidence; no S0 stage gate is claimed passed yet.
+
 Resumable progress manifest for the build defined in [`dev-plan-marketplace.md`](dev-plan-marketplace.md).
 Architecture context: [`architecture-marketplace.md`](architecture-marketplace.md).
 

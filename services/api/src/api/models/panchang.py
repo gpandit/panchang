@@ -6,10 +6,11 @@ PanchangResult produced by services/panchang.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
+from math import isfinite
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class DailyPanchangRequest(BaseModel):
@@ -44,7 +45,40 @@ class TimeValueOut(BaseModel):
     hour_24_plus: str
 
 
-class AngaSpanOut(BaseModel):
+class CanonicalIntervalOut(BaseModel):
+    """Optional only to accept pre-contract cached/downstream payloads during rollout."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    start_utc: datetime | None = Field(default=None, alias="startUtc")
+    end_utc: datetime | None = Field(default=None, alias="endUtc")
+    local_offset_minutes: int | None = Field(
+        default=None, alias="localOffsetMinutes", ge=-1440, le=1440
+    )
+    hours_from_sunrise: float | None = Field(default=None, alias="hoursFromSunrise")
+    flags: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_interval(self) -> CanonicalIntervalOut:
+        values = (self.start_utc, self.end_utc, self.local_offset_minutes, self.hours_from_sunrise)
+        if any(value is not None for value in values):
+            if any(value is None for value in values):
+                raise ValueError("canonical interval fields must be supplied together")
+            assert self.start_utc is not None and self.end_utc is not None
+            assert self.hours_from_sunrise is not None
+            if (
+                self.start_utc.tzinfo is None
+                or self.end_utc.tzinfo is None
+                or self.start_utc.utcoffset() != UTC.utcoffset(None)
+                or self.end_utc.utcoffset() != UTC.utcoffset(None)
+            ):
+                raise ValueError("canonical interval endpoints must be UTC")
+            if self.end_utc <= self.start_utc or not isfinite(self.hours_from_sunrise):
+                raise ValueError("invalid canonical interval")
+        return self
+
+
+class AngaSpanOut(CanonicalIntervalOut):
     index: int
     name: str
     start: TimeValueOut | None
@@ -56,6 +90,7 @@ class DayEventsOut(BaseModel):
     sunset: TimeValueOut
     moonrise: TimeValueOut | None
     moonset: TimeValueOut | None
+    flags: list[str] = Field(default_factory=list)
 
 
 class CalendricalOut(BaseModel):
@@ -73,13 +108,13 @@ class CalendricalOut(BaseModel):
     sun_rashi: str
 
 
-class PeriodOut(BaseModel):
+class PeriodOut(CanonicalIntervalOut):
     name: str
     start: TimeValueOut
     end: TimeValueOut
 
 
-class ChoghadiyaOut(BaseModel):
+class ChoghadiyaOut(CanonicalIntervalOut):
     name: str
     start: TimeValueOut
     end: TimeValueOut
@@ -95,6 +130,7 @@ class DailyPanchangOut(BaseModel):
     tz: str
     ayanamsa: str
     month_scheme: str
+    flags: list[str] = Field(default_factory=list)
 
     sun_longitude: float
     moon_longitude: float
@@ -190,6 +226,7 @@ class DailyPanchangViewOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     date: str
+    flags: list[str] = Field(default_factory=list)
     lat: float
     lon: float
     tz: str

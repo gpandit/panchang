@@ -3,7 +3,9 @@
   "info": {
     "title": "The Pandit API",
     "description": "Versioned REST/JSON gateway for The Pandit platform. Clients (web, iOS, Android, admin) call this service exclusively \u2014 domain services are never exposed directly.\n\n**Auth:** Bearer JWT in the Authorization header.\n\n**Tiers:** basic < silver < gold. Gated endpoints return 403 when the caller's tier is insufficient.",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "x-contract-status": "legacy-runtime-snapshot",
+    "x-reconciliation": "openapi-v1-reconciliation.md"
   },
   "paths": {
     "/v1/panchang/daily": {

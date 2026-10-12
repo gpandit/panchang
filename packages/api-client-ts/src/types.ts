@@ -52,7 +52,19 @@ export interface TimeValueOut {
   hour_24_plus: string; // "HH:MM:SS" where HH may exceed 23
 }
 
-export interface AngaSpanOut {
+/** Canonical UTC interval; optional only for pre-contract cached payloads during rollout.
+ * hoursFromSunrise is the END instant's elapsed real hours since sunrise.
+ * localOffsetMinutes is the offset at startUtc (DST may change before endUtc).
+ */
+export interface CanonicalIntervalOut {
+  startUtc?: string; // ISO-8601 UTC instant
+  endUtc?: string; // ISO-8601 UTC instant
+  localOffsetMinutes?: number;
+  hoursFromSunrise?: number; // may be negative or exceed 24
+  flags?: string[]; // carriesOver, kshaya, vriddhi, sunriseFallback
+}
+
+export interface AngaSpanOut extends CanonicalIntervalOut {
   index: number;
   name: string;
   start: TimeValueOut | null;
@@ -64,6 +76,7 @@ export interface DayEventsOut {
   sunset: TimeValueOut;
   moonrise: TimeValueOut | null;
   moonset: TimeValueOut | null;
+  flags?: string[]; // sunriseFallback when sunrise/sunset are synthetic
 }
 
 export interface CalendricalOut {
@@ -81,13 +94,13 @@ export interface CalendricalOut {
   sun_rashi: string;
 }
 
-export interface PeriodOut {
+export interface PeriodOut extends CanonicalIntervalOut {
   name: string;
   start: TimeValueOut;
   end: TimeValueOut;
 }
 
-export interface ChoghadiyaOut {
+export interface ChoghadiyaOut extends CanonicalIntervalOut {
   name: string;
   start: TimeValueOut;
   end: TimeValueOut;
@@ -102,6 +115,7 @@ export interface DailyPanchangOut {
   tz: string; // IANA timezone
   ayanamsa: string;
   month_scheme: string;
+  flags?: string[]; // sunriseFallback when day anchor is synthetic
 
   sun_longitude: number;
   moon_longitude: number;
@@ -286,6 +300,7 @@ export interface PanchangElement {
 /** View-ready daily Panchang payload from the /v1/panchang/daily endpoint. */
 export interface DailyPanchangView {
   date: string; // "YYYY-MM-DD"
+  flags?: string[]; // sunriseFallback means rise/set placeholders are withheld
   lat: number;
   lon: number;
   tz: string;

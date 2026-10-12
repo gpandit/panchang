@@ -1,0 +1,151 @@
+{
+  "_meta": {
+    "version": 1,
+    "description": "User-supplied timezone conversion fixture for one astronomical phase set across ten global timezones.",
+    "source": "User-provided dataset; values claim Swiss Ephemeris / JPL DE431 and Topocentric Longitude.",
+    "purpose": "Validate aware local timestamps, IANA offsets, and UTC normalization.",
+    "accuracy_gate": "Supplemental timezone test only; not an independent 500-day accuracy dataset."
+  },
+  "records": [
+    {
+      "id": "panchang_nyc_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "New York", "country": "USA", "timezone": "America/New_York", "lat": 40.7128, "lon": -74.006, "utc_offset": "-04:00" },
+      "sun_metrics": { "sunrise": "07:00:00", "sunset": "18:25:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-07T13:46:00-04:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-07T12:10:00-04:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-07T17:22:00-04:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-07T02:23:00-04:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-07T13:46:00-04:00" }
+      }
+    },
+    {
+      "id": "panchang_london_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "London", "country": "UK", "timezone": "Europe/London", "lat": 51.5074, "lon": -0.1278, "utc_offset": "+01:00" },
+      "sun_metrics": { "sunrise": "07:11:00", "sunset": "18:26:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-07T18:46:00+01:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-07T17:10:00+01:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-07T22:22:00+01:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-07T07:23:00+01:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-07T18:46:00+01:00" }
+      }
+    },
+    {
+      "id": "panchang_moscow_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "Moscow", "country": "Russia", "timezone": "Europe/Moscow", "lat": 55.7558, "lon": 37.6173, "utc_offset": "+03:00" },
+      "sun_metrics": { "sunrise": "06:40:00", "sunset": "17:42:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-07T20:46:00+03:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-07T19:10:00+03:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-08T00:22:00+03:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-07T09:23:00+03:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-07T20:46:00+03:00" }
+      }
+    },
+    {
+      "id": "panchang_capetown_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "Cape Town", "country": "South Africa", "timezone": "Africa/Johannesburg", "lat": -33.9249, "lon": 18.4241, "utc_offset": "+02:00" },
+      "sun_metrics": { "sunrise": "06:17:00", "sunset": "18:56:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-07T19:46:00+02:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-07T18:10:00+02:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-07T23:22:00+02:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-07T08:23:00+02:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-07T19:46:00+02:00" }
+      }
+    },
+    {
+      "id": "panchang_rio_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "Rio de Janeiro", "country": "Brazil", "timezone": "America/Sao_Paulo", "lat": -22.9068, "lon": -43.1729, "utc_offset": "-03:00" },
+      "sun_metrics": { "sunrise": "05:32:00", "sunset": "17:55:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-07T14:46:00-03:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-07T13:10:00-03:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-07T18:22:00-03:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-07T03:23:00-03:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-07T14:46:00-03:00" }
+      }
+    },
+    {
+      "id": "panchang_losangeles_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "Los Angeles", "country": "USA", "timezone": "America/Los_Angeles", "lat": 34.0522, "lon": -118.2437, "utc_offset": "-07:00" },
+      "sun_metrics": { "sunrise": "06:55:00", "sunset": "18:29:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-07T10:46:00-07:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-07T09:10:00-07:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-07T14:22:00-07:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-06T23:23:00-07:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-07T10:46:00-07:00" }
+      }
+    },
+    {
+      "id": "panchang_reykjavik_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "Reykjavik", "country": "Iceland", "timezone": "Atlantic/Reykjavik", "lat": 64.1466, "lon": -21.9426, "utc_offset": "+00:00" },
+      "sun_metrics": { "sunrise": "07:54:00", "sunset": "18:31:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-07T17:46:00+00:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-07T16:10:00+00:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-07T21:22:00+00:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-07T06:23:00+00:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-07T17:46:00+00:00" }
+      }
+    },
+    {
+      "id": "panchang_singapore_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "Singapore", "country": "Singapore", "timezone": "Asia/Singapore", "lat": 1.3521, "lon": 103.8198, "utc_offset": "+08:00" },
+      "sun_metrics": { "sunrise": "06:51:00", "sunset": "18:55:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-08T01:46:00+08:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-08T00:10:00+08:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-08T05:22:00+08:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-07T14:23:00+08:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-08T01:46:00+08:00" }
+      }
+    },
+    {
+      "id": "panchang_tokyo_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "Tokyo", "country": "Japan", "timezone": "Asia/Tokyo", "lat": 35.6762, "lon": 139.6503, "utc_offset": "+09:00" },
+      "sun_metrics": { "sunrise": "05:41:00", "sunset": "17:16:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-08T02:46:00+09:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-08T01:10:00+09:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-08T06:22:00+09:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-07T15:23:00+09:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-08T02:46:00+09:00" }
+      }
+    },
+    {
+      "id": "panchang_sydney_20261007",
+      "date": "2026-10-07",
+      "location": { "city": "Sydney", "country": "Australia", "timezone": "Australia/Sydney", "lat": -33.8688, "lon": 151.2093, "utc_offset": "+11:00" },
+      "sun_metrics": { "sunrise": "06:24:00", "sunset": "19:04:00" },
+      "vaara": { "name": "Budhavara", "element": "Wednesday" },
+      "endings": {
+        "tithi": { "name": "Dwadashi", "at": "2026-10-08T04:46:00+11:00" },
+        "nakshatra": { "name": "Magha", "at": "2026-10-08T03:10:00+11:00" },
+        "yoga": { "name": "Shubha", "at": "2026-10-08T08:22:00+11:00" },
+        "karana_1": { "name": "Kaulava", "at": "2026-10-07T17:23:00+11:00" },
+        "karana_2": { "name": "Taitila", "at": "2026-10-08T04:46:00+11:00" }
+      }
+    }
+  ]
+}

@@ -56,6 +56,18 @@ async def daily_panchang(
             month_scheme=month_scheme,
         )
     except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 422:
+            try:
+                error = exc.response.json()
+            except ValueError:
+                error = None
+            if (
+                isinstance(error, dict)
+                and error.get("reason") in {"impossibleLocalDate", "noValidLatitude"}
+                and isinstance(error.get("flags"), list)
+                and "sunriseFallbackUnavailable" in error["flags"]
+            ):
+                raise HTTPException(status_code=422, detail=error) from exc
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Panchang service error: {exc.response.status_code}",

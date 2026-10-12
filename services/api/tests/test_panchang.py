@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from unittest.mock import AsyncMock, patch
 
+import httpx
 from httpx import AsyncClient
 
 from api.cache import get_panchang_cache, panchang_cache_key
@@ -125,6 +126,23 @@ async def test_daily_cache_miss_calls_downstream(client: AsyncClient, basic_toke
 
     assert r.status_code == 200
     mock_fetch.assert_awaited_once()
+
+
+async def test_daily_preserves_explicit_sunrise_policy_failure(client: AsyncClient) -> None:
+    request = httpx.Request("POST", "http://pcs/compute")
+    error = {
+        "reason": "impossibleLocalDate",
+        "flags": ["sunriseFallback", "sunriseFallbackUnavailable", "impossibleLocalDate"],
+    }
+    response = httpx.Response(422, json=error, request=request)
+    with patch(
+        "api.routers.v1.panchang.fetch_daily_panchang",
+        new_callable=AsyncMock,
+        side_effect=httpx.HTTPStatusError("unprocessable", request=request, response=response),
+    ):
+        actual = await client.get(DAILY_URL)
+    assert actual.status_code == 422
+    assert actual.json()["detail"] == error
 
 
 async def test_daily_cache_miss_latency_mock_under_2s(
