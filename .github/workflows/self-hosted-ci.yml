@@ -1,0 +1,73 @@
+name: Self-hosted CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: ["develop"]
+  push:
+    branches: ["develop"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: self-hosted-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Self-hosted validation
+    # The runner must be an ephemeral or dedicated Linux x64 runner.
+    # Do not place untrusted repositories or unrelated workloads on it.
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify runner toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          for command in docker node pnpm uv; do
+            command -v "$command" >/dev/null || {
+              echo "Required command is missing: $command" >&2
+              exit 1
+            }
+          done
+          node --version
+          pnpm --version
+          uv --version
+          docker version
+
+      - name: Install Python dependencies
+        run: uv sync --all-packages --dev
+
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check authority boundaries
+        run: |
+          uv run python tools/check_contract_authority.py
+          uv run python -m unittest tools.test_contract_authority -v
+
+      - name: Python lint, format, typecheck, and tests
+        run: |
+          uv run ruff check services/
+          uv run ruff format --check services/
+          uv run mypy services/ --config-file pyproject.toml
+          uv run pytest services/ tools/ -v --tb=short
+
+      - name: TypeScript lint, format, typecheck, and tests
+        run: |
+          pnpm run lint
+          pnpm run format:check
+          pnpm run typecheck
+          pnpm run test
+
+      - name: Launch-readiness development gate
+        env:
+          PANCHANG_BUILD_PROFILE: development
+          PANCHANG_EPHEMERIS_LICENSE: agpl
+        run: uv run python tools/check_launch_readiness.py
