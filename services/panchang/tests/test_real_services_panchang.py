@@ -91,12 +91,13 @@ def _unique_request() -> PanchangRequest:
     """Create a valid, very unlikely-to-collide durable cache identity."""
     seed = uuid4().int
     day = date(2035, 1, 1) + timedelta(days=(seed >> 32) % 3650)
-    lat_grid = -80.0 + (seed % 1_600) / 10
-    lon_grid = -170.0 + ((seed >> 12) % 3_400) / 10
     return PanchangRequest(
         date=day,
-        lat=lat_grid + 0.01,
-        lon=lon_grid + 0.01,
+        # Keep the integration fixture in a location with a reliable sunrise
+        # throughout the generated date range. Uniqueness comes from the date;
+        # arbitrary high-latitude coordinates can legitimately have no sunrise.
+        lat=28.61,
+        lon=77.21,
         tz="Asia/Kolkata",
     )
 
