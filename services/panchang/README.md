@@ -39,6 +39,21 @@ uv run pytest tests/ -v
 The accuracy harness (Step 1.3) validates computed Panchang values against
 reference data and runs in CI, gating all merges.
 
+## Cache warmer worker seam
+
+`panchang.warming_jobs` contains the queue-agnostic scheduled job contract.
+`publish_warm_job` gives an RQ/outbox publisher a stable daily dedupe key;
+`run_warm_job` resolves configured and observed (aggregated request-volume)
+locations, warms both Amanta and Purnimanta over fifteen actual calendar
+months, and returns deterministic per-request failure records after bounded
+retries. Deployments provide the `WarmJobPublisher`, `LocationSource`, and
+real `PanchangCache` adapters; this package does not install a cron or worker
+process. `location_source_from_settings(settings, observed)` reads
+`PANCHANG_WARM_LOCATIONS_JSON`, `PANCHANG_WARM_TOP_LOCATIONS`, and the cache
+grid resolution; `observed` should read the deployment's aggregated location
+repository. An empty combined source fails the run. The worker's caller must
+record `WarmReport.failures` and requeue/alert unresolved entries.
+
 ## S1-01 ephemeris boundary and calibration status
 
 `src/panchang/engine.py` is the only module permitted to import/call Swiss

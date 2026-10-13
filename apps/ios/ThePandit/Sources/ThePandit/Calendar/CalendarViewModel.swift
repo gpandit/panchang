@@ -50,28 +50,9 @@ final class CalendarViewModel {
         isLoadingDay = true
 
         let dateStr = formattedDate(date)
-        guard let location else { isLoadingDay = false; return }
-        let lat = location.coordinate.latitude
-        let lon = location.coordinate.longitude
-        let tz = timezone.identifier
-
-        // Try cache first for fast response
-        if let cached = try? await cache.fetchPanchang(date: dateStr, lat: lat, lon: lon, tz: tz,
-                                                       ayanamsa: "lahiri", monthScheme: "amanta",
-                                                       context: context) {
-            selectedDayPanchang = cached
-        }
-
-        // Then refresh from API
-        do {
-            let fresh = try await api.dailyPanchang(date: dateStr, lat: lat, lon: lon, tz: tz)
-            selectedDayPanchang = fresh
-            try? await cache.storePanchang(fresh, context: context)
-        } catch {
-            if selectedDayPanchang == nil {
-                self.error = (error as? LocalizedError)?.errorDescription
-            }
-        }
+        // The month response already contains the raw day payloads used by the
+        // calendar. The daily endpoint is a view response and is consumed by Today.
+        selectedDayPanchang = monthData?.days.first { $0.date == dateStr }
 
         loadLocalNotes(for: dateStr, context: context)
         loadLocalReminders(context: context)

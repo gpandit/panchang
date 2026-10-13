@@ -294,7 +294,7 @@ def compute_panchang(request: PanchangRequest) -> PanchangResult:
     )
 
     # ── Muhurat / period values ─────────────────────────────────────────────
-    muhurat = _compute_muhurat(sunrise, sunset, next_sunrise, tv, interval)
+    muhurat = _compute_muhurat(sunrise, sunset, next_sunrise, weekday_index, tv, interval)
     choghadiya = _compute_choghadiya(sunrise, sunset, next_sunrise, weekday_index, tv, interval)
     hora = _compute_hora(sunrise, sunset, next_sunrise, weekday_index, tv, interval)
 
@@ -332,6 +332,7 @@ def _compute_muhurat(
     sunrise: float,
     sunset: float,
     next_sunrise: float,
+    weekday_index: int,
     tv: Callable[[float], TimeValue],
     interval: IntervalFn,
 ) -> list[MuhuratPeriod]:
@@ -344,7 +345,6 @@ def _compute_muhurat(
         end = start + segment
         return MuhuratPeriod(name=name, start=tv(start), end=tv(end), **interval(start, end, None))
 
-    weekday_index = _weekday_from_jd(sunrise)
     periods = [
         seg_period("Rahu Kalam", C.RAHU_KALAM_SEGMENT[weekday_index]),
         seg_period("Yamaganda", C.YAMAGANDA_SEGMENT[weekday_index]),
@@ -453,11 +453,6 @@ def _compute_hora(
         )
 
     return result
-
-
-def _weekday_from_jd(jd_ut: float) -> int:
-    """0 = Sunday, per the Julian-Day weekday convention (JD+1.5 mod 7)."""
-    return int((jd_ut + 1.5) % 7)
 
 
 # ──────────────────────────────────────────────────────────────────────────

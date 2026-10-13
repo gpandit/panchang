@@ -58,13 +58,13 @@
 </head>
 <body>
   <h1>The Pandit — v3.0 Build Dashboard</h1>
-  <p class="sub">Generated 2026-10-07 · package status is scoped to the v3.0 acceptance criteria, not the existence of prototype code. One structural package is complete; no entire wave has passed its gate.</p>
+  <p class="sub">Updated 2026-10-14 · scoped to v3.0 acceptance criteria. Snapshot includes local, uncommitted S1 work and a pre-push code review; S1–S7 remain open.</p>
 
   <div class="alert alert-red">
-    <strong>Build position:</strong> the current source should be preserved and incrementally hardened, not discarded. Existing functionality is prototype/foundation quality. Marketplace, Vault, ledger, booking, Shopify, KYC, and tax work packages remain to be built.
+    <strong>Pre-push position:</strong> seven requested defects are fixed in the worktree. One P1 accuracy-gate issue remains intentionally open, along with 6 P2 defects. Marketplace, Vault, ledger, booking, Shopify, KYC, and tax implementation remain open.
   </div>
   <div class="alert alert-amber">
-    <strong>Evidence limit:</strong> the one complete package is only the repository scaffold, confirmed by its files and workspace manifests. No CI or project test result is asserted here; <span class="mono">uv</span> and <span class="mono">pnpm</span> were unavailable in this worker environment during the review. Counts are work-package dispositions, not percent of engineering effort completed.
+    <strong>Evidence limit:</strong> local review: 241 tests passed, 2 real-service tests skipped; Ruff, format, mypy, authority check, native-source parsing and focused client contract checks passed. Strict S1 gate still fails (4/500 reference days; 3/10 locations). Docker, Gradle and full Xcode checks were unavailable locally. S0 had an earlier passing CI run <span class="mono">37548797298</span>; that is not current-branch CI evidence. Counts are package dispositions, not percent of engineering effort.
   </div>
 
   <div class="grid" id="stats"></div>
@@ -72,15 +72,27 @@
   <section>
     <h2>Status definitions</h2>
     <div class="legend">
-      <span class="pill pill-complete"><span class="dot dot-complete"></span>Complete — v3 gate met; no planned change</span>
+      <span class="pill pill-complete"><span class="dot dot-complete"></span>Complete — scoped implementation; deployment gates may remain</span>
       <span class="pill pill-update"><span class="dot dot-update"></span>Needs update — reusable code exists but v3 contract/gate is incomplete</span>
       <span class="pill pill-new"><span class="dot dot-new"></span>Yet to develop — no usable implementation found</span>
+      <span class="pill pill-critical"><span class="dot" style="background:var(--red)"></span>Review finding — fix before release</span>
     </div>
   </section>
 
   <section>
     <h2>Waves / stage overview</h2>
     <div id="waves"></div>
+  </section>
+
+  <section>
+    <h2>Pre-push code review</h2>
+    <p>Verified against the current <span class="mono">develop</span> worktree. P1 findings block the intended CI, deployment, client build or calendar correctness; P2 findings break a user-visible or API contract. This is a focused review, not a certification of every route or native build.</p>
+    <div class="board">
+      <table>
+        <thead><tr><th>Priority</th><th>Defect</th><th>Code evidence and consequence</th><th>Required fix</th></tr></thead>
+        <tbody id="findings"></tbody>
+      </table>
+    </div>
   </section>
 
   <section>
@@ -101,9 +113,9 @@
   <section>
     <h2>Reusable code inventory</h2>
     <div class="keep-grid">
-      <div class="keep-item"><h3>Keep: Panchang package structure</h3><p><span class="mono">services/panchang/src/panchang/engine.py</span>, models, constants, time handling, cache protocols, and edge-case tests. Rework the ephemeris boundary, approximations, fallback semantics, and production adapters.</p></div>
+      <div class="keep-item"><h3>Keep: Panchang package structure</h3><p><span class="mono">services/panchang/src/panchang/engine.py</span>, models, constants, time handling, cache adapters, and edge-case tests. The Swiss Ephemeris boundary and marked high-latitude fallback are in place; connect the adapters to production services and calibrate the remaining calendrical approximations.</p></div>
       <div class="keep-item"><h3>Keep: gateway seams</h3><p><span class="mono">services/api/src/api/main.py</span>, auth, tier dependencies, error envelopes, routing, and rate-limit patterns. Replace stubs and reconcile routes with the v1 contract.</p></div>
-      <div class="keep-item"><h3>Keep: persistence patterns</h3><p>SQLAlchemy async session, repository conventions, Alembic setup, and the existing migration shape. Extend them with the v3 schema and real PostgreSQL integration tests.</p></div>
+      <div class="keep-item"><h3>Keep: persistence patterns</h3><p>SQLAlchemy async sessions, repository conventions, and additive Alembic migrations 0001–0003 include the v3 data-model foundation. Production cache wiring and live service verification remain open.</p></div>
       <div class="keep-item"><h3>Keep: admin, CMS, audit, PDF</h3><p>Admin workflow/reporting/audit patterns and queued PDF worker interfaces are useful seams. Replace in-memory stores, local-only outputs, and placeholder content.</p></div>
       <div class="keep-item"><h3>Keep: clients and offline structure</h3><p>Web today/calendar/festival flows, iOS/Android repositories and caches, and design-token generation are reusable. Fix stale endpoints, generated types, persistence, and accessibility/contract coverage.</p></div>
       <div class="keep-item"><h3>Keep: operations scaffolding</h3><p>Docker Compose, observability configuration, accuracy harness structure, and launch-readiness checks should remain and become real gate evidence.</p></div>
@@ -113,8 +125,8 @@
   <section>
     <h2>Immediate critical path</h2>
     <ol>
-      <li>S0: accept ADRs, reconcile OpenAPI, add v3 migrations, outbox/idempotency, Vault boundary, and Postgres/Redis integration checks.</li>
-      <li>S1: expand four accuracy fixtures to at least 500 across ten locations; make the executable ±2/±5 tolerance policy and canonical interval payload pass.</li>
+      <li><strong>Next before GitHub:</strong> resolve the P1 review defects, including the CI accuracy-gate claim, deployment wiring, native client contracts, and local-weekday muhurat error; rerun affected checks.</li>
+      <li>S1: connect cache adapters to production Redis/Postgres, schedule the warmer, publish reviewed festival rules, and expand four accuracy fixtures to 500 independently sourced days across ten locations. The interval payload and ±2/±5 harness exist; S1 gate remains blocked.</li>
       <li>S2: replace profile/notes/reminders stubs, persist CMS/rules, reconcile mobile routes, and generate shared clients from the contract.</li>
       <li>S3: build the Commerce Core before any marketplace UI: quote policies, Stripe Connect, ledger, webhooks, payouts, refunds, disputes, and reconciliation.</li>
       <li>S4–S5: build Pandit Services and Shopify Pooja Items against those frozen contracts; prove concurrency, entitlement, webhook, and money invariants.</li>
@@ -132,6 +144,8 @@
       <li><span class="mono">docs/BUILD-STATUS.md</span></li>
       <li><span class="mono">services/api/alembic/versions/0001_initial_temple.py</span></li>
       <li><span class="mono">tools/accuracy_harness/data/reference_panchang.json</span></li>
+      <li><span class="mono">.github/workflows/ci.yml</span>, <span class="mono">.github/workflows/staging-deploy.yml</span></li>
+      <li><span class="mono">services/panchang/src/panchang/app.py</span>, <span class="mono">compute.py</span>, <span class="mono">rules.py</span>, <span class="mono">warming_jobs.py</span></li>
       <li><span class="mono">services/api/src/api/routers/v1/notes.py</span>, <span class="mono">reminders.py</span>, <span class="mono">profile.py</span></li>
     </ul>
   </section>
@@ -151,12 +165,12 @@
         ['S0-07','Postgres/Redis integration and observability','operations','update','Compose and observability scaffolding exist; tests mainly use SQLite/in-memory stores.','Add real service integration jobs and record SLO evidence.']
       ]},
       { id:'S1', title:'Panchang truth', gate:'At least 500 reference days across 10 locations; accuracy harness green.', owner:'panchang', items:[
-        ['S1-01','PCS ephemeris boundary','panchang','update','engine.py provides a boundary, but compute.py/timeforms.py also import swisseph.','Centralise ephemeris access and document/correct approximation gaps.'],
-        ['S1-02','Canonical PanchangDay interval contract','panchang','update','Typed models and edge tests exist, but UTC/offset/hoursFromSunrise/flags are incomplete.','Make the v3 interval schema canonical and derive display formats at the edge.'],
-        ['S1-03','Accuracy harness and reference dataset','quality','update','Harness exists with 4 fixtures and 3 locations, not the 500/10 gate.','Expand independently sourced fixtures and retain the executable ±2/±5 policy.'],
-        ['S1-04','Redis/Postgres cache, grid, and locks','panchang','update','Cache protocols and 0.1° grid exist; production adapters and distributed locks are not wired.','Wire durable Redis/Postgres stores, timezone keying, and per-key locking.'],
-        ['S1-05','15-month cache warmer','panchang','update','Synchronous warmer exists for illustrative cities; scheduled production integration is missing.','Add queue scheduling, popular-location prioritisation, and engine-version invalidation.'],
-        ['S1-06','Festival rule DSL and resolver','rules','update','Rule JSON exists; occurrence persistence/resolution is incomplete and filters discard year/month.','Implement versioned rule resolution, occurrence storage, regional overrides, and snapshots.']
+        ['S1-01','PCS ephemeris boundary','panchang','complete','Only engine.py imports Swiss Ephemeris; compute/timeforms use named wrappers, and a named nearest-valid-latitude high-latitude proxy is marked and fails closed when no local-day anchor exists.','Calibration is still open; the four-fixture harness does not satisfy the S1 accuracy gate.'],
+        ['S1-02','Canonical PanchangDay interval contract','panchang','complete','PCS intervals and derived windows now carry validated UTC endpoints, offset, hoursFromSunrise and flags; the gateway/OpenAPI/TS types expose the additive shape, with DST, 24-plus, and fallback tests.','Legacy gateway cache reads remain temporarily optional; PCS/gateway cache namespaces were bumped to avoid reusing old payloads. Production adapter wiring remains under S1-04.'],
+        ['S1-03','Accuracy harness and reference dataset','quality','update','Harness validates cited fixture schema/provenance, compares absolute UTC instants under the ±2/±5-minute policy, reports coverage gaps, and supports strict --require-gate mode. Four cited references pass; the ten-record timezone supplement is conversion evidence only.','Add authorized independent expected values across at least 500 days and 10 locations, including the documented edge cases; do not synthesize reference values.'],
+        ['S1-04','Redis/Postgres cache, grid, and locks','panchang','update','Injected-client Redis/Postgres adapters, 0.1°/IANA keys, distributed locks, non-development lifespan wiring, and an opt-in PCS real-service test now exist. CI runs the PCS test with disposable PostGIS/Redis; local execution is skipped without service URLs.','Run the CI job and verify Docker/staging startup evidence; keep local development on in-memory defaults.'],
+        ['S1-05','15-month cache warmer','panchang','update','The 15-month worker covers both schemes, ranked locations, dedupe keys, bounded retries, and failure reports in local tests; no deployment publisher, scheduler, location source, or alert/requeue integration exists.','Wire the job to infrastructure and prove a scheduled job runs and failures are tracked.'],
+        ['S1-06','Festival rule DSL and resolver','rules','update','Versioned rule catalog, resolver, adjacent-day tie-breaks, and occurrence provenance have regression tests; the bundled catalog remains draft and no public CMS publication or durable occurrence integration exists.','Persist/publish reviewed catalog versions and occurrences with invalidation before serving public festival results.']
       ]},
       { id:'S2', title:'Core product', gate:'Auth/profile/Vault, calendar, content, reminders, subscriptions, PDF, and 3-client E2E pass.', owner:'platform + clients', items:[
         ['S2-01','Identity, profiles, locations, and Vault lifecycle','platform','update','JWT/tier dependencies exist; profile/location writes return 501 and no user/Vault persistence exists.','Implement persistent identity/profile/location flows, roles, Vault refs, export, and delete.'],
@@ -169,16 +183,16 @@
         ['S2-08','Client contract and design-token compliance','clients','update','Multiple clients and tests exist; shared types are hand-authored and design values are placeholders.','Generate clients, reconcile routes, and preserve token-only visual implementation.']
       ]},
       { id:'S3', title:'Commerce Core', gate:'Sandbox money flows pass; ledger balances; reconciliation variance is zero.', owner:'commerce', items:[
-        ['S3-01','Commerce schema and provider/KYC interfaces','commerce','new','No commerce/provider/KYC/Vault implementation exists.','Build provider accounts, verification refs, Stripe Connect/KYC interfaces, and migrations.'],
+        ['S3-01','Commerce schema and provider/KYC interfaces','commerce','update','v3 migration and provider-neutral Vault interface scaffolding exist; no working commerce/provider onboarding, external KYC integration, or operational Vault exists.','Build provider accounts, verification refs, Stripe Connect/KYC interfaces, and tested domain persistence.'],
         ['S3-02','Quote, commission, tax, and immutable snapshots','commerce','new','No server-authoritative quote or tax/commission policy module exists.','Implement minor-unit calculations, pass-through rules, jurisdiction tax, and snapshots.'],
         ['S3-03','Stripe Connect payments and escrow','commerce','new','No Stripe Connect, PaymentIntent, holdback, refund, or transfer implementation exists.','Implement signed/idempotent adapters and test authorise/capture/hold/release flows.'],
-        ['S3-04','Ledger, payouts, and reconciliation','commerce','new','No ledger, payout, or reconciliation modules/tables exist.','Add append-only double-entry journals, payout scheduler, statements, and reconciliation.'],
+        ['S3-04','Ledger, payouts, and reconciliation','commerce','update','Ledger table scaffolding exists in v3 schema, but no posting, payout, or reconciliation domain modules are implemented.','Add append-only double-entry journals, payout scheduler, statements, and reconciliation.'],
         ['S3-05','Webhooks, disputes, and finance operations','commerce','new','No signed webhook pipeline, dispute lifecycle, or finance console exists.','Add verification, replay safety, dead letters, payout freeze, evidence, and admin views.']
       ]},
       { id:'S4', title:'Pandit Services marketplace', gate:'In-person booking works with no double-booking, immutable policy snapshots, and operations console.', owner:'marketplace', items:[
         ['S4-01','Pandit onboarding and verification','marketplace','new','No marketplace modules; all related build-status items remain todo.','Build agreements, profile, KYC status, approval queue, and discoverability gate.'],
         ['S4-02','Services, travel, availability, and discovery','marketplace','new','No catalogue, PostGIS search, availability, blackout, or ranking implementation exists.','Build service taxonomy, travel fees, lead/buffer rules, search, and availability APIs.'],
-        ['S4-03','Quote and booking state machine','marketplace','new','No booking tables, range constraints, Vault address access, or concurrency implementation exists.','Build server quote, atomic slot reservation, FSM, payment link, and address disclosure rules.'],
+        ['S4-03','Quote and booking state machine','marketplace','update','v3 schema includes booking/range-constraint scaffolding; no booking API, quote logic, concurrency flow, or Vault address access is wired.','Build server quote, atomic slot reservation, FSM, payment link, and address disclosure rules.'],
         ['S4-04','Messaging, reviews, and booking notifications','marketplace','new','No marketplace conversation, masking, review, or booking-notification service exists.','Add persistent WebSocket-ready messaging, PII masking, verified reviews, and events.'],
         ['S4-05','Provider, patron, and operations clients','clients','new','Existing clients contain no Pandit marketplace flow.','Build clients only after S3/S4 contracts freeze; cover Silver/Gold gating and deep links.']
       ]},
@@ -206,18 +220,42 @@
       ]}
     ];
 
+    // Static, reviewed evidence only: no user-supplied content is interpolated here.
+    const findings = [
+      ['P1','CI accuracy gate','.github/workflows/ci.yml:167-168 runs tools/accuracy_harness/run.py without --require-gate; run.py:363-370 returns success despite 4/500 days, 3/10 locations and edge-case gaps.','Enable the strict flag and build independently sourced reference coverage; do not advertise the existing smoke check as a passed S1 gate.'],
+      ['FIXED','PCS deployment cache','Fixed in services/panchang/src/panchang/app.py, settings.py, and infra/docker-compose.staging.yml: non-development lifespan now wires Redis/Postgres, staging supplies PANCHANG_* settings, and readiness tests cover startup.','Keep Docker/real-service verification as the remaining deployment check.'],
+      ['FIXED','Ephemeris image','Fixed in services/panchang/Dockerfile and staging configuration: libs/ephemeris is copied to /opt/swisseph/ephe, the path is explicit, and health checks require the data files.','Build and inspect the image when Docker is available.'],
+      ['FIXED','Staging migrations','Fixed in .github/workflows/staging-deploy.yml: migrations now receive API_DATABASE_URL, matching API settings and Alembic.','Verify the resolved staging database target in the deployment environment.'],
+      ['FIXED','Android routes','Fixed in Android ApiService and callers: daily uses panchang/daily with the required date; calendar day selection uses the raw month payload.','Run Gradle tests when the Android toolchain is available.'],
+      ['FIXED','Android compilation','Fixed in PanchangRepository.kt: explanation responses are unwrapped through .data["text"], with focused repository coverage.','Run the Android compile/test task when Gradle is available.'],
+      ['FIXED','iOS daily decoding','Fixed in iOS APIClient/APIModels and Today flow: /daily decodes DailyPanchangViewOut while /month retains raw DailyPanchang.','Run xcodebuild XCTest when full Xcode is available.'],
+      ['FIXED','Local muhurat weekday','Fixed in services/panchang/src/panchang/compute.py: _compute_muhurat receives the requested local weekday; Kiritimati regression passes.','Retain the positive-offset regression as a permanent guard.'],
+      ['P2','Paksha label','services/api/src/api/panchang_view.py:114 appends Paksha to PCS values already containing Paksha, yielding duplicate text.','Remove the extra suffix or normalise the source; test against a real PCS fixture.'],
+      ['P2','Incomplete month','services/api/src/api/routers/v1/panchang.py:115-129 silently skips downstream failures and returns HTTP 200, hiding missing dates.','Fail the request or return explicit partial-result metadata and handle it in clients.'],
+      ['P2','Invalid JWT handling','services/api/src/api/auth.py:49-60 reads payload["sub"] without claim validation; a signed token lacking sub raises KeyError rather than 401.','Require the claim and map malformed payloads to 401.'],
+      ['P2','Startup docs','README.md:113-116 and services/panchang/README.md:26-31 refer to panchang.main:app, which does not exist.','Use panchang.app:app in both examples.'],
+      ['P2','TypeScript daily type','packages/api-client-ts/src/client.ts:93-97 advertises DailyPanchangOut, while the gateway returns DailyPanchangViewOut. Consumers are misled about the response shape.','Type the current view response or expose an explicit raw endpoint.'],
+      ['P2','Staging smoke check','.github/workflows/staging-deploy.yml:158-173 retries health checks but does not exit nonzero when all retries fail; unhealthy deploys may show green.','Exit 1 after retries for each failed URL.']
+    ];
     const allItems = waves.flatMap(w => w.items.map(item => ({ wave:w.id, waveTitle:w.title, gate:w.gate, id:item[0], title:item[1], owner:item[2], status:item[3], evidence:item[4], action:item[5] })));
     const label = { complete:'Complete', update:'Needs update', new:'Yet to develop' };
     const color = { complete:'var(--green)', update:'var(--amber)', new:'var(--blue)' };
     const stats = document.getElementById('stats');
     const counts = allItems.reduce((a, x) => { a[x.status]++; return a; }, {complete:0, update:0, new:0});
+    const blockers = findings.filter(x => x[0] === 'P1').length;
     stats.innerHTML = [
       [''+allItems.length, 'Total work packages', 'var(--ink)'],
-      [''+counts.complete, 'Complete / no changes', 'var(--green)'],
+      [''+counts.complete, 'Scoped implementations complete', 'var(--green)'],
       [''+counts.update, 'Require v3 updates', 'var(--amber)'],
       [''+counts.new, 'Yet to develop', 'var(--blue)'],
-      ['0/8', 'Wave gates passed', 'var(--red)']
+      [''+blockers, 'Remaining P1 blocker', 'var(--red)'],
+      ['1/8', 'Wave gates passed', 'var(--green)']
     ].map(([big,lbl,c]) => `<div class="card"><div class="big" style="color:${c}">${big}</div><div class="lbl">${lbl}</div></div>`).join('');
+
+    document.getElementById('findings').innerHTML = findings.map(([severity, title, evidence, fix]) => {
+      const pill = severity === 'P1' ? 'pill-critical' : severity === 'FIXED' ? 'pill-complete' : 'pill-update';
+      return `<tr><td><span class="pill ${pill}">${severity}</span></td><td><strong>${title}</strong></td><td>${evidence}</td><td>${fix}</td></tr>`;
+    }).join('');
 
     const wavesEl = document.getElementById('waves');
     wavesEl.innerHTML = waves.map(w => {

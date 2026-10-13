@@ -104,7 +104,7 @@ jobs:
         run: |
           : "${PANCHANG_TEST_POSTGRES_URL:?PostGIS integration URL is required}"
           : "${PANCHANG_TEST_REDIS_URL:?Redis integration URL is required}"
-          uv run pytest services/api/tests/test_real_services.py -v -s --tb=short
+          uv run pytest services/api/tests/test_real_services.py services/panchang/tests/test_real_services_panchang.py -v -s --tb=short
 
   # ── TypeScript: lint, typecheck, test ─────────────────────────────────────
   typescript-ci:

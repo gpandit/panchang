@@ -45,7 +45,7 @@ actor APIClient {
     // MARK: Panchang
 
     func dailyPanchang(date: String, lat: Double, lon: Double, tz: String,
-                       ayanamsa: String = "lahiri", monthScheme: String = "amanta") async throws -> DailyPanchang {
+                       ayanamsa: String = "lahiri", monthScheme: String = "amanta") async throws -> DailyPanchangViewOut {
         var comps = URLComponents(url: baseURL.appendingPathComponent("v1/panchang/daily"), resolvingAgainstBaseURL: false)!
         comps.queryItems = [
             .init(name: "date", value: date),
@@ -55,7 +55,7 @@ actor APIClient {
             .init(name: "ayanamsa", value: ayanamsa),
             .init(name: "month_scheme", value: monthScheme),
         ]
-        let response: APIResponse<DailyPanchang> = try await get(url: comps.url!)
+        let response: APIResponse<DailyPanchangViewOut> = try await get(url: comps.url!)
         return response.data
     }
 

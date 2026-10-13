@@ -11,14 +11,18 @@ and run synchronously.
 
 from __future__ import annotations
 
+import calendar
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, timedelta
 
 from panchang.cache import PanchangCache
 from panchang.models import Ayanamsa, MonthScheme, PanchangRequest
 
-# Default rolling horizon, in months (~ 30-day months for scheduling purposes).
+# Default rolling horizon in actual calendar months.
 DEFAULT_HORIZON_MONTHS = 15
+# Retained as a named compatibility value for callers that explicitly choose
+# the old approximate day horizon.  The default warmer uses calendar months.
 DEFAULT_HORIZON_DAYS = DEFAULT_HORIZON_MONTHS * 30
 
 
@@ -46,30 +50,72 @@ def warm_horizon(
     cache: PanchangCache,
     *,
     start: date,
-    horizon_days: int = DEFAULT_HORIZON_DAYS,
+    horizon_days: int | None = None,
     locations: list[PopularLocation] | None = None,
     ayanamsa: Ayanamsa = Ayanamsa.LAHIRI,
     month_scheme: MonthScheme = MonthScheme.AMANTA,
+    horizon_months: int = DEFAULT_HORIZON_MONTHS,
+    month_schemes: Iterable[MonthScheme] | None = None,
 ) -> int:
-    """Populate *cache* for every (day, location) pair in the horizon.
+    """Populate *cache* for every (day, location, scheme) pair in the horizon.
 
-    Returns the number of (day, location) pairs warmed. Each `cache.get`
+    By default the horizon is fifteen actual calendar months from ``start``.
+    ``horizon_days`` remains an explicit override for legacy/manual jobs, and
+    ``month_schemes`` can request both supported lunar-month schemes.
+
+    Returns the number of pairs warmed. Each `cache.get`
     call is itself the read-through compute-and-store operation — calling
     it here simply ensures the entry exists ahead of any user request.
     """
+    if (
+        isinstance(horizon_months, bool)
+        or not isinstance(horizon_months, int)
+        or horizon_months <= 0
+    ):
+        raise ValueError("horizon_months must be a positive integer")
+    if horizon_days is not None and (
+        isinstance(horizon_days, bool) or not isinstance(horizon_days, int) or horizon_days <= 0
+    ):
+        raise ValueError("horizon_days must be a positive integer")
+
     locations = locations if locations is not None else DEFAULT_POPULAR_LOCATIONS
+    if month_schemes is None:
+        schemes = [month_scheme]
+    else:
+        schemes = list(month_schemes)
+        if not schemes:
+            raise ValueError("month_schemes must contain at least one scheme")
+        schemes = list(dict.fromkeys(schemes))
+
+    if horizon_days is None:
+        horizon_end = _add_months(start, horizon_months)
+        days = (horizon_end - start).days
+    else:
+        # Explicit day counts remain supported for small/manual warm jobs.
+        days = horizon_days
+
     count = 0
-    for offset in range(horizon_days):
+    for offset in range(days):
         day = start + timedelta(days=offset)
         for loc in locations:
-            request = PanchangRequest(
-                date=day,
-                lat=loc.lat,
-                lon=loc.lon,
-                tz=loc.tz,
-                ayanamsa=ayanamsa,
-                month_scheme=month_scheme,
-            )
-            cache.get(request)
-            count += 1
+            for scheme in schemes:
+                request = PanchangRequest(
+                    date=day,
+                    lat=loc.lat,
+                    lon=loc.lon,
+                    tz=loc.tz,
+                    ayanamsa=ayanamsa,
+                    month_scheme=scheme,
+                )
+                cache.get(request)
+                count += 1
     return count
+
+
+def _add_months(value: date, months: int) -> date:
+    """Return *value* advanced by calendar months, clamping month-end days."""
+    month_index = value.year * 12 + value.month - 1 + months
+    year, month_zero_based = divmod(month_index, 12)
+    month = month_zero_based + 1
+    day = min(value.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)

@@ -95,7 +95,7 @@ jobs:
       - name: Run Alembic migrations
         run: |
           docker run --rm \
-            -e DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}" \
+            -e API_DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}" \
             ${{ env.REGISTRY }}/pandit-api:${{ env.IMAGE_TAG }} \
             python -m alembic upgrade head
         env:

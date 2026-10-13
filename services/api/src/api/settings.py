@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     panchang_cache_ttl_seconds: int = 3600  # 1 hour
     # Max items in the in-process LRU cache
     panchang_cache_max_size: int = 1024
+    panchang_engine_version: str = "3"
+    panchang_cache_grid_degrees: float = 0.1
 
     # ── Downstream services ───────────────────────────────────────────────────
     panchang_service_url: str = "http://localhost:8001"

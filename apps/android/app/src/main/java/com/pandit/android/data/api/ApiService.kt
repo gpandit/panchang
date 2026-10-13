@@ -6,8 +6,9 @@ interface ApiService {
 
     // ── Today / Daily view ────────────────────────────────────────────────────
 
-    @GET("panchang/today")
+    @GET("panchang/daily")
     suspend fun getTodayView(
+        @Query("date") date: String,
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
         @Query("tz") tz: String,
@@ -15,17 +16,7 @@ interface ApiService {
         @Query("month_scheme") monthScheme: String = "amanta",
     ): ApiResponse<DailyPanchangViewDto>
 
-    // ── Panchang day & month ──────────────────────────────────────────────────
-
-    @GET("panchang/day")
-    suspend fun getDayPanchang(
-        @Query("date") date: String,
-        @Query("lat") lat: Double,
-        @Query("lon") lon: Double,
-        @Query("tz") tz: String,
-        @Query("ayanamsa") ayanamsa: String = "lahiri",
-        @Query("month_scheme") monthScheme: String = "amanta",
-    ): ApiResponse<DailyPanchangDto>
+    // ── Panchang month (includes raw day payloads) ────────────────────────────
 
     @GET("panchang/month")
     suspend fun getMonthCalendar(

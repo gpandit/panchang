@@ -62,6 +62,27 @@ def test_golden_values_2024_01_15_delhi() -> None:
     assert result.calendrical.sun_rashi == "Makara"
 
 
+def test_muhurat_uses_local_weekday_in_positive_offset_timezone() -> None:
+    """A UTC sunrise can fall on the previous date in a positive-offset zone."""
+    result = compute_panchang(
+        PanchangRequest(
+            date=date(2024, 1, 15),
+            lat=1.87,
+            lon=-157.4,
+            tz="Pacific/Kiritimati",
+        )
+    )
+
+    # 2024-01-15 is Monday locally. Monday's Rahu Kalam is the second
+    # daytime segment, while deriving the weekday from UTC sunrise selects
+    # Sunday's final segment instead.
+    assert result.vara.name == "Somavara"
+    sunrise = result.day_events.sunrise.hour_24
+    assert result.muhurat[0].name == "Rahu Kalam"
+    assert result.muhurat[0].start.hour_24 > sunrise
+    assert result.muhurat[0].start.hour_24.startswith("08:")
+
+
 def test_sunrise_and_anga_boundary_regression_2024_01_15_delhi() -> None:
     """Existing-engine regression values, not independent accuracy references."""
     result = compute_panchang(_request(date(2024, 1, 15)))

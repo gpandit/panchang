@@ -9,6 +9,8 @@ dependencies = [
     "uvicorn[standard]>=0.34",
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
+    "psycopg[binary]>=3.2",
+    "redis>=5.0",
     # Swiss Ephemeris — AGPL build for dev/test; commercial licence is a hard launch gate.
     "pyswisseph>=2.10.3.2",
 ]
