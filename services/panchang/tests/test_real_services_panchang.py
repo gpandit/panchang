@@ -54,7 +54,7 @@ def postgres_url() -> str:
 def migrated_postgres(postgres_url: str) -> str:
     """Apply the existing migrations without dropping or recreating the table."""
     engine = create_engine(
-        postgres_url.replace("postgresql+psycopg://", "postgresql://", 1),
+        postgres_url,
         connect_args={"connect_timeout": 5},
     )
     try:
