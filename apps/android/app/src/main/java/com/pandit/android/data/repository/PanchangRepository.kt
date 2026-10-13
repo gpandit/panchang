@@ -35,14 +35,14 @@ class PanchangRepository @Inject constructor(
         dao.observeToday(key).map { it?.let { e -> todayAdapter.fromJson(e.jsonPayload) } }
 
     suspend fun fetchToday(
-        lat: Double, lon: Double, tz: String, ayanamsa: String, monthScheme: String
+        date: String, lat: Double, lon: Double, tz: String, ayanamsa: String, monthScheme: String
     ): Result<DailyPanchangViewDto> = runCatching {
-        val dto = api.getTodayView(lat, lon, tz, ayanamsa, monthScheme).data
-        val date = dto.date
+        val dto = api.getTodayView(date, lat, lon, tz, ayanamsa, monthScheme).data
+        val dtoDate = dto.date
         dao.upsertToday(
             TodayEntity(
-                cacheKey = todayKey(date, lat, lon),
-                date = date,
+                cacheKey = todayKey(dtoDate, lat, lon),
+                date = dtoDate,
                 lat = lat,
                 lon = lon,
                 jsonPayload = todayAdapter.toJson(dto),
@@ -56,22 +56,6 @@ class PanchangRepository @Inject constructor(
 
     fun observeDay(key: String): Flow<DailyPanchangDto?> =
         dao.observeDay(key).map { it?.let { e -> dayAdapter.fromJson(e.jsonPayload) } }
-
-    suspend fun fetchDay(
-        date: String, lat: Double, lon: Double, tz: String,
-        ayanamsa: String, monthScheme: String,
-    ): Result<DailyPanchangDto> = runCatching {
-        val dto = api.getDayPanchang(date, lat, lon, tz, ayanamsa, monthScheme).data
-        dao.upsertDay(
-            DailyPanchangEntity(
-                cacheKey = dayKey(date, lat, lon),
-                date = date, lat = lat, lon = lon, tz = tz,
-                jsonPayload = dayAdapter.toJson(dto),
-                cachedAtMs = System.currentTimeMillis(),
-            )
-        )
-        dto
-    }.fold({ Result.Success(it) }, { Result.Error(it) })
 
     // ── Month ─────────────────────────────────────────────────────────────────
 
@@ -97,7 +81,7 @@ class PanchangRepository @Inject constructor(
     // ── Explanation ───────────────────────────────────────────────────────────
 
     suspend fun fetchExplanation(key: String): Result<String> = runCatching {
-        api.getExplanation(key)["data"]?.get("text")?.toString() ?: ""
+        api.getExplanation(key).data["text"] ?: ""
     }.fold({ Result.Success(it) }, { Result.Error(it) })
 
     // ── Cache eviction ────────────────────────────────────────────────────────

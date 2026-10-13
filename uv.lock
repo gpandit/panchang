@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -1135,9 +1135,11 @@ version = "0.1.0"
 source = { editable = "services/panchang" }
 dependencies = [
     { name = "fastapi" },
+    { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyswisseph" },
+    { name = "redis" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -1155,11 +1157,13 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.14" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pydantic", specifier = ">=2.10" },
     { name = "pydantic-settings", specifier = ">=2.7" },
     { name = "pyswisseph", specifier = ">=2.10.3.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.25" },
+    { name = "redis", specifier = ">=5.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34" },
 ]

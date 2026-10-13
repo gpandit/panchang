@@ -29,6 +29,7 @@ FROM python:3.12-slim AS runtime
 
 # Swiss Ephemeris AGPL build — commercial licence is a hard launch gate for production.
 ENV SWISSEPH_PATH=/opt/swisseph/ephe
+ENV PANCHANG_EPHEMERIS_PATH=/opt/swisseph/ephe
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
@@ -36,6 +37,7 @@ WORKDIR /app
 
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/services/panchang/src /app/src
+COPY libs/ephemeris /opt/swisseph/ephe
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH="/app/src"

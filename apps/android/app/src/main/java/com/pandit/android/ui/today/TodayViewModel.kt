@@ -71,7 +71,7 @@ class TodayViewModel @Inject constructor(
             }
 
         // Fetch fresh from network
-        when (val result = panchangRepository.fetchToday(loc.lat, loc.lon, loc.tz, ayanamsa, monthScheme)) {
+        when (val result = panchangRepository.fetchToday(today, loc.lat, loc.lon, loc.tz, ayanamsa, monthScheme)) {
             is Result.Success -> _uiState.update {
                 it.copy(panchang = result.data, isLoading = false, isOffline = false, error = null)
             }

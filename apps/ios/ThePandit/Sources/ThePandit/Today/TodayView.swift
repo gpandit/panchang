@@ -19,11 +19,9 @@ struct TodayView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             headerSection(p)
                             timeModeToggle
-                            calendricalSection(p.calendrical)
                             panchangAngasSection(p)
-                            sunMoonSection(p.dayEvents)
-                            muhuratSection(p.muhurat)
-                            choghadiyaSection(p.choghadiya)
+                            sunMoonSection(p)
+                            muhuratSection(p.muhurats)
                             dharmaCard
                         }
                     }
@@ -47,18 +45,18 @@ struct TodayView: View {
     // MARK: - Header
 
     @ViewBuilder
-    private func headerSection(_ p: DailyPanchang) -> some View {
+    private func headerSection(_ p: DailyPanchangViewOut) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(p.date)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .accessibilityLabel("Date: \(p.date)")
 
-            Text(p.calendrical.lunarMonth + " · " + p.calendrical.paksha)
+            Text(p.summaryTitle)
                 .font(.headline)
-                .accessibilityLabel("Lunar month: \(p.calendrical.lunarMonth), Paksha: \(p.calendrical.paksha)")
+                .accessibilityLabel(p.summaryTitle)
 
-            Text(p.calendrical.samvatsara)
+            Text(p.panchangHindiDate)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -80,47 +78,28 @@ struct TodayView: View {
         .accessibilityLabel("Time display format")
     }
 
-    // MARK: - Calendrical details
-
-    @ViewBuilder
-    private func calendricalSection(_ c: Calendrical) -> some View {
-        SectionCard(title: "Calendrical") {
-            DetailRow(label: "Vikram Samvat", value: "\(c.vikramSamvat)")
-            DetailRow(label: "Shaka Samvat", value: "\(c.shakaSamvat)")
-            DetailRow(label: "Ritu", value: c.ritu)
-            DetailRow(label: "Ayana", value: c.ayana)
-            DetailRow(label: "Sun Rashi", value: c.sunRashi)
-            DetailRow(label: "Moon Rashi", value: c.moonRashi)
-            if c.isAdhikaMonth {
-                Text("Adhika Maas").font(.caption).foregroundStyle(.orange)
-                    .accessibilityLabel("Adhika Maas — intercalary month")
-            }
-            if c.isKshayaMonth {
-                Text("Kshaya Maas").font(.caption).foregroundStyle(.red)
-                    .accessibilityLabel("Kshaya Maas")
-            }
-        }
-    }
-
     // MARK: - Pancha Angas
 
     @ViewBuilder
-    private func panchangAngasSection(_ p: DailyPanchang) -> some View {
+    private func panchangAngasSection(_ p: DailyPanchangViewOut) -> some View {
         SectionCard(title: "Pancha Anga") {
-            AngaRow(label: "Vara (Day)", angas: [p.vara], timeMode: viewModel.timeMode) {
-                viewModel.showExplanation = p.vara
-            }
-            AngaRow(label: "Tithi", angas: p.tithi, timeMode: viewModel.timeMode) {
-                viewModel.showExplanation = p.tithi.first
-            }
-            AngaRow(label: "Nakshatra", angas: p.nakshatra, timeMode: viewModel.timeMode) {
-                viewModel.showExplanation = p.nakshatra.first
-            }
-            AngaRow(label: "Yoga", angas: p.yoga, timeMode: viewModel.timeMode) {
-                viewModel.showExplanation = p.yoga.first
-            }
-            AngaRow(label: "Karana", angas: p.karana, timeMode: viewModel.timeMode) {
-                viewModel.showExplanation = p.karana.first
+            ForEach(p.elements.filter { $0.group == "core" }) { element in
+                Button {
+                    viewModel.showExplanation = element
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(element.label).font(.caption).foregroundStyle(.secondary)
+                            Text(element.value).font(.subheadline)
+                            if let secondary = element.secondaryValue {
+                                Text(secondary).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -128,15 +107,15 @@ struct TodayView: View {
     // MARK: - Sun & Moon
 
     @ViewBuilder
-    private func sunMoonSection(_ events: DayEvents) -> some View {
+    private func sunMoonSection(_ p: DailyPanchangViewOut) -> some View {
         SectionCard(title: "Sun & Moon") {
-            DetailRow(label: "Sunrise", value: viewModel.formatted(events.sunrise))
-            DetailRow(label: "Sunset", value: viewModel.formatted(events.sunset))
-            if let moonrise = events.moonrise {
-                DetailRow(label: "Moonrise", value: viewModel.formatted(moonrise))
+            DetailRow(label: "Sunrise", value: viewModel.formatted(p.sunrise))
+            DetailRow(label: "Sunset", value: viewModel.formatted(p.sunset))
+            if let moonrise = p.moonrise {
+                DetailRow(label: "Moonrise", value: moonrise)
             }
-            if let moonset = events.moonset {
-                DetailRow(label: "Moonset", value: viewModel.formatted(moonset))
+            if let moonset = p.moonset {
+                DetailRow(label: "Moonset", value: moonset)
             }
         }
     }
@@ -144,7 +123,7 @@ struct TodayView: View {
     // MARK: - Muhurat
 
     @ViewBuilder
-    private func muhuratSection(_ muhurats: [Period]) -> some View {
+    private func muhuratSection(_ muhurats: [MuhuratWindowViewOut]) -> some View {
         SectionCard(title: "Auspicious Muhurats") {
             if muhurats.isEmpty {
                 Text("No muhurats today").font(.footnote).foregroundStyle(.secondary)
@@ -156,7 +135,7 @@ struct TodayView: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(m.name).font(.subheadline)
-                                Text("\(viewModel.formatted(m.start)) – \(viewModel.formatted(m.end))")
+                                Text("\(m.startTime) – \(m.endTime)")
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
@@ -164,32 +143,8 @@ struct TodayView: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("\(m.name): \(viewModel.formatted(m.start)) to \(viewModel.formatted(m.end))")
+                    .accessibilityLabel("\(m.name): \(m.startTime) to \(m.endTime)")
                     .accessibilityHint("Tap for explanation")
-                }
-            }
-        }
-    }
-
-    // MARK: - Choghadiya
-
-    @ViewBuilder
-    private func choghadiyaSection(_ items: [Choghadiya]) -> some View {
-        SectionCard(title: "Choghadiya") {
-            let day = items.filter(\.isDay)
-            let night = items.filter { !$0.isDay }
-            if !day.isEmpty {
-                Text("Day").font(.caption).foregroundStyle(.secondary)
-                ForEach(day) { c in
-                    DetailRow(label: c.name,
-                              value: "\(viewModel.formatted(c.start)) – \(viewModel.formatted(c.end))")
-                }
-            }
-            if !night.isEmpty {
-                Text("Night").font(.caption).foregroundStyle(.secondary)
-                ForEach(night) { c in
-                    DetailRow(label: c.name,
-                              value: "\(viewModel.formatted(c.start)) – \(viewModel.formatted(c.end))")
                 }
             }
         }
@@ -306,20 +261,20 @@ private struct AngaRow: View {
 // MARK: - Explanation sheets
 
 private struct AngaExplanationSheet: View {
-    let anga: AngaSpan
+    let anga: PanchangElementViewOut
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(anga.name).font(.title2).bold()
+                    Text(anga.value).font(.title2).bold()
                     // TODO(content): fetch explanation from CMS by anga name
-                    Text("Explanation for \(anga.name) will be loaded from the CMS.")
+                    Text(anga.explanation ?? "Explanation for \(anga.label) will be loaded from the CMS.")
                         .foregroundStyle(.secondary)
                 }
                 .padding()
             }
-            .navigationTitle(anga.name)
+            .navigationTitle(anga.label)
             .navigationBarTitleDisplayMode(.inline)
         }
         .presentationDetents([.medium, .large])
@@ -327,7 +282,7 @@ private struct AngaExplanationSheet: View {
 }
 
 private struct PeriodExplanationSheet: View {
-    let period: Period
+    let period: MuhuratWindowViewOut
 
     var body: some View {
         NavigationStack {
@@ -335,7 +290,7 @@ private struct PeriodExplanationSheet: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(period.name).font(.title2).bold()
                     // TODO(content): muhurat explanation from CMS
-                    Text("Details about \(period.name) will be loaded from the CMS.")
+                    Text(period.description ?? "Details about \(period.name) will be loaded from the CMS.")
                         .foregroundStyle(.secondary)
                 }
                 .padding()

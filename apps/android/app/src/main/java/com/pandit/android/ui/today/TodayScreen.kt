@@ -113,7 +113,7 @@ private fun TodayTopBar(
     TopAppBar(
         title = {
             Column {
-                panchang?.location?.let { Text(text = it, style = MaterialTheme.typography.titleMedium) }
+                panchang?.locationLabel?.let { Text(text = it, style = MaterialTheme.typography.titleMedium) }
                 panchang?.date?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
             }
         },
@@ -191,10 +191,10 @@ private fun TodayContent(
         // Sun/moon times
         item {
             SectionHeader("Sun & Moon")
-            TimeRow("Sunrise", panchang.sunrise.display(timeFormat))
-            TimeRow("Sunset", panchang.sunset.display(timeFormat))
-            panchang.moonrise?.let { TimeRow("Moonrise", it.display(timeFormat)) }
-            panchang.moonset?.let { TimeRow("Moonset", it.display(timeFormat)) }
+            TimeRow("Sunrise", panchang.sunrise)
+            TimeRow("Sunset", panchang.sunset)
+            panchang.moonrise?.let { TimeRow("Moonrise", it) }
+            panchang.moonset?.let { TimeRow("Moonset", it) }
             Spacer(Modifier.height(16.dp))
         }
 
@@ -203,12 +203,12 @@ private fun TodayContent(
             SectionHeader("Panchang")
         }
         items(
-            listOf(panchang.tithi, panchang.nakshatra, panchang.yoga, panchang.karana, panchang.vara)
+            panchang.elements.filter { it.group == "core" }
         ) { element ->
             PanchangElementRow(
                 element = element,
                 timeFormat = timeFormat,
-                onExplain = { element.explanationKey?.let { onExplain(it) } },
+                onExplain = { element.explanation?.let { onExplain(it) } },
             )
         }
 
@@ -235,7 +235,7 @@ private fun TodayContent(
         // Advisory
         item {
             SectionHeader("Advisory")
-            AdvisorySection(panchang.advisory)
+            AdvisorySection(panchang.advisories)
             Spacer(Modifier.height(16.dp))
         }
 
@@ -268,10 +268,10 @@ private fun SectionHeader(title: String) {
 }
 
 @Composable
-private fun TimeRow(label: String, value: String) {
+private fun TimeRow(label: String, value: String?) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-        Text(value, style = MaterialTheme.typography.bodyMedium)
+        Text(value ?: "—", style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -293,7 +293,7 @@ private fun PanchangElementRow(
             Text(element.label, style = MaterialTheme.typography.labelMedium)
             Text(element.value, style = MaterialTheme.typography.bodyMedium)
         }
-        val span = buildTimeSpan(element, timeFormat)
+        val span = element.secondaryValue
         if (span != null) {
             Text(span, style = MaterialTheme.typography.bodySmall)
         }
@@ -308,20 +308,19 @@ private fun MuhuratRow(m: MuhuratWindowDto, timeFormat: String) {
             .padding(vertical = 2.dp)
             .semantics {
                 contentDescription =
-                    "${m.name}: ${m.start.display(timeFormat)} to ${m.end.display(timeFormat)}, " +
-                    if (m.isAuspicious) "auspicious" else "inauspicious"
+                    "${m.name}: ${m.startTime} to ${m.endTime}, ${m.type}"
             }
     ) {
         Text(m.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
         Text(
-            "${m.start.display(timeFormat)} – ${m.end.display(timeFormat)}",
+            "${m.startTime} – ${m.endTime}",
             style = MaterialTheme.typography.bodySmall,
         )
     }
 }
 
 @Composable
-private fun FestivalChip(festival: FestivalDto) {
+private fun FestivalChip(festival: DailyFestivalDto) {
     SuggestionChip(
         onClick = {},
         label = { Text(festival.name) },
@@ -330,21 +329,10 @@ private fun FestivalChip(festival: FestivalDto) {
 }
 
 @Composable
-private fun AdvisorySection(advisory: AdvisoryDto) {
-    if (advisory.goodFor.isNotEmpty()) {
-        Text(
-            stringResource(R.string.today_good_for),
-            style = MaterialTheme.typography.labelMedium,
-        )
-        Text(advisory.goodFor.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-    }
-    if (advisory.avoid.isNotEmpty()) {
-        Spacer(Modifier.height(4.dp))
-        Text(
-            stringResource(R.string.today_avoid),
-            style = MaterialTheme.typography.labelMedium,
-        )
-        Text(advisory.avoid.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+private fun AdvisorySection(advisories: List<DailyAdvisoryDto>) {
+    advisories.forEach { advisory ->
+        Text(advisory.label, style = MaterialTheme.typography.labelMedium)
+        advisory.detail?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
 }
 
@@ -360,13 +348,10 @@ private fun HighlightRow(h: DailyHighlightDto) {
 private fun DharmaCardSection(card: DharmaCardDto) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
-            Text(
-                stringResource(R.string.today_dharma_card),
-                style = MaterialTheme.typography.labelMedium,
-            )
+            Text(card.title, style = MaterialTheme.typography.labelMedium)
             Spacer(Modifier.height(8.dp))
-            Text(card.text, style = MaterialTheme.typography.bodyMedium)
-            card.source?.let { src ->
+            Text(card.body, style = MaterialTheme.typography.bodyMedium)
+            card.attribution?.let { src ->
                 Spacer(Modifier.height(4.dp))
                 Text("— $src", style = MaterialTheme.typography.bodySmall)
             }
@@ -408,24 +393,10 @@ private fun ExplanationDialog(
     )
 }
 
-private fun TimeValueDto.display(format: String): String = when (format) {
-    "24h" -> hour24
-    "24plus" -> hour24Plus
-    else -> hour12
-}
-
-private fun buildTimeSpan(element: PanchangElementDto, format: String): String? {
-    val start = element.startTime?.display(format) ?: return null
-    val end = element.endTime?.display(format)
-    return if (end != null) "$start – $end" else start
-}
-
 private fun buildShareText(p: DailyPanchangViewDto, timeFormat: String): String = buildString {
-    appendLine("${p.location} — ${p.date}")
-    appendLine("Tithi: ${p.tithi.value}")
-    appendLine("Nakshatra: ${p.nakshatra.value}")
-    appendLine("Yoga: ${p.yoga.value}")
-    appendLine("Sunrise: ${p.sunrise.display(timeFormat)} | Sunset: ${p.sunset.display(timeFormat)}")
+    appendLine("${p.locationLabel} — ${p.date}")
+    p.elements.filter { it.group == "core" }.forEach { appendLine("${it.label}: ${it.value}") }
+    appendLine("Sunrise: ${p.sunrise ?: "—"} | Sunset: ${p.sunset ?: "—"}")
     if (p.festivals.isNotEmpty()) {
         appendLine("Festivals: ${p.festivals.joinToString(", ") { it.name }}")
     }

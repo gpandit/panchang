@@ -55,7 +55,7 @@ class TodayViewModelTest {
     @Test
     fun `successful fetch updates panchang in state`() = runTest {
         val dto = fakeTodayDto()
-        coEvery { panchangRepo.fetchToday(any(), any(), any(), any(), any()) } returns Result.Success(dto)
+        coEvery { panchangRepo.fetchToday(any(), any(), any(), any(), any(), any()) } returns Result.Success(dto)
 
         val vm = TodayViewModel(panchangRepo, noteRepo, locationHelper, prefsStore)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -66,7 +66,7 @@ class TodayViewModelTest {
 
     @Test
     fun `network failure marks isOffline true`() = runTest {
-        coEvery { panchangRepo.fetchToday(any(), any(), any(), any(), any()) } returns
+        coEvery { panchangRepo.fetchToday(any(), any(), any(), any(), any(), any()) } returns
             Result.Error(Exception("no network"))
 
         val vm = TodayViewModel(panchangRepo, noteRepo, locationHelper, prefsStore)
@@ -77,7 +77,7 @@ class TodayViewModelTest {
 
     @Test
     fun `setTimeFormat persists to prefs`() = runTest {
-        coEvery { panchangRepo.fetchToday(any(), any(), any(), any(), any()) } returns
+        coEvery { panchangRepo.fetchToday(any(), any(), any(), any(), any(), any()) } returns
             Result.Error(Exception())
         val vm = TodayViewModel(panchangRepo, noteRepo, locationHelper, prefsStore)
 
@@ -90,7 +90,7 @@ class TodayViewModelTest {
     @Test
     fun `toggleBookmark calls noteRepository`() = runTest {
         val dto = fakeTodayDto()
-        coEvery { panchangRepo.fetchToday(any(), any(), any(), any(), any()) } returns Result.Success(dto)
+        coEvery { panchangRepo.fetchToday(any(), any(), any(), any(), any(), any()) } returns Result.Success(dto)
         val vm = TodayViewModel(panchangRepo, noteRepo, locationHelper, prefsStore)
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -101,22 +101,24 @@ class TodayViewModelTest {
     }
 
     private fun fakeTodayDto() = DailyPanchangViewDto(
-        date = "2025-01-01", location = "New Delhi",
-        tithi = fakeElement("tithi", "Pratipada"),
-        nakshatra = fakeElement("nakshatra", "Ashwini"),
-        yoga = fakeElement("yoga", "Vishkumbha"),
-        karana = fakeElement("karana", "Kimstughna"),
-        vara = fakeElement("vara", "Ravivara"),
-        sunrise = fakeTime("06:30"), sunset = fakeTime("18:00"),
+        date = "2025-01-01", flags = emptyList(), lat = 28.6, lon = 77.2, tz = "Asia/Kolkata",
+        locationLabel = "28.60°, 77.20°", summaryTitle = "Ravivara · Pratipada",
+        panchangHindiDate = "Pausha · Shukla Paksha",
+        elements = listOf(
+            fakeElement("tithi", "Pratipada"), fakeElement("nakshatra", "Ashwini"),
+            fakeElement("yoga", "Vishkumbha"), fakeElement("karana", "Kimstughna"),
+            fakeElement("vara", "Ravivara"),
+        ),
+        sunrise = "2025-01-01T06:30:00+05:30", sunset = "2025-01-01T18:00:00+05:30",
         moonrise = null, moonset = null,
         muhurats = emptyList(), festivals = emptyList(),
-        advisory = AdvisoryDto(emptyList(), emptyList()),
-        highlights = emptyList(), dharmaCard = null,
+        advisories = emptyList(), highlights = emptyList(), dharmaCard = null,
+        leapMonthFlag = null, cachedAt = "2025-01-01T00:00:00Z",
     )
 
     private fun fakeElement(key: String, value: String) = PanchangElementDto(
-        key = key, label = key, value = value,
-        startTime = null, endTime = null, explanationKey = key,
+        key = key, label = key, value = value, secondaryValue = null,
+        group = "core", explanation = key,
     )
 
     private fun fakeTime(t: String) = TimeValueDto(

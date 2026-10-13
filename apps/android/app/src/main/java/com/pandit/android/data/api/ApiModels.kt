@@ -84,6 +84,7 @@ data class ChoghadiyaDto(
 @JsonClass(generateAdapter = true)
 data class DailyPanchangDto(
     val date: String,
+    val flags: List<String> = emptyList(),
     val lat: Double,
     val lon: Double,
     val tz: String,
@@ -102,7 +103,7 @@ data class DailyPanchangDto(
     val choghadiya: List<ChoghadiyaDto>,
     val hora: List<PeriodDto>,
     val calendrical: CalendricalDto,
-    val cached: Boolean,
+    val cached: Boolean = false,
 )
 
 @JsonClass(generateAdapter = true)
@@ -117,9 +118,10 @@ data class MonthCalendarDto(
 @JsonClass(generateAdapter = true)
 data class MuhuratWindowDto(
     val name: String,
-    val start: TimeValueDto,
-    val end: TimeValueDto,
-    @Json(name = "is_auspicious") val isAuspicious: Boolean,
+    @Json(name = "startTime") val startTime: String,
+    @Json(name = "endTime") val endTime: String,
+    val type: String,
+    val description: String?,
 )
 
 @JsonClass(generateAdapter = true)
@@ -134,21 +136,32 @@ data class FestivalDto(
 )
 
 @JsonClass(generateAdapter = true)
-data class AdvisoryDto(
-    @Json(name = "good_for") val goodFor: List<String>,
-    val avoid: List<String>,
+data class DailyFestivalDto(
+    val name: String,
+    val description: String?,
+    val significance: String?,
+    val type: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class DailyAdvisoryDto(
+    val category: String,
+    val label: String,
+    val detail: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
 data class DailyHighlightDto(
     val label: String,
     val value: String,
+    val detail: String?,
 )
 
 @JsonClass(generateAdapter = true)
 data class DharmaCardDto(
-    val text: String,
-    val source: String?,
+    val title: String,
+    val body: String,
+    val attribution: String?,
 )
 
 @JsonClass(generateAdapter = true)
@@ -156,29 +169,33 @@ data class PanchangElementDto(
     val key: String,
     val label: String,
     val value: String,
-    @Json(name = "start_time") val startTime: TimeValueDto?,
-    @Json(name = "end_time") val endTime: TimeValueDto?,
-    @Json(name = "explanation_key") val explanationKey: String?,
+    @Json(name = "secondaryValue") val secondaryValue: String? = null,
+    val group: String,
+    val explanation: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
 data class DailyPanchangViewDto(
     val date: String,
-    val location: String,
-    val tithi: PanchangElementDto,
-    val nakshatra: PanchangElementDto,
-    val yoga: PanchangElementDto,
-    val karana: PanchangElementDto,
-    val vara: PanchangElementDto,
-    val sunrise: TimeValueDto,
-    val sunset: TimeValueDto,
-    val moonrise: TimeValueDto?,
-    val moonset: TimeValueDto?,
+    val flags: List<String>,
+    val lat: Double,
+    val lon: Double,
+    val tz: String,
+    @Json(name = "locationLabel") val locationLabel: String,
+    @Json(name = "summaryTitle") val summaryTitle: String,
+    @Json(name = "panchangHindiDate") val panchangHindiDate: String,
+    val elements: List<PanchangElementDto>,
+    val sunrise: String?,
+    val sunset: String?,
+    val moonrise: String?,
+    val moonset: String?,
     val muhurats: List<MuhuratWindowDto>,
-    val festivals: List<FestivalDto>,
-    val advisory: AdvisoryDto,
+    val festivals: List<DailyFestivalDto>,
+    val advisories: List<DailyAdvisoryDto>,
     val highlights: List<DailyHighlightDto>,
-    @Json(name = "dharma_card") val dharmaCard: DharmaCardDto?,
+    @Json(name = "dharmaCard") val dharmaCard: DharmaCardDto?,
+    @Json(name = "leapMonthFlag") val leapMonthFlag: String?,
+    @Json(name = "cachedAt") val cachedAt: String,
 )
 
 // ─── Festivals ─────────────────────────────────────────────────────────────────

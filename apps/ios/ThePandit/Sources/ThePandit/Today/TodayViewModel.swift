@@ -15,13 +15,13 @@ enum TimeDisplayMode: String, CaseIterable, Identifiable {
 @MainActor
 @Observable
 final class TodayViewModel {
-    var panchang: DailyPanchang?
+    var panchang: DailyPanchangViewOut?
     var isLoading = false
     var error: String?
     var timeMode: TimeDisplayMode = .hour12
     var isBookmarked = false
-    var showExplanation: AngaSpan? = nil
-    var showMuhuratExplanation: Period? = nil
+    var showExplanation: PanchangElementViewOut? = nil
+    var showMuhuratExplanation: MuhuratWindowViewOut? = nil
 
     // Location — provided by the app's location manager
     var location: CLLocation?
@@ -43,12 +43,12 @@ final class TodayViewModel {
         do {
             let result = try await api.dailyPanchang(date: dateStr, lat: lat, lon: lon, tz: tz)
             panchang = result
-            try? await cache.storePanchang(result, context: context)
+            try? await cache.storeDailyView(result, ayanamsa: "lahiri", monthScheme: "amanta", context: context)
         } catch {
             // Fall back to cache
-            if let cached = try? await cache.fetchPanchang(date: dateStr, lat: lat, lon: lon, tz: tz,
-                                                           ayanamsa: "lahiri", monthScheme: "amanta",
-                                                           context: context) {
+            if let cached = try? await cache.fetchDailyView(date: dateStr, lat: lat, lon: lon, tz: tz,
+                                                            ayanamsa: "lahiri", monthScheme: "amanta",
+                                                            context: context) {
                 panchang = cached
             } else {
                 self.error = (error as? LocalizedError)?.errorDescription ?? "Failed to load Panchang."
@@ -68,12 +68,16 @@ final class TodayViewModel {
         }
     }
 
+    func formatted(_ value: String?) -> String {
+        value ?? "—"
+    }
+
     // MARK: - Share
 
     var shareText: String {
         guard let p = panchang else { return "" }
-        let tithi = p.tithi.first?.name ?? ""
-        let nakshatra = p.nakshatra.first?.name ?? ""
+        let tithi = p.elements.first(where: { $0.key == "tithi" })?.value ?? ""
+        let nakshatra = p.elements.first(where: { $0.key == "nakshatra" })?.value ?? ""
         return "Today's Panchang (\(p.date)): Tithi – \(tithi), Nakshatra – \(nakshatra). via The Pandit"
     }
 }
