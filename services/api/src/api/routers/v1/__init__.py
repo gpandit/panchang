@@ -1,4 +1,5 @@
 from api.routers.v1 import (
+    bookmarks,
     festivals,
     notes,
     panchang,
@@ -9,6 +10,7 @@ from api.routers.v1 import (
 )
 
 __all__ = [
+    "bookmarks",
     "festivals",
     "notes",
     "panchang",

@@ -26,6 +26,7 @@ from accuracy_harness.run import (  # noqa: E402
     _check_time,
     _load_fixtures,
     _reference_instant,
+    accuracy_gate_report,
     compare_fixture,
     gate_gaps,
     run_fixture,
@@ -112,6 +113,16 @@ def test_gate_report_does_not_count_timezone_supplement_as_accuracy_days() -> No
     assert "locations 3/10" in gaps
 
 
+def test_gate_report_exposes_counts_and_blockers_explicitly() -> None:
+    report = accuracy_gate_report(_load_fixtures())
+
+    assert report.fixture_count == 4
+    assert report.unique_days == 4
+    assert report.unique_locations == 3
+    assert not report.passed
+    assert report.gaps == tuple(gate_gaps(_load_fixtures()))
+
+
 def test_rise_set_and_anga_thresholds_and_dst_instants() -> None:
     tz = ZoneInfo("America/New_York")
     expected = "2024-11-03T01:30:00-04:00"
@@ -130,7 +141,7 @@ def test_rise_set_and_anga_thresholds_and_dst_instants() -> None:
 def test_all_anga_names_and_boundaries_are_required_and_checked() -> None:
     fixture = copy.deepcopy(_load_fixtures()[0])
     fixture["expected"].pop("yoga")
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match="missing fields"):
         validate_dataset([fixture])
     fixture = copy.deepcopy(_load_fixtures()[0])
     result = compute_panchang(PanchangRequest(**fixture["request"]))
@@ -142,3 +153,19 @@ def test_all_anga_names_and_boundaries_are_required_and_checked() -> None:
             datetime.fromisoformat(actual.iso).replace(tzinfo=None) + timedelta(minutes=6)
         ).isoformat()
         assert any(m.field == f"{field}.end" for m in compare_fixture(altered, result))
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda fixture: fixture.pop("label"), "missing fields"),
+        (lambda fixture: fixture["request"].update(extra="ignored"), "unsupported fields"),
+        (lambda fixture: fixture["request"].update(lat=float("nan")), "invalid coordinates"),
+    ],
+)
+def test_dataset_validation_rejects_ambiguous_or_unverifiable_fixture_data(change, message) -> None:
+    fixture = copy.deepcopy(_load_fixtures()[0])
+    change(fixture)
+
+    with pytest.raises(ValueError, match=message):
+        validate_dataset([fixture])

@@ -1,5 +1,6 @@
 """Tests for versioned festival-rule loading and resolution."""
 
+import json
 from dataclasses import FrozenInstanceError
 from datetime import date, timedelta
 from pathlib import Path
@@ -206,4 +207,36 @@ def test_catalog_rejects_unvalidated_regional_overrides(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     with pytest.raises(ValueError, match=r"overrides.*tieBreak"):
+        RuleCatalog.load(path)
+
+
+@pytest.mark.parametrize(
+    ("rule_edit", "message"),
+    [
+        (lambda rule: rule.update(extra="ignored"), "unsupported keys"),
+        (lambda rule: rule.update(id="Not-Copy-Safe"), "lowercase"),
+    ],
+)
+def test_catalog_rejects_unvalidated_rule_shape(tmp_path: Path, rule_edit, message) -> None:
+    payload = {
+        "version": "1",
+        "reviewState": "published",
+        "rules": [
+            {
+                "id": "valid_rule",
+                "name": "Valid rule",
+                "type": "lunar",
+                "anchor": "sunrise",
+                "tieBreak": "udaya_tithi",
+                "regions": ["default"],
+                "priority": 1,
+                "tithi": 1,
+            }
+        ],
+    }
+    rule_edit(payload["rules"][0])
+    path = tmp_path / "invalid-rule.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match=message):
         RuleCatalog.load(path)

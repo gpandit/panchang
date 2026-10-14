@@ -35,6 +35,29 @@ Vault, licensing, load/SLO and provider integrations remain open.
 | S1-05 15-month cache warmer | done | `warming.py` covers 15 actual calendar months with optional dual schemes; `warming_jobs.py` adds configured/observed location selection, stable scheduler dedupe identity, bounded deterministic retries, and per-request failure reports for an RQ/outbox adapter. Focused warmer tests: 10 passed. Deployment still needs the aggregated location source, scheduler/publisher/worker wiring, and failure alert/requeue handling. |
 | S1-06 versioned festival-rule resolver | done | `services/panchang/src/panchang/rules.py` validates immutable versioned catalogs, publication state, exact anchor/tie-break behavior, adjacent-day resolution, year/month filters, regional aliases/overrides, deterministic ordering, and occurrence provenance. Rule and full PCS checks pass; the bundled catalog is draft and CMS publication/database occurrence persistence remain later gates. |
 
+## Provisional next-ten package run
+
+This branch advances the next ten planned packages provisionally. It does not
+claim that the S1 accuracy exit gate has passed: the repository still contains
+four cited fixtures rather than at least 500 independently sourced days across
+ten locations. S2 work below is therefore contract and persistence progress,
+not a release-ready stage completion.
+
+| Package | Status | Evidence / remaining gate |
+|---|---|---|
+| S1-03 accuracy harness and reference dataset | in-progress | Dataset schema, provenance, coordinate, timestamp, duplicate, and explicit coverage reporting were hardened in `tools/accuracy_harness/run.py`; focused harness tests pass. Independent references must still be supplied; no values were synthesized. |
+| S1-05 15-month cache warmer | in-progress | Bounded failure callback/reporting seam added to `warming_jobs.py` with focused tests. Scheduler, publisher, durable failure alert/requeue, and production location source remain open. |
+| S1-06 festival rule DSL and resolver | in-progress | Rule key and identifier validation tightened with focused regression coverage. Reviewed CMS publication, durable occurrence persistence, and invalidation remain open. |
+| S2-01 identity, profiles, locations, and Vault lifecycle | in-progress | Authenticated profile/preferences and owned location read/write flows now persist through the async SQLAlchemy spine; invalid IANA zones and coordinate ranges are rejected. Birth-data API/Vault persistence, export/delete, and production identity integration remain open. |
+| S2-02 calendar assembly and client views | in-progress | Month assembly now runs day requests concurrently and returns explicit `partial`/`missing_dates` metadata and headers instead of silently dropping failed days. Offline bundles, week/year/range views, and three-client E2E remain open. |
+| S2-03 CMS workflow and provenance | update | No implementation was added in this provisional run; CMS persistence and publication remain a dependency for authoritative festival content. |
+| S2-04 notes, bookmarks, reminders, and vrat tracking | in-progress | Authenticated notes, bookmarks, and Gregorian reminder CRUD now use durable rows, ownership filters, quotas, and round-trip tests. Lunar recurrence resolution and scheduler delivery remain S6/follow-up work. |
+| S2-05 subscription receipt reconciliation | in-progress | Provider-neutral, idempotent normalized receipt ingestion updates durable entitlement records and rejects changed replay payloads. Apple/Google/Stripe signature verification and external adapters remain open. |
+| S2-06 PDF jobs and signed exports | update | Existing queue seams were preserved; durable job execution and object storage signing were not implemented in this run. |
+| S2-07 notifications and delivery tracking | update | Existing client scaffolding was preserved; event fan-out, delivery retries, idempotency, and tracking were not implemented in this run. |
+
+Focused evidence for this branch: `uv run pytest services/api/tests/test_s2_calendar_overlays.py services/panchang/tests/test_rules.py services/panchang/tests/test_warming_jobs.py tools/accuracy_harness/test_harness.py -q`; full repository checks are reported in the PR.
+
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,
 `uv run ruff format --check services/`, `uv run mypy services/ --config-file

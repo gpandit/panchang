@@ -19,11 +19,12 @@ def test_reconciliation_inventory_is_explicit_about_planned_operations() -> None
     assert all(item["method"] in {"GET", "POST", "PUT", "PATCH", "DELETE"} for item in operations)
     assert {item["status"] for item in operations} <= {"implemented", "partial", "planned"}
 
-    # A route registered only as a placeholder must never be silently promoted to shipped.
-    planned = {(item["path"], item["method"]) for item in operations if item["status"] == "planned"}
-    assert ("/v1/notes", "POST") in planned
-    assert ("/v1/reminders", "POST") in planned
-    assert ("/v1/profile", "PUT") in planned
+    # The next-ten branch replaces these placeholders with partial, explicitly
+    # bounded implementations; partial is not a claim that the stage gate passed.
+    by_operation = {(item["path"], item["method"]): item["status"] for item in operations}
+    assert by_operation[("/v1/notes", "POST")] == "partial"
+    assert by_operation[("/v1/reminders", "POST")] == "partial"
+    assert by_operation[("/v1/profile", "PUT")] == "partial"
 
 
 def test_legacy_openapi_snapshot_links_to_reconciliation() -> None:

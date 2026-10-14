@@ -8,6 +8,7 @@ Adjacent PCS days are required for two-day tie-breaks and never synthesized here
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
@@ -82,6 +83,29 @@ OVERRIDE_FIELDS = {
     "notes",
     "deity",
 }
+RULE_FIELDS = {
+    "id",
+    "name",
+    "type",
+    "anchor",
+    "tieBreak",
+    "regions",
+    "priority",
+    "scheme",
+    "month",
+    "paksha",
+    "tithi",
+    "rashi",
+    "nakshatra",
+    "cycle",
+    "aliases",
+    "overrides",
+    "duration_days",
+    "preferNakshatra",
+    "deity",
+    "notes",
+}
+RULE_ID = re.compile(r"^[a-z0-9_]+$")
 
 
 @dataclass(frozen=True)
@@ -109,6 +133,9 @@ class FestivalRule:
     def from_mapping(cls, value: object, path: str) -> FestivalRule:
         if not isinstance(value, dict):
             raise ValueError(f"{path}: expected an object")
+        unknown = value.keys() - RULE_FIELDS
+        if unknown:
+            raise ValueError(f"{path}: unsupported keys {sorted(unknown)}")
 
         def text(
             key: str, *, required: bool = False, allowed: set[str] | tuple[str, ...] | None = None
@@ -212,8 +239,13 @@ class FestivalRule:
             or (kind == "recurring" and cycle == "tithi" and tithi is None)
         ):
             raise ValueError(f"{path}: missing criteria for {kind}")
+        identifier = cast(str, text("id", required=True))
+        if not RULE_ID.fullmatch(identifier):
+            raise ValueError(
+                f"{path}.id: must contain only lowercase letters, digits and underscores"
+            )
         return cls(
-            id=cast(str, text("id", required=True)),
+            id=identifier,
             name=cast(str, text("name", required=True)),
             type=cast(RuleType, kind),
             anchor=cast(str, anchor),

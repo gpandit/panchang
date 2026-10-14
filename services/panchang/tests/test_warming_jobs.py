@@ -100,6 +100,25 @@ def test_retry_exhaustion_reports_precise_failed_requests_and_continues():
     assert "private backend detail" not in repr(report)
 
 
+def test_retry_exhaustion_calls_follow_up_handler_once_per_failed_request():
+    failures = []
+
+    def fail(request):
+        if request.month_scheme == MonthScheme.PURNIMANTA:
+            raise RuntimeError("backend unavailable")
+
+    report = run_warm_job(
+        RecordingCache(fail),
+        PopularLocations([DELHI], lambda: ()),
+        start=date(2024, 1, 1),
+        max_attempts=2,
+        on_failure=failures.append,
+    )
+
+    assert len(failures) == report.failed == 456
+    assert failures == list(report.failures)
+
+
 def test_transient_failure_retries_then_succeeds():
     attempts = 0
 
