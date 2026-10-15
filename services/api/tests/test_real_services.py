@@ -13,6 +13,7 @@ from uuid import uuid4
 
 import pytest
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from redis import Redis
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import make_url
@@ -51,9 +52,10 @@ def migrated_postgres(postgres_url: str) -> str:
             config.set_main_option("script_location", str(API_ROOT / "alembic"))
             config.attributes["connection"] = connection
             command.upgrade(config, "head")
-            assert connection.execute(
-                text("SELECT version_num FROM alembic_version")
-            ).scalar_one() == ("0003_s005_outbox_idempotency")
+            assert (
+                connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+                == ScriptDirectory.from_config(config).get_current_head()
+            )
             assert connection.execute(text("SELECT PostGIS_Version()")).scalar_one()
             assert (
                 connection.execute(
