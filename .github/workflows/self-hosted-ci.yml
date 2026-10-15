@@ -2,8 +2,10 @@ name: Self-hosted CI
 
 on:
   workflow_dispatch:
+  # Keep self-hosted validation aligned with hosted CI: feature/develop pushes
+  # get one run, while release promotion PRs get a separate full validation.
   pull_request:
-    branches: ["develop"]
+    branches: ["staging", "main"]
   push:
     branches: ["develop", "feat/**", "fix/**"]
 
@@ -17,6 +19,7 @@ concurrency:
 jobs:
   validate:
     name: Self-hosted validation
+    if: github.event_name != 'pull_request' || github.head_ref == 'develop'
     # The runner must be an ephemeral or dedicated Linux x64 runner.
     # Do not place untrusted repositories or unrelated workloads on it.
     runs-on: [self-hosted, linux, x64]
