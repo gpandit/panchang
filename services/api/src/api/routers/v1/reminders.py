@@ -135,6 +135,14 @@ def _validated_next_fire(body: ReminderIn) -> datetime | None:
         raise HTTPException(
             status_code=422, detail="trigger_value is not a valid ISO date/time"
         ) from exc
+    if next_fire is None and body.trigger_type != "gregorian":
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "lunar reminder scheduling is not available until the Tithi/Nakshatra "
+                "recurrence resolver is configured"
+            ),
+        )
     if next_fire is not None:
         next_fire -= timedelta(minutes=body.advance_minutes)
     return next_fire

@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import uuid
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.db import get_session
@@ -18,6 +20,7 @@ from api.dependencies import require_auth
 from api.models.auth import SubscriptionTier, TokenClaims
 from api.models.common import ApiResponse
 from api.models.content import SubscriptionOut, SubscriptionReceiptIn, SubscriptionReceiptOut
+from api.settings import get_settings
 from api.user_data import get_or_create_user
 
 router = APIRouter(prefix="/subscription", tags=["subscription"])
@@ -77,13 +80,17 @@ async def reconcile_receipt(
     body: SubscriptionReceiptIn,
     claims: Annotated[TokenClaims, Depends(require_auth)],
     session: Annotated[AsyncSession, Depends(get_session)],
+    provider_adapter_token: Annotated[str | None, Header(alias="X-Provider-Adapter-Token")] = None,
 ) -> ApiResponse[SubscriptionReceiptOut]:
-    """Reconcile a receipt already normalized by a provider adapter.
+    """Reconcile a receipt already normalized by a trusted provider adapter.
 
-    This endpoint stores an idempotent receipt and updates the one active
-    subscription for the authenticated user. It never contacts Apple, Google,
-    or Stripe; those calls belong in provider adapters upstream of this seam.
+    Client applications cannot call this endpoint: the adapter credential is
+    deliberately separate from the user's JWT. Apple, Google, and Stripe
+    workers validate their vendor payloads before submitting this canonical
+    shape. This endpoint stores an idempotent receipt and updates the one active
+    subscription for the authenticated user.
     """
+    _require_provider_adapter(provider_adapter_token)
     user = await get_or_create_user(session, claims)
     payload_hash = hashlib.sha256(
         json.dumps(body.model_dump(mode="json"), sort_keys=True).encode("utf-8")
@@ -97,18 +104,68 @@ async def reconcile_receipt(
     if receipt is not None:
         if receipt.payload_hash != payload_hash:
             raise HTTPException(status_code=409, detail="Receipt event payload changed")
+        owner = await session.scalar(
+            select(SubscriptionRow).where(
+                SubscriptionRow.source == body.provider,
+                SubscriptionRow.provider_ref == body.provider_ref,
+                SubscriptionRow.user_id == user.id,
+            )
+        )
+        if owner is None:
+            raise HTTPException(
+                status_code=409, detail="Receipt event belongs to another account"
+            ) from None
         return ApiResponse(data=_receipt_out(body, duplicate=True))
 
-    receipt = WebhookReceiptRow(
-        id=str(uuid.uuid4()),
-        provider=body.provider,
-        external_event_id=body.external_event_id,
-        payload_hash=payload_hash,
-        status="processed",
-        processed_at=datetime.now(UTC),
+    # The unique provider/event constraint is the replay guard. A savepoint
+    # lets a concurrent adapter delivery lose the race without poisoning the
+    # request transaction; the winner's row is then read and compared below.
+    try:
+        async with session.begin_nested():
+            session.add(
+                WebhookReceiptRow(
+                    id=str(uuid.uuid4()),
+                    provider=body.provider,
+                    external_event_id=body.external_event_id,
+                    payload_hash=payload_hash,
+                    status="processed",
+                    processed_at=datetime.now(UTC),
+                )
+            )
+            await session.flush()
+    except IntegrityError:
+        receipt = await session.scalar(
+            select(WebhookReceiptRow).where(
+                WebhookReceiptRow.provider == body.provider,
+                WebhookReceiptRow.external_event_id == body.external_event_id,
+            )
+        )
+        if receipt is None:
+            raise
+        if receipt.payload_hash != payload_hash:
+            raise HTTPException(status_code=409, detail="Receipt event payload changed") from None
+        owner = await session.scalar(
+            select(SubscriptionRow).where(
+                SubscriptionRow.source == body.provider,
+                SubscriptionRow.provider_ref == body.provider_ref,
+                SubscriptionRow.user_id == user.id,
+            )
+        )
+        if owner is None:
+            raise HTTPException(
+                status_code=409, detail="Receipt event belongs to another account"
+            ) from None
+        return ApiResponse(data=_receipt_out(body, duplicate=True))
+
+    other_owner = await session.scalar(
+        select(SubscriptionRow).where(
+            SubscriptionRow.source == body.provider,
+            SubscriptionRow.provider_ref == body.provider_ref,
+            SubscriptionRow.user_id != user.id,
+        )
     )
-    session.add(receipt)
-    await session.flush()
+    if other_owner is not None:
+        raise HTTPException(status_code=409, detail="Receipt is already linked to another account")
 
     current = await session.scalar(
         select(SubscriptionRow).where(
@@ -158,3 +215,17 @@ def _receipt_out(body: SubscriptionReceiptIn, duplicate: bool = False) -> Subscr
         expires_at=body.expires_at,
         duplicate=duplicate,
     )
+
+
+def _require_provider_adapter(token: str | None) -> None:
+    expected = get_settings().subscription_adapter_token
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Subscription provider adapters are not configured",
+        )
+    if token is None or not hmac.compare_digest(token, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Trusted subscription adapter authentication required",
+        )

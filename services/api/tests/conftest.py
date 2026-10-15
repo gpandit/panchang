@@ -13,6 +13,7 @@ import os
 # Point the DB at in-memory SQLite before anything reads settings. The engine
 # factory applies a StaticPool so the in-memory DB is shared across connections.
 os.environ.setdefault("API_DATABASE_URL", "sqlite://")
+os.environ.setdefault("API_SUBSCRIPTION_ADAPTER_TOKEN", "test-provider-token")
 
 import pytest
 import pytest_asyncio

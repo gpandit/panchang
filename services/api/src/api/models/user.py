@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -93,3 +93,12 @@ class BirthDetailsIn(BaseModel):
             except (ZoneInfoNotFoundError, ValueError) as exc:
                 raise ValueError("placeOfBirth.tz must be a valid IANA timezone") from exc
         return value
+
+
+class BirthVaultRefOut(BaseModel):
+    """Opaque metadata for the caller; sensitive values never appear here."""
+
+    id: str
+    region: str
+    purpose: str
+    created_at: datetime

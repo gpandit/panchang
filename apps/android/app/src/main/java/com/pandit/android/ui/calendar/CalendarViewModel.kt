@@ -98,7 +98,9 @@ class CalendarViewModel @Inject constructor(
             .getOrElse { locationHelper.defaultLocation() }
         val ayanamsa = prefsStore.ayanamsa.first()
         val monthScheme = prefsStore.monthScheme.first()
-        val key = PanchangRepository.monthKey(ym.year, ym.monthValue, loc.lat, loc.lon)
+        val key = PanchangRepository.monthKey(
+            ym.year, ym.monthValue, loc.lat, loc.lon, loc.tz, ayanamsa, monthScheme
+        )
 
         // Show cached first
         panchangRepository.observeMonth(key).filterNotNull().take(1).collect { cached ->

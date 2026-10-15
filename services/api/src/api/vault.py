@@ -158,11 +158,12 @@ class InMemoryVault:
         subject_id: str,
         region: str,
         purpose: str,
+        reference_id: str | None = None,
     ) -> VaultReference:
         number = next(self._sequence)
         opaque = f"mem-vault-{number:08d}"
         reference = VaultReference(
-            id=f"vault-ref-{number:08d}",
+            id=reference_id or f"vault-ref-{number:08d}",
             subject_type=subject_type,
             subject_id=subject_id,
             region=region,

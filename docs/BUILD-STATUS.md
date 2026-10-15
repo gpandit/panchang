@@ -48,15 +48,22 @@ not a release-ready stage completion.
 | S1-03 accuracy harness and reference dataset | in-progress | Dataset schema, provenance, coordinate, timestamp, duplicate, and explicit coverage reporting were hardened in `tools/accuracy_harness/run.py`; focused harness tests pass. Independent references must still be supplied; no values were synthesized. |
 | S1-05 15-month cache warmer | in-progress | Bounded failure callback/reporting seam added to `warming_jobs.py` with focused tests. Scheduler, publisher, durable failure alert/requeue, and production location source remain open. |
 | S1-06 festival rule DSL and resolver | in-progress | Rule key and identifier validation tightened with focused regression coverage. Reviewed CMS publication, durable occurrence persistence, and invalidation remain open. |
-| S2-01 identity, profiles, locations, and Vault lifecycle | in-progress | Authenticated profile/preferences and owned location read/write flows now persist through the async SQLAlchemy spine; invalid IANA zones and coordinate ranges are rejected. Birth-data API/Vault persistence, export/delete, and production identity integration remain open. |
-| S2-02 calendar assembly and client views | in-progress | Month assembly now runs day requests concurrently and returns explicit `partial`/`missing_dates` metadata and headers instead of silently dropping failed days. Offline bundles, week/year/range views, and three-client E2E remain open. |
+| S2-01 identity, profiles, locations, and Vault lifecycle | in-progress | Authenticated profile/preferences and owned location read/write flows persist through the async SQLAlchemy spine; birth details now have owner-only opaque-reference, export, and delete routes backed by the Vault fake. Production Vault storage and identity integration remain open. |
+| S2-02 calendar assembly and client views | in-progress | Month assembly now runs day requests concurrently and returns explicit `partial`/`missing_dates` metadata and headers; TS/iOS/Android models expose the metadata and Android cache keys include timezone/ayanamsa/scheme. Offline bundles, week/year/range views, and three-client E2E remain open. |
 | S2-03 CMS workflow and provenance | update | No implementation was added in this provisional run; CMS persistence and publication remain a dependency for authoritative festival content. |
-| S2-04 notes, bookmarks, reminders, and vrat tracking | in-progress | Authenticated notes, bookmarks, and Gregorian reminder CRUD now use durable rows, ownership filters, quotas, and round-trip tests. Lunar recurrence resolution and scheduler delivery remain S6/follow-up work. |
-| S2-05 subscription receipt reconciliation | in-progress | Provider-neutral, idempotent normalized receipt ingestion updates durable entitlement records and rejects changed replay payloads. Apple/Google/Stripe signature verification and external adapters remain open. |
+| S2-04 notes, bookmarks, reminders, and vrat tracking | in-progress | Authenticated notes, bookmarks, and Gregorian reminder CRUD now use durable rows, ownership filters, quotas, and round-trip tests. Unsupported lunar reminders now fail closed instead of creating non-firing rows; recurrence resolution, Vrat CRUD, and scheduler delivery remain open. |
+| S2-05 subscription receipt reconciliation | in-progress | Normalized receipt ingestion now requires a separate trusted adapter credential, binds replayed events to the owning account, and uses a savepoint around the unique replay guard. Apple/Google/Stripe signature verification and external adapters remain open. |
 | S2-06 PDF jobs and signed exports | update | Existing queue seams were preserved; durable job execution and object storage signing were not implemented in this run. |
 | S2-07 notifications and delivery tracking | update | Existing client scaffolding was preserved; event fan-out, delivery retries, idempotency, and tracking were not implemented in this run. |
 
 Focused evidence for this branch: `uv run pytest services/api/tests/test_s2_calendar_overlays.py services/panchang/tests/test_rules.py services/panchang/tests/test_warming_jobs.py tools/accuracy_harness/test_harness.py -q`; full repository checks are reported in the PR.
+
+**Follow-up hardening in this PR:** birth-data lifecycle routes are recorded in the
+runtime contract inventory; partial calendar metadata is carried into all three
+client model layers; Android month-cache identity is complete; unsupported lunar
+reminders fail closed; and receipt reconciliation is no longer callable with a
+user JWT alone. These changes improve the provisional packages but do not close
+the S1/S2 stage gates.
 
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,

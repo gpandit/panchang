@@ -64,6 +64,17 @@ async def test_notes_bookmarks_and_reminders_round_trip(client: AsyncClient) -> 
     )
     assert invalid.status_code == 422
 
+    unsupported_lunar = await client.post(
+        "/v1/reminders",
+        json={
+            "title": "Ekadashi",
+            "trigger_type": "tithi",
+            "trigger_value": "11",
+        },
+        headers=headers,
+    )
+    assert unsupported_lunar.status_code == 422
+
 
 async def test_profile_and_locations_round_trip(client: AsyncClient) -> None:
     headers = _auth(sub="profile-user-unique")
@@ -109,6 +120,37 @@ async def test_profile_and_locations_round_trip(client: AsyncClient) -> None:
     assert [location["is_default"] for location in locations] == [True, False]
 
 
+async def test_birth_details_use_an_opaque_vault_reference(client: AsyncClient) -> None:
+    headers = _auth(sub="birth-user-unique")
+    body = {
+        "dateOfBirth": "1990-02-03",
+        "timeOfBirth": "04:05",
+        "placeOfBirth": {"lat": 25.2, "lon": 55.3, "tz": "Asia/Dubai"},
+    }
+    saved = await client.put("/v1/profile/birth-details", json=body, headers=headers)
+    assert saved.status_code == 200
+    assert saved.json()["data"]["id"]
+    assert "dateOfBirth" not in saved.text
+    assert "placeOfBirth" not in saved.text
+
+    reference = await client.get("/v1/profile/birth-details", headers=headers)
+    assert reference.status_code == 200
+    assert reference.json()["data"]["id"] == saved.json()["data"]["id"]
+
+    exported = await client.get("/v1/profile/birth-details/export", headers=headers)
+    assert exported.status_code == 200
+    assert exported.json()["data"] == body
+
+    other = await client.get(
+        "/v1/profile/birth-details/export", headers=_auth(sub="other-birth-user")
+    )
+    assert other.status_code == 404
+
+    deleted = await client.delete("/v1/profile/birth-details", headers=headers)
+    assert deleted.status_code == 204
+    assert (await client.get("/v1/profile/birth-details", headers=headers)).status_code == 404
+
+
 async def test_receipt_reconciliation_is_idempotent_and_drives_entitlement(
     client: AsyncClient,
 ) -> None:
@@ -120,8 +162,11 @@ async def test_receipt_reconciliation_is_idempotent_and_drives_entitlement(
         "tier": "gold",
         "status": "active",
     }
-    first = await client.post("/v1/subscription/receipts", json=payload, headers=headers)
-    second = await client.post("/v1/subscription/verify-receipt", json=payload, headers=headers)
+    adapter_headers = {**headers, "X-Provider-Adapter-Token": "test-provider-token"}
+    first = await client.post("/v1/subscription/receipts", json=payload, headers=adapter_headers)
+    second = await client.post(
+        "/v1/subscription/verify-receipt", json=payload, headers=adapter_headers
+    )
     assert first.status_code == 200
     assert second.status_code == 200
     assert second.json()["data"]["duplicate"] is True
@@ -131,9 +176,12 @@ async def test_receipt_reconciliation_is_idempotent_and_drives_entitlement(
     changed = await client.post(
         "/v1/subscription/receipts",
         json={**payload, "tier": "silver"},
-        headers=headers,
+        headers=adapter_headers,
     )
     assert changed.status_code == 409
+
+    client_attempt = await client.post("/v1/subscription/receipts", json=payload, headers=headers)
+    assert client_attempt.status_code == 401
 
 
 async def test_month_assembly_reports_missing_days(client: AsyncClient, silver_token: str) -> None:

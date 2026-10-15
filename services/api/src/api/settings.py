@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     # Access token lifetime in seconds (15 min default)
     access_token_expire_seconds: int = 900
+    # Internal credential used only by trusted Apple/Google/Stripe adapter
+    # workers. Client applications must never receive this value.
+    subscription_adapter_token: str | None = None
 
     # ── CORS ──────────────────────────────────────────────────────────────────
     # Comma-separated list of allowed browser origins for staging/prod (ignored
