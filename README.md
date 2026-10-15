@@ -154,6 +154,9 @@ pnpm run py:format
 GitHub Actions runs once for each push and runs a separate full validation for
 promotion pull requests targeting `staging` or `main` (`.github/workflows/ci.yml`):
 
+The self-hosted workflow is manual-only and is not part of automatic push or
+pull-request validation.
+
 1. **python-ci** — ruff lint/format-check, mypy, pytest across `services/`
 2. **typescript-ci** — ESLint, Prettier check, tsc, Vitest across `packages/` and `apps/`
 3. **accuracy-harness** — *skipped placeholder* (enabled in Step 1.3; will gate all merges)
