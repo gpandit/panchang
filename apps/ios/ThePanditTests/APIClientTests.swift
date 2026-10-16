@@ -56,6 +56,45 @@ final class APIClientTests: XCTestCase {
         XCTAssertFalse(panchang.cached)
     }
 
+    func test_dailyPanchangView_decodesGatewayPayload() throws {
+        let json = """
+        {
+          "date": "2026-01-14",
+          "flags": [],
+          "lat": 28.6139,
+          "lon": 77.2090,
+          "tz": "Asia/Kolkata",
+          "locationLabel": "28.61°, 77.21°",
+          "summaryTitle": "Budhavara · Chaturdashi",
+          "panchangHindiDate": "Pausha · Krishna Paksha",
+          "elements": [{"key": "tithi", "label": "Tithi", "value": "Chaturdashi",
+                         "secondaryValue": "ends:18:20", "group": "core", "explanation": null}],
+          "sunrise": "2026-01-14T07:15:00+05:30",
+          "sunset": "2026-01-14T17:48:00+05:30",
+          "moonrise": null,
+          "moonset": null,
+          "muhurats": [{"name": "Brahma Muhurta", "startTime": "05:30",
+                         "endTime": "06:15", "type": "auspicious", "description": null}],
+          "festivals": [],
+          "advisories": [],
+          "highlights": [],
+          "dharmaCard": null,
+          "leapMonthFlag": null,
+          "cachedAt": "2026-01-14T00:00:00Z"
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        let envelope = try decoder.decode(
+            APIResponse<DailyPanchangViewOut>.self, from: Data("{\"data\":\(json)}".utf8)
+        )
+
+        XCTAssertEqual(envelope.data.locationLabel, "28.61°, 77.21°")
+        XCTAssertEqual(envelope.data.elements.first?.value, "Chaturdashi")
+        XCTAssertEqual(envelope.data.muhurats.first?.type, "auspicious")
+    }
+
     func test_apiResponse_envelope_unwraps() throws {
         let json = """
         {"data": {"id": "f1", "name": "Makar Sankranti", "date": "2026-01-14",

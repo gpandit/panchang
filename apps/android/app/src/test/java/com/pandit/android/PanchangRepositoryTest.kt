@@ -31,9 +31,9 @@ class PanchangRepositoryTest {
     @Test
     fun `fetchToday returns Success and persists to dao`() = runTest {
         val dto = fakeTodayDto()
-        coEvery { api.getTodayView(any(), any(), any(), any(), any()) } returns ApiResponse(dto)
+        coEvery { api.getTodayView(any(), any(), any(), any(), any(), any()) } returns ApiResponse(dto)
 
-        val result = repo.fetchToday(28.6, 77.2, "Asia/Kolkata", "lahiri", "amanta")
+        val result = repo.fetchToday("2025-01-01", 28.6, 77.2, "Asia/Kolkata", "lahiri", "amanta")
 
         assertTrue(result is Result.Success)
         coVerify { dao.upsertToday(any()) }
@@ -41,9 +41,9 @@ class PanchangRepositoryTest {
 
     @Test
     fun `fetchToday returns Error when network throws`() = runTest {
-        coEvery { api.getTodayView(any(), any(), any(), any(), any()) } throws Exception("timeout")
+        coEvery { api.getTodayView(any(), any(), any(), any(), any(), any()) } throws Exception("timeout")
 
-        val result = repo.fetchToday(28.6, 77.2, "Asia/Kolkata", "lahiri", "amanta")
+        val result = repo.fetchToday("2025-01-01", 28.6, 77.2, "Asia/Kolkata", "lahiri", "amanta")
 
         assertTrue(result is Result.Error)
         coVerify(exactly = 0) { dao.upsertToday(any()) }
@@ -78,34 +78,64 @@ class PanchangRepositoryTest {
     }
 
     @Test
+    fun `fetchExplanation unwraps ApiResponse data`() = runTest {
+        coEvery { api.getExplanation("tithi") } returns ApiResponse(mapOf("text" to "A lunar day"))
+
+        val result = repo.fetchExplanation("tithi")
+
+        assertEquals(Result.Success("A lunar day"), result)
+    }
+
+    @Test
     fun `cacheKey helpers produce consistent keys`() {
         val key1 = PanchangRepository.todayKey("2025-01-01", 28.6, 77.2)
         val key2 = PanchangRepository.todayKey("2025-01-01", 28.6, 77.2)
         assertEquals(key1, key2)
     }
 
+    @Test
+    fun `month cache key includes calendar identity`() {
+        val base = PanchangRepository.monthKey(
+            2025, 1, 28.6, 77.2, "Asia/Kolkata", "lahiri", "amanta"
+        )
+        assertNotEquals(
+            base,
+            PanchangRepository.monthKey(2025, 1, 28.6, 77.2, "Asia/Dubai", "lahiri", "amanta")
+        )
+        assertNotEquals(
+            base,
+            PanchangRepository.monthKey(2025, 1, 28.6, 77.2, "Asia/Kolkata", "lahiri", "purnimanta")
+        )
+    }
+
     private fun fakeTodayDto() = DailyPanchangViewDto(
         date = "2025-01-01",
-        location = "New Delhi",
-        tithi = fakePanchangElement("tithi", "Pratipada"),
-        nakshatra = fakePanchangElement("nakshatra", "Ashwini"),
-        yoga = fakePanchangElement("yoga", "Vishkumbha"),
-        karana = fakePanchangElement("karana", "Kimstughna"),
-        vara = fakePanchangElement("vara", "Ravivara"),
-        sunrise = fakeTime("06:30"),
-        sunset = fakeTime("18:00"),
+        flags = emptyList(), lat = 28.6, lon = 77.2, tz = "Asia/Kolkata",
+        locationLabel = "28.60°, 77.20°", summaryTitle = "Ravivara · Pratipada",
+        panchangHindiDate = "Pausha · Shukla Paksha",
+        elements = listOf(
+            fakePanchangElement("tithi", "Pratipada"),
+            fakePanchangElement("nakshatra", "Ashwini"),
+            fakePanchangElement("yoga", "Vishkumbha"),
+            fakePanchangElement("karana", "Kimstughna"),
+            fakePanchangElement("vara", "Ravivara"),
+        ),
+        sunrise = "2025-01-01T06:30:00+05:30",
+        sunset = "2025-01-01T18:00:00+05:30",
         moonrise = null,
         moonset = null,
         muhurats = emptyList(),
         festivals = emptyList(),
-        advisory = AdvisoryDto(goodFor = listOf("Travel"), avoid = listOf("Surgery")),
+        advisories = emptyList(),
         highlights = emptyList(),
         dharmaCard = null,
+        leapMonthFlag = null,
+        cachedAt = "2025-01-01T00:00:00Z",
     )
 
     private fun fakePanchangElement(key: String, value: String) = PanchangElementDto(
         key = key, label = key.replaceFirstChar { it.uppercase() },
-        value = value, startTime = null, endTime = null, explanationKey = key,
+        value = value, secondaryValue = null, group = "core", explanation = key,
     )
 
     private fun fakeTime(t: String) = TimeValueDto(

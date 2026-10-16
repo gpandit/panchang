@@ -13,6 +13,7 @@ from uuid import uuid4
 
 import pytest
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from redis import Redis
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import make_url
@@ -51,9 +52,10 @@ def migrated_postgres(postgres_url: str) -> str:
             config.set_main_option("script_location", str(API_ROOT / "alembic"))
             config.attributes["connection"] = connection
             command.upgrade(config, "head")
-            assert connection.execute(
-                text("SELECT version_num FROM alembic_version")
-            ).scalar_one() == ("0003_s005_outbox_idempotency")
+            assert (
+                connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+                == ScriptDirectory.from_config(config).get_current_head()
+            )
             assert connection.execute(text("SELECT PostGIS_Version()")).scalar_one()
             assert (
                 connection.execute(
@@ -174,3 +176,39 @@ def test_redis_roundtrip_cache_ttl_and_per_key_lock() -> None:
     finally:
         client.delete(key, f"{key}:lock")
         client.close()
+
+
+def test_postgres_user_data_rls_is_enabled(migrated_postgres: str) -> None:
+    """The existing disposable Postgres CI job also proves the RLS migration."""
+    expected_tables = {
+        "user_preferences",
+        "locations",
+        "family_groups",
+        "family_memberships",
+        "vault_refs",
+        "devices",
+        "legal_acceptances",
+        "notes",
+        "bookmarks",
+        "reminders",
+        "vrat_records",
+        "planner_requests",
+        "calendar_jobs",
+        "subscriptions",
+        "provider_accounts",
+    }
+    engine = create_engine(_sync_url(migrated_postgres), connect_args={"connect_timeout": 5})
+    try:
+        with engine.connect() as connection:
+            rows = connection.execute(
+                text(
+                    "SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity "
+                    "FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                    "WHERE n.nspname = current_schema() AND c.relname = ANY(:tables)"
+                ),
+                {"tables": list(expected_tables)},
+            ).all()
+            assert {row.relname for row in rows} == expected_tables
+            assert all(row.relrowsecurity and row.relforcerowsecurity for row in rows)
+    finally:
+        engine.dispose()

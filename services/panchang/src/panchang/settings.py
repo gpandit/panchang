@@ -1,5 +1,6 @@
 """Panchang service settings — loaded from environment / .env file."""
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -36,8 +37,26 @@ class Settings(BaseSettings):
     build_profile: str = "development"
 
     # ── Cache ─────────────────────────────────────────────────────────────────
+    database_url: str = "postgresql+psycopg://pandit:pandit@localhost:5432/pandit_dev"
     redis_url: str = "redis://localhost:6379/0"
     cache_ttl_seconds: int = 86_400  # 24 h — Panchang doesn't change once computed
+    cache_grid_degrees: float = 0.1
+
+    @field_validator("cache_grid_degrees")
+    @classmethod
+    def validate_grid(cls, value: float) -> float:
+        from panchang.cache import _validate_grid
+
+        return _validate_grid(value)
+
+    # JSON array of seed locations for the worker; observed locations are
+    # supplied by the deployment's aggregated usage repository.
+    warm_locations_json: str = "[]"
+    warm_top_locations: int = 500
+
+    # Versioned editorial rule export.  Production should point this at the
+    # reviewed CMS artifact rather than relying on the repository fallback.
+    festival_rules_path: str = ""
 
 
 _settings: Settings | None = None

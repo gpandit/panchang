@@ -7,17 +7,20 @@ version: "3.9"
 #   docker compose -f infra/docker-compose.yml up -d
 #   docker compose -f infra/docker-compose.yml down
 #
-# Credentials match the defaults in .env.example — DO NOT use these in production.
+# PostGIS is required by the v3 migrations. Credentials match the defaults in
+# .env.example — DO NOT use these in production.
 
 services:
   # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
+    image: ${POSTGRES_IMAGE:-postgis/postgis:16-3.4}
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-pandit_dev}
       POSTGRES_USER: ${POSTGRES_USER:-pandit}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pandit}
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:-pandit_app}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-pandit_app_dev}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:

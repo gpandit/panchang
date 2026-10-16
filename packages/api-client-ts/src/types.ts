@@ -141,6 +141,10 @@ export interface MonthCalendarOut {
   year: number;
   month: number;
   days: DailyPanchangOut[];
+  /** True when one or more daily computations could not be assembled. */
+  partial: boolean;
+  /** ISO dates omitted from `days`; callers should surface a retry/unavailable state. */
+  missing_dates: string[];
 }
 
 // ─── Festivals ───────────────────────────────────────────────────────────────

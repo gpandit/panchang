@@ -85,25 +85,37 @@ pre-commit install
 ### 2. Start local infrastructure
 
 ```bash
-# Copy environment variables
-cp .env.example .env
-
-# Start Postgres, Redis, MinIO
-docker compose -f infra/docker-compose.yml up -d
+# Start PostGIS-backed Postgres, Redis, MinIO, migrations, API, and PCS
+./deploy.sh up
 
 # Verify health
-docker compose -f infra/docker-compose.yml ps
+./deploy.sh status
 ```
 
 Services once running:
 
 | Service  | URL / port                             |
 |----------|----------------------------------------|
-| Postgres | `localhost:5432`  db=`pandit_dev`      |
+| PostgreSQL/PostGIS | `localhost:5432`  db=`pandit_dev`      |
 | Redis    | `localhost:6379`                       |
 | MinIO    | API `localhost:9000`, console `:9001`  |
 
-### 3. Run the Python services (dev)
+`API_DATABASE_URL` and `PANCHANG_DATABASE_URL` both point at the same local
+**PostgreSQL 16 + PostGIS** database through the least-privileged
+`pandit_app` runtime role. `MIGRATION_DATABASE_URL` uses the bootstrap
+`pandit` role only for Alembic migrations. PostGIS is required by the v3
+migrations and location/booking geography types; plain `postgres:16-alpine` is
+not enough.
+Redis uses database 0 for the API and database 1 for PCS. MinIO provides the
+local S3-compatible object-storage endpoint.
+
+To stop the development deployment while preserving Docker volumes:
+
+```bash
+./deploy.sh down
+```
+
+### 3. Run the Python services manually (optional)
 
 ```bash
 # API Gateway
@@ -151,7 +163,11 @@ pnpm run py:format
 
 ## CI
 
-GitHub Actions runs on every push and PR (`.github/workflows/ci.yml`):
+GitHub Actions runs once for each push and runs a separate full validation for
+promotion pull requests targeting `staging` or `main` (`.github/workflows/ci.yml`):
+
+The self-hosted workflow is manual-only and is not part of automatic push or
+pull-request validation.
 
 1. **python-ci** — ruff lint/format-check, mypy, pytest across `services/`
 2. **typescript-ci** — ESLint, Prettier check, tsc, Vitest across `packages/` and `apps/`

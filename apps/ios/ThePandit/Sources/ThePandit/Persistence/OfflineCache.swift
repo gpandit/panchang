@@ -54,6 +54,33 @@ actor OfflineCache {
         return try decoder.decode(DailyPanchang.self, from: record.payloadJSON)
     }
 
+    func storeDailyView(_ panchang: DailyPanchangViewOut, ayanamsa: String,
+                        monthScheme: String, context: ModelContext) throws {
+        let key = cacheKey(date: panchang.date, lat: panchang.lat, lon: panchang.lon,
+                           tz: panchang.tz, ayanamsa: ayanamsa, monthScheme: monthScheme)
+        let json = try encoder.encode(panchang)
+        let descriptor = FetchDescriptor<CachedDay>(predicate: #Predicate { $0.cacheKey == key })
+        if let existing = try context.fetch(descriptor).first {
+            existing.payloadJSON = json
+            existing.cachedAt = Date()
+        } else {
+            context.insert(CachedDay(cacheKey: key, date: panchang.date, lat: panchang.lat,
+                                     lon: panchang.lon, tz: panchang.tz, ayanamsaKey: ayanamsa,
+                                     monthScheme: monthScheme, payloadJSON: json))
+        }
+        try context.save()
+    }
+
+    func fetchDailyView(date: String, lat: Double, lon: Double, tz: String,
+                        ayanamsa: String, monthScheme: String,
+                        context: ModelContext) throws -> DailyPanchangViewOut? {
+        let key = cacheKey(date: date, lat: lat, lon: lon, tz: tz,
+                           ayanamsa: ayanamsa, monthScheme: monthScheme)
+        let descriptor = FetchDescriptor<CachedDay>(predicate: #Predicate { $0.cacheKey == key })
+        guard let record = try context.fetch(descriptor).first else { return nil }
+        return try decoder.decode(DailyPanchangViewOut.self, from: record.payloadJSON)
+    }
+
     /// Evicts cached days older than `days` except the current month.
     func evictStale(keepDays days: Int = 7, context: ModelContext) throws {
         let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date())!

@@ -98,7 +98,9 @@ class CalendarViewModel @Inject constructor(
             .getOrElse { locationHelper.defaultLocation() }
         val ayanamsa = prefsStore.ayanamsa.first()
         val monthScheme = prefsStore.monthScheme.first()
-        val key = PanchangRepository.monthKey(ym.year, ym.monthValue, loc.lat, loc.lon)
+        val key = PanchangRepository.monthKey(
+            ym.year, ym.monthValue, loc.lat, loc.lon, loc.tz, ayanamsa, monthScheme
+        )
 
         // Show cached first
         panchangRepository.observeMonth(key).filterNotNull().take(1).collect { cached ->
@@ -113,16 +115,9 @@ class CalendarViewModel @Inject constructor(
 
     private fun loadDay(date: LocalDate) = viewModelScope.launch {
         _uiState.update { it.copy(isLoadingDay = true) }
-        val loc = runCatching { locationHelper.currentLocation() }
-            .getOrElse { locationHelper.defaultLocation() }
         val dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
-        val ayanamsa = prefsStore.ayanamsa.first()
-        val monthScheme = prefsStore.monthScheme.first()
-
-        when (val r = panchangRepository.fetchDay(dateStr, loc.lat, loc.lon, loc.tz, ayanamsa, monthScheme)) {
-            is Result.Success -> _uiState.update { it.copy(selectedDayData = r.data, isLoadingDay = false) }
-            is Result.Error -> _uiState.update { it.copy(isLoadingDay = false) }
-        }
+        val day = _uiState.value.monthData?.days?.firstOrNull { it.date == dateStr }
+        _uiState.update { it.copy(selectedDayData = day, isLoadingDay = false) }
     }
 
     private fun observeNotes(date: LocalDate) {

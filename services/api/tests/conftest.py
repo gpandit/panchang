@@ -13,6 +13,7 @@ import os
 # Point the DB at in-memory SQLite before anything reads settings. The engine
 # factory applies a StaticPool so the in-memory DB is shared across connections.
 os.environ.setdefault("API_DATABASE_URL", "sqlite://")
+os.environ.setdefault("API_SUBSCRIPTION_ADAPTER_TOKEN", "test-provider-token")
 
 import pytest
 import pytest_asyncio
@@ -20,6 +21,8 @@ from httpx import ASGITransport, AsyncClient
 
 from api.auth import create_token
 from api.cache import get_panchang_cache
+from api.db import Base, get_async_engine
+from api.db import models as _models  # noqa: F401
 from api.models.auth import SubscriptionTier
 
 
@@ -27,6 +30,9 @@ from api.models.auth import SubscriptionTier
 async def client():
     from api.main import app
 
+    engine = get_async_engine()
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
 

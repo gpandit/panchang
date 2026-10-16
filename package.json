@@ -24,7 +24,11 @@
     "ci:lint": "pnpm run lint && pnpm run py:lint",
     "ci:typecheck": "pnpm run typecheck && pnpm run py:typecheck",
     "ci:test": "pnpm run test && pnpm run py:test",
-    "ci:format:check": "pnpm run format:check && pnpm run py:format:check"
+    "ci:format:check": "pnpm run format:check && pnpm run py:format:check",
+    "test:security": "uv run pytest services/api/tests/test_security.py -q",
+    "test:build": "uv run pytest tools/test_build_contract.py -q && uv run python tools/check_build_contract.py",
+    "test:rls": "uv run pytest services/api/tests/test_rls.py -v",
+    "test:lighthouse": "uv run pytest tests/lighthouse -v"
   },
   "pnpm": {
     "overrides": {

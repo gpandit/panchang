@@ -30,7 +30,84 @@ Vault, licensing, load/SLO and provider integrations remain open.
 | S1-01 PCS ephemeris boundary | done | `services/panchang/src/panchang/engine.py` is the sole library importer; CI guard and regressions pass. Local Ruff/format/mypy and 165 tests passed; four accuracy fixtures passed. Calibration, flagged polar fallback, and 500-day/10-location gate remain S1 work. |
 | S1-02 canonical interval contract | done | PCS adds validated UTC interval fields and flags, gateway/OpenAPI/TS expose them, fallback proxy is flagged and withheld in the Today view, and cache namespaces are bumped. DST/cross-date/24-plus tests pass; S1-04 owns durable cache adapters. |
 | S1 high-latitude fallback (development-plan §4 item 3) | done | Named `sunriseFallbackNearestValidLatitude` policy, bounded 1° inward search, marked UTC proxy instants, impossible-date/no-reference structured failures, and gateway 422 propagation tested. This is not the dashboard's S1-03 accuracy-dataset package; independent calibration remains open. |
-| S1-03 accuracy harness/reference dataset | in-progress | Added `tools/accuracy_harness/data/timezone_conversion_20261007.json` with 10 user-supplied global timezone records and 2 UTC-normalization tests. This validates timezone conversion only; the ≥500 independently sourced days/≥10 locations accuracy gate remains open. |
+| S1-03 accuracy harness/reference dataset | in-progress | The harness now validates cited fixture schema/provenance, compares absolute UTC instants under the ±2/±5-minute policy, reports coverage gaps, and supports strict `--require-gate` CI mode. Four cited references pass; the ten-record timezone supplement is conversion evidence only. The ≥500 independently sourced days/≥10 locations accuracy gate remains open. |
+| S1-04 cache adapters, grid, and locks | in-progress | `RedisStore` and serialized `PostgresPanchangDayStore` use injected production clients, canonical IANA/grid/version identity and validation are enforced, an injected Redis lease lock prevents cross-process stampedes, and non-development PCS lifespan wires Redis/Postgres. New opt-in PCS real-service tests cover Postgres readback, Redis serialization/TTL, and cross-client lock contention; CI now runs them with disposable PostGIS/Redis. Local execution skips without service URLs; CI/Docker/staging evidence remains open. |
+| S1-05 15-month cache warmer | done | `warming.py` covers 15 actual calendar months with optional dual schemes; `warming_jobs.py` adds configured/observed location selection, stable scheduler dedupe identity, bounded deterministic retries, and per-request failure reports for an RQ/outbox adapter. Focused warmer tests: 10 passed. Deployment still needs the aggregated location source, scheduler/publisher/worker wiring, and failure alert/requeue handling. |
+| S1-06 versioned festival-rule resolver | done | `services/panchang/src/panchang/rules.py` validates immutable versioned catalogs, publication state, exact anchor/tie-break behavior, adjacent-day resolution, year/month filters, regional aliases/overrides, deterministic ordering, and occurrence provenance. Rule and full PCS checks pass; the bundled catalog is draft and CMS publication/database occurrence persistence remain later gates. |
+
+## Provisional next-ten package run
+
+This branch advances the next ten planned packages provisionally. It does not
+claim that the S1 accuracy exit gate has passed: the repository still contains
+four cited fixtures rather than at least 500 independently sourced days across
+ten locations. S2 work below is therefore contract and persistence progress,
+not a release-ready stage completion.
+
+| Package | Status | Evidence / remaining gate |
+|---|---|---|
+| S1-03 accuracy harness and reference dataset | in-progress | Dataset schema, provenance, coordinate, timestamp, duplicate, and explicit coverage reporting were hardened in `tools/accuracy_harness/run.py`; focused harness tests pass. Independent references must still be supplied; no values were synthesized. |
+| S1-05 15-month cache warmer | in-progress | Bounded failure callback/reporting seam added to `warming_jobs.py` with focused tests. Scheduler, publisher, durable failure alert/requeue, and production location source remain open. |
+| S1-06 festival rule DSL and resolver | in-progress | Rule key and identifier validation tightened with focused regression coverage. Reviewed CMS publication, durable occurrence persistence, and invalidation remain open. |
+| S2-01 identity, profiles, locations, and Vault lifecycle | in-progress | Authenticated profile/preferences and owned location read/write flows persist through the async SQLAlchemy spine; birth details now have owner-only opaque-reference, export, and delete routes backed by the Vault fake. Production Vault storage and identity integration remain open. |
+| S2-02 calendar assembly and client views | in-progress | Month assembly now runs day requests concurrently and returns explicit `partial`/`missing_dates` metadata and headers; TS/iOS/Android models expose the metadata and Android cache keys include timezone/ayanamsa/scheme. Offline bundles, week/year/range views, and three-client E2E remain open. |
+| S2-03 CMS workflow and provenance | update | No implementation was added in this provisional run; CMS persistence and publication remain a dependency for authoritative festival content. |
+| S2-04 notes, bookmarks, reminders, and vrat tracking | in-progress | Authenticated notes, bookmarks, and Gregorian reminder CRUD now use durable rows, ownership filters, quotas, and round-trip tests. Unsupported lunar reminders now fail closed instead of creating non-firing rows; recurrence resolution, Vrat CRUD, and scheduler delivery remain open. |
+| S2-05 subscription receipt reconciliation | in-progress | Normalized receipt ingestion now requires a separate trusted adapter credential, binds replayed events to the owning account, and uses a savepoint around the unique replay guard. Apple/Google/Stripe signature verification and external adapters remain open. |
+| S2-06 PDF jobs and signed exports | update | Existing queue seams were preserved; durable job execution and object storage signing were not implemented in this run. |
+| S2-07 notifications and delivery tracking | update | Existing client scaffolding was preserved; event fan-out, delivery retries, idempotency, and tracking were not implemented in this run. |
+
+Focused evidence for this branch: `uv run pytest services/api/tests/test_s2_calendar_overlays.py services/panchang/tests/test_rules.py services/panchang/tests/test_warming_jobs.py tools/accuracy_harness/test_harness.py -q`; full repository checks are reported in the PR.
+
+**Follow-up hardening in this PR:** birth-data lifecycle routes are recorded in the
+runtime contract inventory; partial calendar metadata is carried into all three
+client model layers; Android month-cache identity is complete; unsupported lunar
+reminders fail closed; and receipt reconciliation is no longer callable with a
+user JWT alone. These changes improve the provisional packages but do not close
+the S1/S2 stage gates.
+
+## CI and first-deploy readiness (2026-10-16)
+
+The branch adds a self-hosted GitHub Actions workflow at
+`.github/workflows/self-hosted-ci.yml`. It runs on pushes to `develop` and manual
+dispatches using `self-hosted`, `linux`, `x64` labels. Pull requests remain on
+GitHub-hosted CI so fork code is not executed on a private runner. The workflow
+covers Python and TypeScript checks, workspace builds, Docker build contracts,
+dependency/secret scans, disposable Postgres/Redis integration, RLS isolation,
+and an environment-gated Lighthouse audit.
+
+Local evidence on this branch:
+
+- `uv run pytest services/api/ tools/ tests/lighthouse -q` — 152 passed, 6 skipped;
+- Ruff lint/format and mypy — passed;
+- `uv run python tools/check_build_contract.py` — passed;
+- workflow YAML parse and `git diff --check` — passed;
+- production launch gate correctly blocks AGPL and passes only with the
+  explicitly supplied commercial licence setting.
+
+The code is **not ready for a public first production deploy**. The commercial
+Swiss Ephemeris licence, production secrets/managed configuration, live RLS and
+Postgres/Redis evidence, Lighthouse against a real staging URL, Docker image
+builds, external billing/Vault/CMS integrations, and the strict 500-day/10-location
+accuracy gate remain open. A controlled internal staging deploy is possible only
+after those environment-specific checks and credentials are supplied; the
+staging smoke check now fails closed when any endpoint remains unhealthy.
+
+## Development deployment helper (2026-10-16)
+
+`./deploy.sh up` now provisions local infrastructure from `.env`, applies
+Alembic migrations, and starts the API and Panchang services with health checks.
+The development database is **PostgreSQL 16 with the PostGIS extension**,
+supplied by `postgis/postgis:16-3.4`; plain PostgreSQL is insufficient for the
+v3 geography migrations. API and PCS share the database through the
+least-privileged `pandit_app` runtime role; the bootstrap `pandit` role is used
+only through `MIGRATION_DATABASE_URL` for Alembic. Redis database 0 is used by
+the API, Redis database 1 by PCS, and MinIO provides local S3-compatible object
+storage.
+
+The helper is development-only, preserves Docker volumes on `down`, and refuses
+non-development profiles. `bash -n deploy.sh`, `./deploy.sh --help`, and the
+build-contract checks pass locally; an actual run remains environment-gated
+because Docker is unavailable in this workspace.
 
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,

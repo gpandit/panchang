@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     # Access token lifetime in seconds (15 min default)
     access_token_expire_seconds: int = 900
+    # Internal credential used only by trusted Apple/Google/Stripe adapter
+    # workers. Client applications must never receive this value.
+    subscription_adapter_token: str | None = None
 
     # ── CORS ──────────────────────────────────────────────────────────────────
     # Comma-separated list of allowed browser origins for staging/prod (ignored
@@ -55,6 +58,8 @@ class Settings(BaseSettings):
     panchang_cache_ttl_seconds: int = 3600  # 1 hour
     # Max items in the in-process LRU cache
     panchang_cache_max_size: int = 1024
+    panchang_engine_version: str = "3"
+    panchang_cache_grid_degrees: float = 0.1
 
     # ── Downstream services ───────────────────────────────────────────────────
     panchang_service_url: str = "http://localhost:8001"

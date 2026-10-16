@@ -6,6 +6,14 @@ output must be to the curated reference values before the harness reports a
 regression. It is read by `tools/accuracy_harness/run.py` (the comparison
 runner is parameterised against the numbers below — keep them in sync).
 
+The reference file is deliberately an independent, cited dataset. The harness
+rejects duplicate request keys, unknown IANA zones, invalid coordinates,
+missing/invalid fetch dates, and non-HTTPS provenance before computing any
+result. It also reports the S1 coverage gate from cited references only:
+**at least 500 distinct dates and 10 distinct locations**. The ten-record
+`timezone_conversion_20261007.json` supplement is a timezone/UTC conversion check;
+it is explicitly not counted as independent accuracy coverage.
+
 The harness compares against values transcribed from an established published
 Panchang (drikpanchang.com, Drik Ganita method, Lahiri ayanamsa — see
 `source_url` on each fixture in `data/reference_panchang.json`). Published
@@ -84,7 +92,8 @@ Add a new fixture object to the `fixtures` array in
     "yoga":      { "name": "...", "end": "YYYY-MM-DDTHH:MM:SS" },
     "karana":    { "name": "...", "end": "YYYY-MM-DDTHH:MM:SS" },
     "lunar_month": "... (optional)",
-    "is_adhika_month": true|false, "is_kshaya_month": true|false   // optional
+    "is_adhika_month": true|false, "is_kshaya_month": true|false, // optional
+    "tithi_flags": ["kshaya"], "sunrise_fallback": false          // optional
   }
 }
 ```
@@ -94,7 +103,9 @@ Notes for transcription:
 - `expected.*.end` is the **local** boundary instant in the location's `tz`,
   written as a bare ISO datetime (no offset) — it may roll onto the following
   civil date (e.g. `02:16` after midnight is still written with the next
-  day's date). The harness compares it against the engine's `TimeValue.iso`.
+  day's date). For a repeated hour during a DST fold, include the UTC offset
+  (`-04:00` or `-05:00`); a nonexistent/ambiguous bare local timestamp is
+  rejected. The harness compares absolute instants against `TimeValue.iso`.
 - Normalize Vara/anga spellings to the engine's canonical transliteration in
   `panchang.constants` (e.g. `Somavara`, not `Somawara`) — this is a spelling
   normalization of the transcription, not a change to the reference value.
@@ -106,3 +117,18 @@ Run the harness locally with:
 ```sh
 uv run python tools/accuracy_harness/run.py
 ```
+
+The command above is regression mode: it runs all cited fixtures and reports
+any remaining S1 coverage gaps without pretending that the gate is green. To
+make CI fail until the documented S1 dataset gate is actually met, run:
+
+```sh
+uv run python tools/accuracy_harness/run.py --require-gate
+```
+
+Coverage flags are claims about the reference data, not generated engine
+output. Add `tithi_flags` only when an independently published source records
+`kshaya` or `vriddhi`; similarly, add a polar-edge, DST-transition, Adhika,
+Kshaya, scheme, or festival fixture only with its source URL and fetch date.
+The harness will report missing edge-case coverage rather than infer it from
+the implementation.

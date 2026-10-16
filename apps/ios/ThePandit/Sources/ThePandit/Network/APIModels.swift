@@ -108,9 +108,92 @@ struct DailyPanchang: Decodable, Identifiable {
 }
 
 struct MonthCalendar: Decodable {
-    let year: Int
-    let month: Int
-    let days: [DailyPanchang]
+     let year: Int
+     let month: Int
+     let days: [DailyPanchang]
+     let partial: Bool
+     let missingDates: [String]
+}
+
+// MARK: - Daily view response
+
+// /v1/panchang/daily returns this view-ready payload (rather than the raw
+// computation shape used by MonthCalendar.days).
+struct DailyPanchangViewOut: Codable, Identifiable {
+    let date: String
+    let flags: [String]
+    let lat: Double
+    let lon: Double
+    let tz: String
+    let locationLabel: String
+    let summaryTitle: String
+    let panchangHindiDate: String
+    let elements: [PanchangElementViewOut]
+    let sunrise: String?
+    let sunset: String?
+    let moonrise: String?
+    let moonset: String?
+    let muhurats: [MuhuratWindowViewOut]
+    let festivals: [DailyFestivalViewOut]
+    let advisories: [DailyAdvisoryViewOut]
+    let highlights: [DailyHighlightViewOut]
+    let dharmaCard: DailyDharmaCardViewOut?
+    let leapMonthFlag: String?
+    let cachedAt: String
+
+    var id: String { "\(date)-\(lat)-\(lon)" }
+}
+
+struct PanchangElementViewOut: Codable, Identifiable {
+    let key: String
+    let label: String
+    let value: String
+    let secondaryValue: String?
+    let group: String
+    let explanation: String?
+
+    var id: String { key }
+}
+
+struct MuhuratWindowViewOut: Codable, Identifiable {
+    let name: String
+    let startTime: String
+    let endTime: String
+    let type: String
+    let description: String?
+
+    var id: String { "\(name)-\(startTime)" }
+}
+
+struct DailyFestivalViewOut: Codable, Identifiable {
+    let name: String
+    let type: String
+    let description: String?
+    let significance: String?
+
+    var id: String { "\(type)-\(name)" }
+}
+
+struct DailyAdvisoryViewOut: Codable, Identifiable {
+    let category: String
+    let label: String
+    let detail: String?
+
+    var id: String { "\(category)-\(label)" }
+}
+
+struct DailyHighlightViewOut: Codable, Identifiable {
+    let label: String
+    let value: String
+    let detail: String?
+
+    var id: String { label }
+}
+
+struct DailyDharmaCardViewOut: Codable {
+    let title: String
+    let body: String
+    let attribution: String?
 }
 
 // MARK: - Festivals

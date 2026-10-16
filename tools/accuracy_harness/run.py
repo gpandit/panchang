@@ -3,24 +3,29 @@
 
 Computes the engine's output for every fixture in
 `data/reference_panchang.json` and asserts it matches the curated reference
-values within the tolerances documented in `docs/accuracy-tolerances.md`
+values within the tolerances documented in `docs/architecture/accuracy-tolerances.md`
 (the single source of truth for the numbers below — keep them in sync).
 
 Exit codes:
-  0 — every fixture matched within tolerance
-  1 — at least one mismatch (a clear expected/actual diff is printed)
+  0 — every fixture matched within tolerance (regression mode)
+  1 — mismatch, invalid dataset, or unmet gate with --require-gate
 
 Run with:  uv run python tools/accuracy_harness/run.py
 """
 
 from __future__ import annotations
 
+import argparse
 import json
+import math
+import re
 import sys
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 # Make the panchang package importable when run as a plain script (mirrors
 # tools/check_launch_readiness.py's "no package" approach).
@@ -33,11 +38,27 @@ from panchang.models import AngaSpan, PanchangRequest, PanchangResult  # noqa: E
 
 DATA_PATH = Path(__file__).parent / "data" / "reference_panchang.json"
 
-# ─── Tolerance policy (docs/accuracy-tolerances.md is the committed source) ──
+# ─── Tolerance policy (docs/architecture/accuracy-tolerances.md) ──
 SUNRISE_SUNSET_TOLERANCE_MINUTES = 2
 ANGA_BOUNDARY_TOLERANCE_MINUTES = 5
+MIN_REFERENCE_DAYS = 500
+MIN_LOCATIONS = 10
 
 _ANGA_FIELDS = ("tithi", "nakshatra", "yoga", "karana")
+_FIXTURE_FIELDS = {"id", "label", "source_url", "fetched", "request", "expected"}
+_REQUEST_FIELDS = {"date", "lat", "lon", "tz", "ayanamsa", "month_scheme"}
+_EXPECTED_FIELDS = {
+    "sunrise",
+    "sunset",
+    "vara",
+    *_ANGA_FIELDS,
+    "lunar_month",
+    "is_adhika_month",
+    "is_kshaya_month",
+    "tithi_flags",
+    "sunrise_fallback",
+}
+_FIXTURE_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
 @dataclass
@@ -57,20 +78,199 @@ class Mismatch:
         return line
 
 
-def _load_fixtures() -> list[dict[str, Any]]:
-    raw = json.loads(DATA_PATH.read_text())
-    return list(raw["fixtures"])
+def _load_fixtures(path: Path = DATA_PATH) -> list[dict[str, Any]]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict) or not isinstance(raw.get("fixtures"), list):
+        raise ValueError("reference dataset must contain a fixtures array")
+    fixtures = raw["fixtures"]
+    validate_dataset(fixtures)
+    return fixtures
 
 
-def _parse_local(value: str) -> datetime:
-    return datetime.fromisoformat(value)
+def _reference_instant(value: str, tz: ZoneInfo) -> datetime:
+    """Resolve a published local time; ambiguous/nonexistent wall times need an offset."""
+    wall = datetime.fromisoformat(value)
+    if wall.tzinfo is not None:
+        instant = wall.astimezone(tz)
+        if instant.replace(tzinfo=None) != wall.replace(tzinfo=None):
+            raise ValueError(f"{value}: offset disagrees with IANA timezone {tz.key}")
+        return instant
+    candidates = [wall.replace(tzinfo=tz, fold=fold) for fold in (0, 1)]
+    valid = [
+        candidate
+        for candidate in candidates
+        if candidate.astimezone(UTC).astimezone(tz).replace(tzinfo=None) == wall
+    ]
+    if not valid or (len(valid) == 2 and valid[0].utcoffset() != valid[1].utcoffset()):
+        raise ValueError(f"{value}: nonexistent or ambiguous local time; provide a UTC offset")
+    return valid[0]
+
+
+def validate_dataset(fixtures: list[dict[str, Any]]) -> None:
+    """Reject incomplete, duplicated or untraceable references before any comparison."""
+    if not isinstance(fixtures, list) or not fixtures:
+        raise ValueError("independent reference dataset is empty")
+    ids: set[str] = set()
+    keys: set[tuple[date, float, float, str, str]] = set()
+    for fixture in fixtures:
+        if not isinstance(fixture, dict):
+            raise ValueError("each reference fixture must be an object")
+        missing = _FIXTURE_FIELDS - fixture.keys()
+        unknown = fixture.keys() - _FIXTURE_FIELDS
+        if missing:
+            raise ValueError(f"fixture is missing fields: {sorted(missing)}")
+        if unknown:
+            raise ValueError(f"fixture has unsupported fields: {sorted(unknown)}")
+        fid = fixture["id"]
+        if not isinstance(fid, str) or not _FIXTURE_ID.fullmatch(fid) or fid in ids:
+            raise ValueError(f"duplicate or empty fixture id: {fid!r}")
+        ids.add(fid)
+        if not isinstance(fixture["label"], str) or not fixture["label"].strip():
+            raise ValueError(f"{fid}: label must be a non-empty string")
+        source = urlparse(fixture["source_url"])
+        if source.scheme != "https" or not source.netloc:
+            raise ValueError(f"{fid}: source_url must be a reproducible HTTPS citation")
+        fetched = date.fromisoformat(fixture["fetched"])
+        if fetched > date.today():
+            raise ValueError(f"{fid}: fetched date cannot be in the future")
+        request_data = fixture["request"]
+        if not isinstance(request_data, dict):
+            raise ValueError(f"{fid}: request must be an object")
+        missing_request = _REQUEST_FIELDS - request_data.keys()
+        unknown_request = request_data.keys() - _REQUEST_FIELDS
+        if missing_request:
+            raise ValueError(f"{fid}: request is missing fields: {sorted(missing_request)}")
+        if unknown_request:
+            raise ValueError(f"{fid}: request has unsupported fields: {sorted(unknown_request)}")
+        try:
+            request = PanchangRequest(**request_data)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{fid}: invalid request: {exc}") from exc
+        try:
+            tz = ZoneInfo(request.tz)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(f"{fid}: unknown IANA timezone {request.tz}") from exc
+        if not (
+            math.isfinite(request.lat)
+            and math.isfinite(request.lon)
+            and -90 <= request.lat <= 90
+            and -180 <= request.lon <= 180
+        ):
+            raise ValueError(f"{fid}: invalid coordinates")
+        key = (request.date, request.lat, request.lon, request.tz, request.month_scheme.value)
+        if key in keys:
+            raise ValueError(f"{fid}: duplicate date/location/scheme reference")
+        keys.add(key)
+        exp = fixture["expected"]
+        if not isinstance(exp, dict):
+            raise ValueError(f"{fid}: expected must be an object")
+        missing_expected = {"sunrise", "sunset", "vara", *_ANGA_FIELDS} - exp.keys()
+        unknown_expected = exp.keys() - _EXPECTED_FIELDS
+        if missing_expected:
+            raise ValueError(f"{fid}: expected is missing fields: {sorted(missing_expected)}")
+        if unknown_expected:
+            raise ValueError(f"{fid}: expected has unsupported fields: {sorted(unknown_expected)}")
+        for field in ("sunrise", "sunset"):
+            try:
+                _reference_instant(exp[field], tz)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"{fid}: invalid expected {field}: {exc}") from exc
+        if not isinstance(exp["vara"], str) or not exp["vara"]:
+            raise ValueError(f"{fid}: missing vara name")
+        for field in _ANGA_FIELDS:
+            if not isinstance(exp[field], dict) or {"name", "end"} - exp[field].keys():
+                raise ValueError(f"{fid}: expected {field} requires name and end")
+            if not isinstance(exp[field]["name"], str) or not exp[field]["name"]:
+                raise ValueError(f"{fid}: missing {field} name")
+            try:
+                _reference_instant(exp[field]["end"], tz)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"{fid}: invalid expected {field}.end: {exc}") from exc
+        for field in ("is_adhika_month", "is_kshaya_month"):
+            if field in exp and not isinstance(exp[field], bool):
+                raise ValueError(f"{fid}: {field} must be boolean")
+        if "tithi_flags" in exp and (
+            not isinstance(exp["tithi_flags"], list)
+            or any(flag not in {"kshaya", "vriddhi"} for flag in exp["tithi_flags"])
+        ):
+            raise ValueError(f"{fid}: tithi_flags must contain only kshaya/vriddhi")
+        if "sunrise_fallback" in exp and not isinstance(exp["sunrise_fallback"], bool):
+            raise ValueError(f"{fid}: sunrise_fallback must be boolean")
+
+
+def gate_gaps(fixtures: list[dict[str, Any]]) -> list[str]:
+    """Coverage is based on independently cited values, never generated engine output."""
+    return accuracy_gate_report(fixtures).gaps
+
+
+@dataclass(frozen=True)
+class AccuracyGateReport:
+    """Auditable S1 gate result based only on cited fixture metadata."""
+
+    fixture_count: int
+    unique_days: int
+    unique_locations: int
+    gaps: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return not self.gaps
+
+
+def accuracy_gate_report(fixtures: list[dict[str, Any]]) -> AccuracyGateReport:
+    """Return explicit coverage evidence without treating engine output as references."""
+    days = {f["request"]["date"] for f in fixtures}
+    locations = {(f["request"]["lat"], f["request"]["lon"], f["request"]["tz"]) for f in fixtures}
+    gaps = []
+    if len(days) < MIN_REFERENCE_DAYS:
+        gaps.append(f"days {len(days)}/{MIN_REFERENCE_DAYS}")
+    if len(locations) < MIN_LOCATIONS:
+        gaps.append(f"locations {len(locations)}/{MIN_LOCATIONS}")
+    schemes = {f["request"]["month_scheme"] for f in fixtures if "lunar_month" in f["expected"]}
+    for scheme in ("amanta", "purnimanta"):
+        if scheme not in schemes:
+            gaps.append(f"{scheme} month label")
+    if not any(f["expected"].get("is_adhika_month") is True for f in fixtures):
+        gaps.append("Adhika month")
+    if not any(f["expected"].get("is_kshaya_month") is True for f in fixtures):
+        gaps.append("Kshaya month")
+    for flag in ("kshaya", "vriddhi"):
+        if not any(flag in f["expected"].get("tithi_flags", []) for f in fixtures):
+            gaps.append(f"{flag} tithi")
+    if not any(abs(f["request"]["lat"]) >= 60 for f in fixtures):
+        gaps.append("polar-edge location (>=60° latitude)")
+    if not any(_crosses_dst(f) for f in fixtures):
+        gaps.append("DST transition day")
+    # PCS results contain no resolved festival occurrences yet; a label alone
+    # cannot prove festival accuracy without comparing the resolver's output.
+    gaps.append("major festival comparison (not supported by this harness yet)")
+    return AccuracyGateReport(len(fixtures), len(days), len(locations), tuple(gaps))
+
+
+def _crosses_dst(fixture: dict[str, Any]) -> bool:
+    request = fixture["request"]
+    tz = ZoneInfo(request["tz"])
+    day = date.fromisoformat(request["date"])
+    before = datetime.combine(day, datetime.min.time(), tzinfo=tz).utcoffset()
+    after = datetime.combine(day + timedelta(days=1), datetime.min.time(), tzinfo=tz).utcoffset()
+    return before != after
 
 
 def _check_time(
-    fixture_id: str, field: str, expected_iso: str, actual_iso: str, tolerance_minutes: int
+    fixture_id: str,
+    field: str,
+    expected_iso: str,
+    actual_iso: str,
+    tolerance_minutes: int,
+    tz: ZoneInfo,
 ) -> Mismatch | None:
-    expected_dt = _parse_local(expected_iso)
-    actual_dt = _parse_local(actual_iso).replace(tzinfo=None)
+    expected_dt = _reference_instant(expected_iso, tz)
+    actual_dt = datetime.fromisoformat(actual_iso)
+    if actual_dt.tzinfo is None:
+        return Mismatch(fixture_id, field, expected_iso, actual_iso, "engine time lacks UTC offset")
+    # UTC arithmetic, including DST folds; wall-clock subtraction can hide an hour's drift.
+    expected_dt = expected_dt.astimezone(UTC)
+    actual_dt = actual_dt.astimezone(UTC)
     diff_minutes = abs((actual_dt - expected_dt).total_seconds()) / 60.0
     if diff_minutes > tolerance_minutes:
         return Mismatch(
@@ -99,6 +299,7 @@ def compare_fixture(fixture: dict[str, Any], result: PanchangResult) -> list[Mis
     """Return every mismatch between `fixture["expected"]` and `result`."""
     fid = fixture["id"]
     expected = fixture["expected"]
+    tz = ZoneInfo(fixture["request"]["tz"])
     mismatches: list[Mismatch] = []
 
     def add(m: Mismatch | None) -> None:
@@ -112,6 +313,7 @@ def compare_fixture(fixture: dict[str, Any], result: PanchangResult) -> list[Mis
             expected["sunrise"],
             result.day_events.sunrise.iso,
             SUNRISE_SUNSET_TOLERANCE_MINUTES,
+            tz,
         )
     )
     add(
@@ -121,6 +323,7 @@ def compare_fixture(fixture: dict[str, Any], result: PanchangResult) -> list[Mis
             expected["sunset"],
             result.day_events.sunset.iso,
             SUNRISE_SUNSET_TOLERANCE_MINUTES,
+            tz,
         )
     )
     add(_check_exact(fid, "vara.name", expected["vara"], result.vara.name))
@@ -155,6 +358,7 @@ def compare_fixture(fixture: dict[str, Any], result: PanchangResult) -> list[Mis
                     exp["end"],
                     headline.end.iso,
                     ANGA_BOUNDARY_TOLERANCE_MINUTES,
+                    tz,
                 )
             )
 
@@ -186,6 +390,21 @@ def compare_fixture(fixture: dict[str, Any], result: PanchangResult) -> list[Mis
             )
         )
 
+    if "tithi_flags" in expected:
+        observed = sorted(
+            {flag for span in result.tithi for flag in span.flags} & {"kshaya", "vriddhi"}
+        )
+        add(_check_exact(fid, "tithi.flags", sorted(set(expected["tithi_flags"])), observed))
+    if "sunrise_fallback" in expected:
+        add(
+            _check_exact(
+                fid,
+                "day_events.sunrise_fallback",
+                expected["sunrise_fallback"],
+                "sunriseFallbackNearestValidLatitude" in result.day_events.flags,
+            )
+        )
+
     return mismatches
 
 
@@ -195,8 +414,15 @@ def run_fixture(fixture: dict[str, Any]) -> list[Mismatch]:
     return compare_fixture(fixture, result)
 
 
-def main() -> int:
-    fixtures = _load_fixtures()
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--require-gate", action="store_true", help="fail until S1 coverage passes")
+    args = parser.parse_args(argv)
+    try:
+        fixtures = _load_fixtures()
+    except (ValueError, KeyError, TypeError) as exc:
+        print(f"Invalid reference dataset: {exc}", file=sys.stderr)
+        return 1
     total_mismatches: list[Mismatch] = []
 
     for fixture in fixtures:
@@ -210,14 +436,25 @@ def main() -> int:
         for m in total_mismatches:
             print(m.render())
         print(
-            "\nSee docs/accuracy-tolerances.md for the tolerance policy and "
+            "\nSee docs/architecture/accuracy-tolerances.md for the tolerance policy and "
             "data/reference_panchang.json (`source_url`) for how to re-derive "
             "the reference values."
         )
         return 1
 
     print(f"\nAll {len(fixtures)} fixture(s) passed within tolerance.")
-    return 0
+    gate = accuracy_gate_report(fixtures)
+    print(
+        "S1 accuracy evidence: "
+        f"{gate.fixture_count} cited fixtures, {gate.unique_days} distinct days, "
+        f"{gate.unique_locations} distinct locations"
+    )
+    if gate.gaps:
+        print("S1 accuracy gate BLOCKED: " + "; ".join(gate.gaps))
+        print("Run with --require-gate to enforce the S1 exit gate in CI.")
+    else:
+        print("S1 accuracy gate PASSED.")
+    return int(bool(gate.gaps) and args.require_gate)
 
 
 if __name__ == "__main__":

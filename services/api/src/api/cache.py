@@ -17,7 +17,10 @@ from __future__ import annotations
 import json
 import time
 from collections import OrderedDict
+from decimal import ROUND_HALF_UP, Decimal
+from math import isfinite
 from typing import Any, cast
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from redis import Redis
 from redis.lock import Lock
@@ -104,7 +107,25 @@ def get_panchang_cache() -> LRUCache:
 def panchang_cache_key(
     date: str, lat: float, lon: float, tz: str, ayanamsa: str, month_scheme: str
 ) -> str:
-    # Round lat/lon to 4 decimal places (~11 m grid) for cache key stability
-    # Do not reuse pre-nearest-valid-latitude fallback results.
-    # S1-04 will reconcile this with the PCS canonical grid/versioned cache key.
-    return f"panchang:canonical-v3:{date}:{lat:.4f}:{lon:.4f}:{tz}:{ayanamsa}:{month_scheme}"
+    settings = get_settings()
+    if (
+        not all(isfinite(value) for value in (lat, lon))
+        or not -90 <= lat <= 90
+        or not -180 <= lon <= 180
+    ):
+        raise ValueError("latitude/longitude out of range or non-finite")
+    try:
+        ZoneInfo(tz)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ValueError("tz must be an IANA timezone") from exc
+    grid = Decimal(str(settings.panchang_cache_grid_degrees))
+    if not 0 < grid <= 1 or grid != round(grid, 4):
+        raise ValueError("invalid grid resolution")
+
+    def snap(value: float) -> float:
+        return float((Decimal(str(value)) / grid).quantize(0, rounding=ROUND_HALF_UP) * grid)
+
+    return (
+        f"panchang:canonical-v3:{date}:{snap(lat):.4f}:{snap(lon):.4f}:"
+        f"{tz}:{ayanamsa}:{month_scheme}:{settings.panchang_engine_version}:grid={grid:.4f}"
+    )

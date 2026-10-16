@@ -10,6 +10,7 @@ Edge caching:
 
 from __future__ import annotations
 
+import asyncio
 import calendar
 import datetime
 from typing import Annotated
@@ -110,9 +111,8 @@ async def month_calendar(
     response.headers["X-Rate-Limit-Tier"] = "burst"
 
     _, days_in_month = calendar.monthrange(year, month)
-    day_results: list[DailyPanchangOut] = []
 
-    for day in range(1, days_in_month + 1):
+    async def load_day(day: int) -> tuple[datetime.date, DailyPanchangOut | None]:
         d = datetime.date(year, month, day)
         try:
             result = await fetch_daily_panchang(
@@ -123,12 +123,30 @@ async def month_calendar(
                 ayanamsa=ayanamsa,
                 month_scheme=month_scheme,
             )
-            day_results.append(result)
+            return d, result
         except (httpx.HTTPStatusError, httpx.RequestError):
-            # Partial data: skip failing days rather than aborting the whole month
-            continue
+            return d, None
+
+    # A month is an assembly operation; fetch its independent cache keys in
+    # parallel while preserving calendar order in the response. A single bad
+    # downstream day is represented explicitly instead of silently changing the
+    # meaning of the month payload.
+    assembled = await asyncio.gather(*(load_day(day) for day in range(1, days_in_month + 1)))
+    day_results = [result for _, result in assembled if result is not None]
+    missing_dates = [day.isoformat() for day, result in assembled if result is None]
 
     response.headers["Cache-Control"] = "public, max-age=1800, s-maxage=1800"
     response.headers["Surrogate-Key"] = f"panchang month {year}-{month:02d}"
+    response.headers["X-Calendar-Partial"] = "true" if missing_dates else "false"
+    if missing_dates:
+        response.headers["X-Calendar-Missing-Days"] = ",".join(missing_dates)
 
-    return ApiResponse(data=MonthCalendarOut(year=year, month=month, days=day_results))
+    return ApiResponse(
+        data=MonthCalendarOut(
+            year=year,
+            month=month,
+            days=day_results,
+            missing_dates=missing_dates,
+            partial=bool(missing_dates),
+        )
+    )
