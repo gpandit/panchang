@@ -66,6 +66,7 @@ def assert_build_contract() -> None:
     ):
         assert f"{key}=" in development_env, f".env.example is missing {key}"
     assert "postgis/postgis:16-3.4" in development_compose
+    assert "quay.io/minio/minio:latest" in development_compose
     assert role_init.exists() and role_init.stat().st_mode & 0o111, (
         "PostgreSQL runtime-role init script must exist and be executable"
     )

@@ -1,5 +1,3 @@
-version: "3.9"
-
 # Local development infrastructure for The Pandit.
 # Brings up Postgres, Redis, and MinIO (S3-compatible object storage).
 #
@@ -50,7 +48,9 @@ services:
 
   # ── MinIO (S3-compatible object storage) ────────────────────────────────────
   minio:
-    image: minio/minio:latest
+    # Use the official Quay distribution; Docker Hub's minio/minio endpoint is
+    # not a reliable public pull source for this development image.
+    image: quay.io/minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:

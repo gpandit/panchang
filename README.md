@@ -107,7 +107,8 @@ Services once running:
 migrations and location/booking geography types; plain `postgres:16-alpine` is
 not enough.
 Redis uses database 0 for the API and database 1 for PCS. MinIO provides the
-local S3-compatible object-storage endpoint.
+local S3-compatible object-storage endpoint. The development Compose file pulls
+MinIO from the official Quay registry (`quay.io/minio/minio`).
 
 To stop the development deployment while preserving Docker volumes:
 
