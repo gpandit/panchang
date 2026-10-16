@@ -8,9 +8,11 @@ separate self-hosted validation workflow at
 
 The workflow runs automatically for:
 
-- pull requests targeting `develop`;
 - pushes to `develop`;
 - a manual `workflow_dispatch` run.
+
+Pull requests continue to use the GitHub-hosted workflow. This avoids running
+untrusted fork code on a self-hosted machine.
 
 It targets the standard runner labels:
 
@@ -46,5 +48,12 @@ unrelated repositories, or sensitive user data. The workflow requests only
 The workflow installs dependencies, checks the Panchang/client authority
 boundary, runs Python lint/format/type checks and tests, runs the JavaScript
 lint/format/type/test suite, and executes the development launch-readiness gate.
-The existing GitHub-hosted workflow remains responsible for disposable
-PostGIS/Redis integration services and the existing accuracy-harness job.
+The workflow also runs the build contract and Docker image checks, dependency
+and secret scans, disposable Postgres/Redis plus RLS checks, and an optional
+Lighthouse audit. Set the repository variable `LIGHTHOUSE_URL`, or provide the
+manual `lighthouse_url` input, to audit a deployed staging URL. Without a URL,
+the workflow validates the Lighthouse budget file and records the audit as an
+environment-gated skip.
+
+The GitHub-hosted workflow remains responsible for pull-request validation and
+the existing accuracy-harness job.

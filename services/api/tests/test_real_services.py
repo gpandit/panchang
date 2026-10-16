@@ -176,3 +176,39 @@ def test_redis_roundtrip_cache_ttl_and_per_key_lock() -> None:
     finally:
         client.delete(key, f"{key}:lock")
         client.close()
+
+
+def test_postgres_user_data_rls_is_enabled(migrated_postgres: str) -> None:
+    """The existing disposable Postgres CI job also proves the RLS migration."""
+    expected_tables = {
+        "user_preferences",
+        "locations",
+        "family_groups",
+        "family_memberships",
+        "vault_refs",
+        "devices",
+        "legal_acceptances",
+        "notes",
+        "bookmarks",
+        "reminders",
+        "vrat_records",
+        "planner_requests",
+        "calendar_jobs",
+        "subscriptions",
+        "provider_accounts",
+    }
+    engine = create_engine(_sync_url(migrated_postgres), connect_args={"connect_timeout": 5})
+    try:
+        with engine.connect() as connection:
+            rows = connection.execute(
+                text(
+                    "SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity "
+                    "FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                    "WHERE n.nspname = current_schema() AND c.relname = ANY(:tables)"
+                ),
+                {"tables": list(expected_tables)},
+            ).all()
+            assert {row.relname for row in rows} == expected_tables
+            assert all(row.relrowsecurity and row.relforcerowsecurity for row in rows)
+    finally:
+        engine.dispose()

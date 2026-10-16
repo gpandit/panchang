@@ -67,7 +67,7 @@ class SlidingWindowRateLimiter(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: object) -> Response:
         # Health check is exempt
-        if request.url.path in {"/health", "/docs", "/redoc", "/openapi.json"}:
+        if request.url.path in {"/health", "/healthz", "/docs", "/redoc", "/openapi.json"}:
             return await call_next(request)  # type: ignore[operator,no-any-return]
 
         key = self._identity(request)

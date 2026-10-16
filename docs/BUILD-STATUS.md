@@ -65,6 +65,50 @@ reminders fail closed; and receipt reconciliation is no longer callable with a
 user JWT alone. These changes improve the provisional packages but do not close
 the S1/S2 stage gates.
 
+## CI and first-deploy readiness (2026-10-16)
+
+The branch adds a self-hosted GitHub Actions workflow at
+`.github/workflows/self-hosted-ci.yml`. It runs on pushes to `develop` and manual
+dispatches using `self-hosted`, `linux`, `x64` labels. Pull requests remain on
+GitHub-hosted CI so fork code is not executed on a private runner. The workflow
+covers Python and TypeScript checks, workspace builds, Docker build contracts,
+dependency/secret scans, disposable Postgres/Redis integration, RLS isolation,
+and an environment-gated Lighthouse audit.
+
+Local evidence on this branch:
+
+- `uv run pytest services/api/ tools/ tests/lighthouse -q` — 152 passed, 6 skipped;
+- Ruff lint/format and mypy — passed;
+- `uv run python tools/check_build_contract.py` — passed;
+- workflow YAML parse and `git diff --check` — passed;
+- production launch gate correctly blocks AGPL and passes only with the
+  explicitly supplied commercial licence setting.
+
+The code is **not ready for a public first production deploy**. The commercial
+Swiss Ephemeris licence, production secrets/managed configuration, live RLS and
+Postgres/Redis evidence, Lighthouse against a real staging URL, Docker image
+builds, external billing/Vault/CMS integrations, and the strict 500-day/10-location
+accuracy gate remain open. A controlled internal staging deploy is possible only
+after those environment-specific checks and credentials are supplied; the
+staging smoke check now fails closed when any endpoint remains unhealthy.
+
+## Development deployment helper (2026-10-16)
+
+`./deploy.sh up` now provisions local infrastructure from `.env`, applies
+Alembic migrations, and starts the API and Panchang services with health checks.
+The development database is **PostgreSQL 16 with the PostGIS extension**,
+supplied by `postgis/postgis:16-3.4`; plain PostgreSQL is insufficient for the
+v3 geography migrations. API and PCS share the database through the
+least-privileged `pandit_app` runtime role; the bootstrap `pandit` role is used
+only through `MIGRATION_DATABASE_URL` for Alembic. Redis database 0 is used by
+the API, Redis database 1 by PCS, and MinIO provides local S3-compatible object
+storage.
+
+The helper is development-only, preserves Docker volumes on `down`, and refuses
+non-development profiles. `bash -n deploy.sh`, `./deploy.sh --help`, and the
+build-contract checks pass locally; an actual run remains environment-gated
+because Docker is unavailable in this workspace.
+
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,
 `uv run ruff format --check services/`, `uv run mypy services/ --config-file

@@ -1,8 +1,10 @@
 """Alembic migration environment (synchronous, psycopg).
 
-The database URL is pulled from the application settings (``API_DATABASE_URL``) so
-migrations always run against the same database the API uses. All ORM models are
-imported via ``api.db`` so ``target_metadata`` is complete for autogenerate.
+The database URL is pulled from the application settings (``API_DATABASE_URL``).
+Deployments should provide the bootstrap-only migration URL through
+``API_DATABASE_URL`` for the Alembic command while the running API uses its
+least-privileged runtime role. All ORM models are imported via ``api.db`` so
+``target_metadata`` is complete for autogenerate.
 """
 
 from __future__ import annotations
