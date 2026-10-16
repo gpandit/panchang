@@ -108,9 +108,11 @@ struct DailyPanchang: Decodable, Identifiable {
 }
 
 struct MonthCalendar: Decodable {
-    let year: Int
-    let month: Int
-    let days: [DailyPanchang]
+     let year: Int
+     let month: Int
+     let days: [DailyPanchang]
+     let partial: Bool
+     let missingDates: [String]
 }
 
 // MARK: - Daily view response

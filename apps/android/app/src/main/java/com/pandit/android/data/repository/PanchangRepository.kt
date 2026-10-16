@@ -69,7 +69,7 @@ class PanchangRepository @Inject constructor(
         val dto = api.getMonthCalendar(year, month, lat, lon, tz, ayanamsa, monthScheme).data
         dao.upsertMonth(
             MonthCalendarEntity(
-                cacheKey = monthKey(year, month, lat, lon),
+                cacheKey = monthKey(year, month, lat, lon, tz, ayanamsa, monthScheme),
                 year = year, month = month, lat = lat, lon = lon,
                 jsonPayload = monthAdapter.toJson(dto),
                 cachedAtMs = System.currentTimeMillis(),
@@ -95,6 +95,9 @@ class PanchangRepository @Inject constructor(
     companion object {
         fun todayKey(date: String, lat: Double, lon: Double) = "${date}_${lat}_${lon}"
         fun dayKey(date: String, lat: Double, lon: Double) = "${date}_${lat}_${lon}"
-        fun monthKey(year: Int, month: Int, lat: Double, lon: Double) = "${year}_${month}_${lat}_${lon}"
+        fun monthKey(
+            year: Int, month: Int, lat: Double, lon: Double,
+            tz: String, ayanamsa: String, monthScheme: String,
+        ) = "${year}_${month}_${lat}_${lon}_${tz}_${ayanamsa}_${monthScheme}"
     }
 }

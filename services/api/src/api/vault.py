@@ -129,6 +129,9 @@ class VaultPort(Protocol):
     ) -> Any:
         """Read under an exact purpose/subject scope and append an audit record."""
 
+    def delete(self, reference: VaultReference, *, actor_ref: str, purpose: str) -> None:
+        """Erase a reference under its exact purpose scope."""
+
 
 @dataclass(slots=True, repr=False)
 class _VaultEntry:
@@ -155,11 +158,12 @@ class InMemoryVault:
         subject_id: str,
         region: str,
         purpose: str,
+        reference_id: str | None = None,
     ) -> VaultReference:
         number = next(self._sequence)
         opaque = f"mem-vault-{number:08d}"
         reference = VaultReference(
-            id=f"vault-ref-{number:08d}",
+            id=reference_id or f"vault-ref-{number:08d}",
             subject_type=subject_type,
             subject_id=subject_id,
             region=region,
@@ -187,6 +191,14 @@ class InMemoryVault:
         access = VaultAccessRecord(reference.id, actor_ref, purpose, datetime.now(UTC))
         self.access_log.record(access)
         return deepcopy(entry.value)
+
+    def delete(self, reference: VaultReference, *, actor_ref: str, purpose: str) -> None:
+        entry = self._entries.get(reference.id)
+        if entry is None or entry.reference.provider_ref != reference.provider_ref:
+            raise VaultAccessDenied("unknown Vault reference")
+        if not actor_ref or purpose != entry.reference.purpose:
+            raise VaultAccessDenied("Vault purpose or actor scope is not authorised")
+        del self._entries[reference.id]
 
     def __repr__(self) -> str:
         return f"InMemoryVault(entries={len(self._entries)})"

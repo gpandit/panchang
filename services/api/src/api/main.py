@@ -24,6 +24,7 @@ from api.routers.admin import temples as admin_temples
 from api.routers.temple import auth as temple_auth
 from api.routers.temple import config as temple_config
 from api.routers.v1 import (
+    bookmarks,
     festivals,
     notes,
     panchang,
@@ -99,6 +100,7 @@ V1 = "/v1"
 app.include_router(panchang.router, prefix=V1)
 app.include_router(festivals.router, prefix=V1)
 app.include_router(notes.router, prefix=V1)
+app.include_router(bookmarks.router, prefix=V1)
 app.include_router(reminders.router, prefix=V1)
 app.include_router(profile.router, prefix=V1)
 app.include_router(subscriptions.router, prefix=V1)

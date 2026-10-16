@@ -166,6 +166,8 @@ class MonthCalendarOut(BaseModel):
     year: int
     month: int
     days: list[DailyPanchangOut]
+    missing_dates: list[str] = Field(default_factory=list)
+    partial: bool = False
 
 
 # ─── Today / Daily view model ────────────────────────────────────────────────

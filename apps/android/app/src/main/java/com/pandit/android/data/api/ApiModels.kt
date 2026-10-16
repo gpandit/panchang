@@ -111,6 +111,8 @@ data class MonthCalendarDto(
     val year: Int,
     val month: Int,
     val days: List<DailyPanchangDto>,
+    val partial: Boolean,
+    @Json(name = "missing_dates") val missingDates: List<String>,
 )
 
 // ─── Today / DailyPanchangView ────────────────────────────────────────────────

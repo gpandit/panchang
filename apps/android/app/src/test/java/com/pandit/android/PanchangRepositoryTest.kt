@@ -93,6 +93,21 @@ class PanchangRepositoryTest {
         assertEquals(key1, key2)
     }
 
+    @Test
+    fun `month cache key includes calendar identity`() {
+        val base = PanchangRepository.monthKey(
+            2025, 1, 28.6, 77.2, "Asia/Kolkata", "lahiri", "amanta"
+        )
+        assertNotEquals(
+            base,
+            PanchangRepository.monthKey(2025, 1, 28.6, 77.2, "Asia/Dubai", "lahiri", "amanta")
+        )
+        assertNotEquals(
+            base,
+            PanchangRepository.monthKey(2025, 1, 28.6, 77.2, "Asia/Kolkata", "lahiri", "purnimanta")
+        )
+    }
+
     private fun fakeTodayDto() = DailyPanchangViewDto(
         date = "2025-01-01",
         flags = emptyList(), lat = 28.6, lon = 77.2, tz = "Asia/Kolkata",

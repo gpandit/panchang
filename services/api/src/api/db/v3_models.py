@@ -443,6 +443,7 @@ class NoteRow(Base):
     date_ref: Mapped[date_value | None] = mapped_column(Date)
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    tags: Mapped[list[str]] = mapped_column(JSON_VARIANT, nullable=False, default=list)
     version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     created_at = _created()
     updated_at = _updated()
@@ -456,7 +457,8 @@ class BookmarkRow(Base):
         UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     target_type: Mapped[str] = mapped_column(String(64), nullable=False)
-    target_id: Mapped[str] = mapped_column(UUID, nullable=False)
+    # Targets include UUID-backed records as well as stable CMS/festival slugs.
+    target_id: Mapped[str] = mapped_column(String(128), nullable=False)
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at = _created()
     __table_args__ = (

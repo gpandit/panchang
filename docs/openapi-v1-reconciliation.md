@@ -23,17 +23,17 @@ and currently return `501` or a not-found placeholder.
 | `/v1/panchang/month` | GET | partial | Month assembly is present; persistence/production cache gates remain. |
 | `/v1/festivals` | GET | partial | Published CMS entries only; the current CMS store is in-process prototype data. |
 | `/v1/festivals/{festival_id}` | GET | partial | Published CMS detail only; the current CMS store is in-process prototype data. |
-| `/v1/notes` | GET | partial | Returns an empty prototype list; DB persistence is not wired. |
-| `/v1/notes` | POST | planned | Returns `501 Not Implemented`. |
-| `/v1/notes/{note_id}` | GET, PUT, DELETE | planned | Placeholder not-found responses. |
-| `/v1/reminders` | GET | partial | Returns an empty prototype list; scheduler persistence is not wired. |
-| `/v1/reminders` | POST | planned | Returns `501 Not Implemented`. |
-| `/v1/reminders/{reminder_id}` | DELETE | planned | Placeholder not-found response. |
-| `/v1/profile` | GET | partial | Claims-backed projection; profile persistence is not wired. |
-| `/v1/profile` | PUT | planned | Returns `501 Not Implemented`. |
-| `/v1/profile/locations` | GET | partial | Returns an empty prototype list; persistence is not wired. |
-| `/v1/profile/locations` | POST | planned | Returns `501 Not Implemented`. |
-| `/v1/subscription` | GET | partial | Reads signed claims; receipt reconciliation is not wired. |
+| `/v1/notes` | GET, POST | partial | Durable ownership and quota checks are present; sync and production migration remain. |
+| `/v1/notes/{note_id}` | GET, PUT, DELETE | partial | Durable CRUD is present; sync and production migration remain. |
+| `/v1/reminders` | GET, POST | partial | Gregorian persistence is present; lunar resolution and delivery remain explicitly gated. |
+| `/v1/reminders/{reminder_id}` | GET, PUT, DELETE | partial | Durable CRUD is present; scheduler delivery remains. |
+| `/v1/profile` | GET, PUT | partial | Async SQLAlchemy profile/preferences persistence is present. |
+| `/v1/profile/locations` | GET, POST | partial | Owned location persistence and IANA/coordinate validation are present. |
+| `/v1/profile/birth-details` | GET, PUT, DELETE | partial | Sensitive values use an opaque Vault reference; production Vault storage remains. |
+| `/v1/profile/birth-details/export` | GET | partial | Owner-only export is audited by the Vault boundary; production Vault storage remains. |
+| `/v1/subscription` | GET | partial | Reads the authoritative durable entitlement row, falling back to basic. |
+| `/v1/subscription/receipts` | POST | partial | Trusted adapter credential and replay guard are present; vendor verification adapters remain. |
+| `/v1/subscription/verify-receipt` | POST | partial | Trusted adapter credential and replay guard are present; vendor verification adapters remain. |
 | `/v1/pdf/jobs` | POST | partial | In-process job/storage adapters; durable queue/object storage is planned. |
 | `/v1/pdf/jobs/{job_id}` | GET | partial | In-process job status only. |
 | `/v1/temple/{temple_id}` | GET | partial | Separate temple configuration surface backed by an in-process store. |

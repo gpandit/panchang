@@ -174,6 +174,9 @@ class WarmFailure:
     error_type: str
 
 
+WarmFailureHandler = Callable[[WarmFailure], None]
+
+
 @dataclass(frozen=True)
 class WarmReport:
     start: date
@@ -195,11 +198,14 @@ def run_warm_job(
     horizon_months: int = DEFAULT_HORIZON_MONTHS,
     max_attempts: int = 3,
     ayanamsa: Ayanamsa = Ayanamsa.LAHIRI,
+    on_failure: WarmFailureHandler | None = None,
 ) -> WarmReport:
     """Warm [start, start + calendar months) for both schemes, reporting every failure.
 
     Retries are immediate, bounded and deterministic. Unresolved failures are
     reported to the invoking worker, which must record/alert or requeue them.
+    ``on_failure`` is an optional deployment seam for that follow-up action; it
+    is called only once per request after all bounded attempts are exhausted.
     Source failures are fatal so a missing location snapshot is never a success.
     """
     if (
@@ -235,9 +241,12 @@ def run_warm_job(
                         cache.get(request)
                     except Exception as exc:
                         if attempt == max_attempts:
-                            failures.append(
-                                WarmFailure(day, location, scheme, attempt, type(exc).__name__)
+                            failure = WarmFailure(
+                                day, location, scheme, attempt, type(exc).__name__
                             )
+                            failures.append(failure)
+                            if on_failure is not None:
+                                on_failure(failure)
                     else:
                         succeeded += 1
                         break
