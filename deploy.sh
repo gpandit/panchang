@@ -93,13 +93,50 @@ infra_up() {
     -U "${POSTGRES_USER:-pandit}" -d "${POSTGRES_DB:-pandit_dev}"
   wait_for "Redis" compose exec -T redis redis-cli ping
   wait_for_url "MinIO" "http://127.0.0.1:${MINIO_API_PORT:-9000}/minio/health/live"
+  ensure_runtime_role
+}
+
+ensure_runtime_role() {
+  printf 'Ensuring least-privileged PostgreSQL runtime role exists...\n'
+  compose exec -T postgres psql -v ON_ERROR_STOP=1 \
+    --username "${POSTGRES_USER:-pandit}" \
+    --dbname "${POSTGRES_DB:-pandit_dev}" \
+    --set=app_user="${POSTGRES_APP_USER:-pandit_app}" \
+    --set=app_password="${POSTGRES_APP_PASSWORD:-pandit_app_dev}" <<'SQL'
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') THEN
+    EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_password');
+  ELSE
+    EXECUTE format('ALTER ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_password');
+  END IF;
+END
+$$;
+DO $$
+BEGIN
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO %I', current_database(), :'app_user');
+  EXECUTE format('GRANT USAGE ON SCHEMA public TO %I', :'app_user');
+  EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %I', :'app_user');
+  EXECUTE format('GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO %I', :'app_user');
+  EXECUTE format(
+    'ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I',
+    :'app_user'
+  );
+  EXECUTE format(
+    'ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO %I',
+    :'app_user'
+  );
+END
+$$;
+SQL
 }
 
 migrate() {
   printf 'Applying API database migrations...\n'
   (
     cd "$ROOT_DIR/services/api"
-    uv run alembic upgrade head
+    API_DATABASE_URL="${MIGRATION_DATABASE_URL:-${API_DATABASE_URL}}" \
+      uv run alembic upgrade head
   )
 }
 

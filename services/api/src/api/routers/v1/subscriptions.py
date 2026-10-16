@@ -189,19 +189,30 @@ async def reconcile_receipt(
         current.tier = body.tier
         current.status = body.status
         current.expires_at = body.expires_at
-    if body.status in {"active", "grace_period"}:
-        active = (
-            await session.scalars(
-                select(SubscriptionRow).where(
-                    SubscriptionRow.user_id == user.id,
-                    SubscriptionRow.id != current.id,
-                    SubscriptionRow.status == "active",
-                )
-            )
-        ).all()
-        for row in active:
-            row.status = "expired"
-    await session.flush()
+    try:
+        async with session.begin_nested():
+            if body.status in {"active", "grace_period"}:
+                active = (
+                    await session.scalars(
+                        select(SubscriptionRow).where(
+                            SubscriptionRow.user_id == user.id,
+                            SubscriptionRow.id != current.id,
+                            SubscriptionRow.status == "active",
+                        )
+                    )
+                ).all()
+                for row in active:
+                    row.status = "expired"
+            await session.flush()
+    except IntegrityError as exc:
+        # With RLS, a subscription owned by another user is invisible to the
+        # lookup above. The provider_ref uniqueness constraint is therefore the
+        # authoritative cross-owner conflict signal.
+        if "uq_subscription_provider_ref" not in str(exc.orig):
+            raise
+        raise HTTPException(
+            status_code=409, detail="Receipt is already linked to another account"
+        ) from None
     return ApiResponse(data=_receipt_out(body))
 
 

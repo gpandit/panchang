@@ -101,8 +101,11 @@ Services once running:
 | MinIO    | API `localhost:9000`, console `:9001`  |
 
 `API_DATABASE_URL` and `PANCHANG_DATABASE_URL` both point at the same local
-**PostgreSQL 16 + PostGIS** database. PostGIS is required by the v3 migrations
-and location/booking geography types; plain `postgres:16-alpine` is not enough.
+**PostgreSQL 16 + PostGIS** database through the least-privileged
+`pandit_app` runtime role. `MIGRATION_DATABASE_URL` uses the bootstrap
+`pandit` role only for Alembic migrations. PostGIS is required by the v3
+migrations and location/booking geography types; plain `postgres:16-alpine` is
+not enough.
 Redis uses database 0 for the API and database 1 for PCS. MinIO provides the
 local S3-compatible object-storage endpoint.
 

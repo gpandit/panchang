@@ -140,25 +140,37 @@ def test_rls_hides_other_users_and_rejects_cross_owner_insert(migrated_rls: str)
                     },
                 ],
             )
+            # FORCE RLS applies to the non-superuser test role, so seed each
+            # private row while its owner is the transaction-local subject.
+            connection.execute(
+                text("SELECT set_config('app.user_id', :id, false)"), {"id": first_user}
+            )
             connection.execute(
                 text(
                     "INSERT INTO notes (id, owner_user_id, category, body, tags) VALUES "
                     "(:id, :owner, 'test', :body, CAST(:tags AS jsonb))"
                 ),
-                [
-                    {
-                        "id": first_note,
-                        "owner": first_user,
-                        "body": "first private note",
-                        "tags": json.dumps([]),
-                    },
-                    {
-                        "id": second_note,
-                        "owner": second_user,
-                        "body": "second private note",
-                        "tags": json.dumps([]),
-                    },
-                ],
+                {
+                    "id": first_note,
+                    "owner": first_user,
+                    "body": "first private note",
+                    "tags": json.dumps([]),
+                },
+            )
+            connection.execute(
+                text("SELECT set_config('app.user_id', :id, false)"), {"id": second_user}
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO notes (id, owner_user_id, category, body, tags) VALUES "
+                    "(:id, :owner, 'test', :body, CAST(:tags AS jsonb))"
+                ),
+                {
+                    "id": second_note,
+                    "owner": second_user,
+                    "body": "second private note",
+                    "tags": json.dumps([]),
+                },
             )
             connection.execute(
                 text("SELECT set_config('app.user_id', :id, false)"), {"id": first_user}

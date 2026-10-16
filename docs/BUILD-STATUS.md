@@ -98,9 +98,11 @@ staging smoke check now fails closed when any endpoint remains unhealthy.
 Alembic migrations, and starts the API and Panchang services with health checks.
 The development database is **PostgreSQL 16 with the PostGIS extension**,
 supplied by `postgis/postgis:16-3.4`; plain PostgreSQL is insufficient for the
-v3 geography migrations. API and PCS share the database, Redis database 0 is
-used by the API, Redis database 1 by PCS, and MinIO provides local S3-compatible
-object storage.
+v3 geography migrations. API and PCS share the database through the
+least-privileged `pandit_app` runtime role; the bootstrap `pandit` role is used
+only through `MIGRATION_DATABASE_URL` for Alembic. Redis database 0 is used by
+the API, Redis database 1 by PCS, and MinIO provides local S3-compatible object
+storage.
 
 The helper is development-only, preserves Docker volumes on `down`, and refuses
 non-development profiles. `bash -n deploy.sh`, `./deploy.sh --help`, and the

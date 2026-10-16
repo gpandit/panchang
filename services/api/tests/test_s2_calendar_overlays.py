@@ -180,6 +180,16 @@ async def test_receipt_reconciliation_is_idempotent_and_drives_entitlement(
     )
     assert changed.status_code == 409
 
+    other_owner = await client.post(
+        "/v1/subscription/receipts",
+        json={**payload, "external_event_id": "evt-2"},
+        headers={
+            **_auth(sub="another-s2-user"),
+            "X-Provider-Adapter-Token": "test-provider-token",
+        },
+    )
+    assert other_owner.status_code == 409
+
     client_attempt = await client.post("/v1/subscription/receipts", json=payload, headers=headers)
     assert client_attempt.status_code == 401
 

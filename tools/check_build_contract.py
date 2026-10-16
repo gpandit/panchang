@@ -26,6 +26,7 @@ def assert_build_contract() -> None:
     deploy_script = (ROOT / "deploy.sh").read_text()
     development_env = (ROOT / ".env.example").read_text()
     development_compose = (ROOT / "infra/docker-compose.yml").read_text()
+    role_init = ROOT / "infra/init/postgres/01-app-role.sh"
     assert (ROOT / "deploy.sh").stat().st_mode & 0o111, "deploy.sh must be executable"
     assert "FROM python:3.12-slim" in api
     assert "FROM python:3.12-slim" in panchang
@@ -46,6 +47,7 @@ def assert_build_contract() -> None:
     assert "PANCHANG_BUILD_PROFILE" in deploy_script
     for key in (
         "API_DATABASE_URL",
+        "MIGRATION_DATABASE_URL",
         "API_REDIS_URL",
         "API_PANCHANG_SERVICE_URL",
         "API_SECRET_KEY",
@@ -56,12 +58,17 @@ def assert_build_contract() -> None:
         "POSTGRES_DB",
         "POSTGRES_USER",
         "POSTGRES_PASSWORD",
+        "POSTGRES_APP_USER",
+        "POSTGRES_APP_PASSWORD",
         "REDIS_PORT",
         "MINIO_ROOT_USER",
         "MINIO_ROOT_PASSWORD",
     ):
         assert f"{key}=" in development_env, f".env.example is missing {key}"
     assert "postgis/postgis:16-3.4" in development_compose
+    assert role_init.exists() and role_init.stat().st_mode & 0o111, (
+        "PostgreSQL runtime-role init script must exist and be executable"
+    )
     for image in (
         "pandit-api",
         "pandit-panchang",
