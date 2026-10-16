@@ -1,85 +1,559 @@
 name: Self-hosted CI
 
 on:
-  # Automatic validation uses GitHub-hosted runners in ci.yml. Keep this
-  # workflow available only for an explicit operator-requested run.
+  # Keep arbitrary checkout code off the self-hosted fleet. Automatic
+  # pull-request validation is provided by .github/workflows/ci.yml on
+  # GitHub-hosted runners. This workflow runs after code reaches develop, or
+  # when an operator explicitly dispatches it.
+  push:
+    branches: [develop]
   workflow_dispatch:
+    inputs:
+      lighthouse_url:
+        description: "Optional staging URL for the Lighthouse audit"
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: self-hosted-ci-${{ github.workflow }}-${{ github.ref }}
+  group: self-hosted-ci-${{ github.repository }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CI: "true"
+  GIT_TERMINAL_PROMPT: "0"
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.15.0"
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  validate:
-    name: Self-hosted validation
-    # The runner must be an ephemeral or dedicated Linux x64 runner.
-    # Do not place untrusted repositories or unrelated workloads on it.
+  # Every job uses the same explicit labels. The runner must be ephemeral or
+  # dedicated to CI; never attach this workflow to a host with production
+  # credentials, unrelated repositories, or sensitive user data.
+  preflight:
+    name: Runner preflight
     runs-on: [self-hosted, linux, x64]
-    timeout-minutes: 45
-
+    timeout-minutes: 10
     steps:
-      - name: Checkout
+      - name: Checkout without retaining credentials
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          clean: true
 
-      - name: Install native Python build prerequisites
-        shell: bash
+      - name: Validate runner and toolchain
         run: |
           set -euo pipefail
-          if [ ! -f /usr/include/python3.12/Python.h ] || ! command -v gcc >/dev/null; then
-            sudo apt-get update
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential python3.12-dev
-          fi
+
+          test "$(uname -s)" = "Linux"
+          test "$(uname -m)" = "x86_64"
+          for command in bash git docker node pnpm python3 uv; do
+            command -v "$command" >/dev/null || {
+              echo "Required command is missing: $command" >&2
+              exit 1
+            }
+          done
+
+          python3 - <<'PY'
+          import platform
+          import sys
+
+          expected = (3, 12)
+          actual = sys.version_info[:2]
+          if actual != expected:
+              raise SystemExit(f"Python {expected[0]}.{expected[1]} is required; found {actual}")
+          if platform.machine() != "x86_64":
+              raise SystemExit(f"x86_64 runner is required; found {platform.machine()}")
+          PY
+
+          node --version
+          pnpm --version
+          python3 --version
+          uv --version
+          git --version
+          docker version
+          docker info >/dev/null
+
+  python:
+    name: Python checks
+    needs: preflight
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout without retaining credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: false
 
-      - name: Verify runner toolchain
-        shell: bash
+      - name: Validate Python toolchain
         run: |
           set -euo pipefail
-          for command in docker node pnpm uv; do
-            command -v "$command" >/dev/null || {
-              echo "Required command is missing: $command" >&2
-              exit 1
-            }
-          done
-          node --version
-          pnpm --version
+          python --version
           uv --version
-          docker version
+          python -c 'import sys; assert sys.version_info[:2] == (3, 12)'
 
-      - name: Install Python dependencies
-        run: uv sync --all-packages --dev
+      - name: Install locked Python workspace
+        run: uv sync --locked --all-packages --dev
 
-      - name: Install JavaScript dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check authority boundaries
+      - name: Run Python lint, format, type, authority, and tests
         run: |
-          uv run python tools/check_contract_authority.py
-          uv run python -m unittest tools.test_contract_authority -v
-
-      - name: Python lint, format, typecheck, and tests
-        run: |
+          set -euo pipefail
+          mkdir -p artifacts/python
           uv run ruff check services/
           uv run ruff format --check services/
           uv run mypy services/ --config-file pyproject.toml
-          uv run pytest services/ tools/ -v --tb=short
+          uv run python tools/check_contract_authority.py
+          uv run python -m unittest tools.test_contract_authority -v
+          uv run pytest services/ tools/ -v --tb=short \
+            --junitxml=artifacts/python/pytest.xml
 
-      - name: TypeScript lint, format, typecheck, and tests
-        run: |
-          pnpm run lint
-          pnpm run format:check
-          pnpm run typecheck
-          pnpm run test
-
-      - name: Launch-readiness development gate
+      - name: Run development launch gate
         env:
           PANCHANG_BUILD_PROFILE: development
           PANCHANG_EPHEMERIS_LICENSE: agpl
         run: uv run python tools/check_launch_readiness.py
+
+      - name: Upload Python reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-hosted-python-${{ github.run_id }}
+          path: artifacts/python/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  typescript-build:
+    name: TypeScript and build checks
+    needs: preflight
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 60
+    steps:
+      - name: Checkout without retaining credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python for build contracts
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: false
+
+      - name: Install locked Python workspace for build contracts
+        run: uv sync --locked --all-packages --dev
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+
+      - name: Validate JavaScript toolchain
+        run: |
+          set -euo pipefail
+          node --version
+          pnpm --version
+          node -e 'assert(Number(process.versions.node.split(".")[0]) >= 20)'
+          pnpm --version | awk -F. '{ if ($1 < 9) exit 1 }'
+
+      - name: Install locked JavaScript workspace
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run TypeScript lint, format, typecheck, tests, and build
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/typescript
+          pnpm run lint
+          pnpm run format:check
+          pnpm run typecheck
+          pnpm run test
+          pnpm run build
+          pnpm run test:build
+
+      - name: Build API and web images without registry credentials
+        env:
+          PANCHANG_RUN_DOCKER_BUILDS: "1"
+        run: pnpm run test:build
+
+      - name: Upload TypeScript and build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-hosted-typescript-build-${{ github.run_id }}
+          path: artifacts/typescript/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Remove contract-test images from the runner
+        if: always()
+        run: |
+          docker image rm the-pandit-api:contract-test the-pandit-web:contract-test || true
+
+  security:
+    name: Security checks
+    needs: preflight
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout without retaining credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python and uv
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: |
+          set -euo pipefail
+          uv sync --locked --all-packages --dev
+          pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run repository security tests
+        run: pnpm run test:security
+
+      - name: Audit dependencies and scan tracked files for secrets
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/security
+          set +e
+
+          uv run --with pip-audit pip-audit \
+            --format json \
+            --output artifacts/security/pip-audit.json
+          pip_status=$?
+
+          pnpm audit --audit-level=high --json \
+            > artifacts/security/pnpm-audit.json 2>&1
+          pnpm_status=$?
+
+          uvx --from detect-secrets detect-secrets scan --all-files \
+            --exclude-files '(^|/)(\.git|node_modules|\.venv|dist|build|\.next)/' \
+            > artifacts/security/detect-secrets.json
+          secrets_status=$?
+          set -e
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("artifacts/security/detect-secrets.json").read_text())
+          findings = sum(len(items) for items in report.get("results", {}).values())
+          if findings:
+              raise SystemExit(
+                  f"detect-secrets found {findings} potential secret(s); inspect the uploaded report"
+              )
+          print("detect-secrets found no potential secrets")
+          PY
+
+          if [ "$pip_status" -ne 0 ]; then
+            echo "pip-audit failed" >&2
+            exit "$pip_status"
+          fi
+          if [ "$pnpm_status" -ne 0 ]; then
+            echo "pnpm audit reported high-severity vulnerabilities" >&2
+            exit "$pnpm_status"
+          fi
+          if [ "$secrets_status" -ne 0 ]; then
+            echo "detect-secrets failed to scan the checkout" >&2
+            exit "$secrets_status"
+          fi
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-hosted-security-${{ github.run_id }}
+          path: artifacts/security/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  lighthouse:
+    name: Lighthouse audit
+    needs: preflight
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 20
+    env:
+      LIGHTHOUSE_URL: ${{ inputs.lighthouse_url || vars.LIGHTHOUSE_URL }}
+      LIGHTHOUSE_REPORT: artifacts/lighthouse/lighthouse.json
+    steps:
+      - name: Checkout without retaining credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python, Node.js, and pnpm
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          check-latest: false
+
+      - name: Install Lighthouse CLI
+        run: npm install --global lighthouse@12
+
+      - name: Run Lighthouse budget test
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/lighthouse
+          pnpm run test:lighthouse
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-hosted-lighthouse-${{ github.run_id }}
+          path: artifacts/lighthouse/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  integration-rls:
+    name: Postgres, Redis, migration, and RLS checks
+    needs: preflight
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: pandit_ci_test
+          POSTGRES_USER: ci_test
+          POSTGRES_PASSWORD: ci_test_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_test -d pandit_ci_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      # These are disposable service-container credentials, never repository
+      # secrets. The integration fixtures reject non-*_test database names.
+      PANCHANG_TEST_POSTGRES_URL: postgresql+psycopg://ci_test:ci_test_only@127.0.0.1:5432/pandit_ci_test
+      PANCHANG_TEST_REDIS_URL: redis://127.0.0.1:6379/0
+      # The preparation step creates the non-superuser role before the RLS
+      # suite runs; use the disposable role rather than a missing credential.
+      PANCHANG_TEST_RLS_URL: postgresql+psycopg://rls_test:rls_test_only@127.0.0.1:5432/pandit_ci_test
+      API_DATABASE_URL: postgresql+psycopg://ci_test:ci_test_only@127.0.0.1:5432/pandit_ci_test
+    steps:
+      - name: Checkout without retaining credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up Python and uv
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install locked Python workspace
+        run: uv sync --locked --all-packages --dev
+
+      - name: Run disposable Postgres and Redis integration tests
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/integration
+          uv run pytest \
+            services/api/tests/test_real_services.py \
+            services/panchang/tests/test_real_services_panchang.py \
+            -v -s --tb=short --junitxml=artifacts/integration/services.xml
+
+      - name: Check migration and RLS policy integrity
+        run: |
+          set -euo pipefail
+          uv run python - <<'PY'
+          import os
+          from pathlib import Path
+
+          from sqlalchemy import create_engine, text
+
+          url = os.environ["PANCHANG_TEST_POSTGRES_URL"]
+          engine = create_engine(url, connect_args={"connect_timeout": 5})
+          try:
+              with engine.connect() as connection:
+                  current_head = connection.execute(
+                      text("SELECT version_num FROM alembic_version")
+                  ).scalar_one()
+                  invalid = connection.execute(
+                      text(
+                          """
+                          SELECT c.relname
+                          FROM pg_class AS c
+                          JOIN pg_namespace AS n ON n.oid = c.relnamespace
+                          WHERE n.nspname = 'public'
+                            AND c.relkind = 'r'
+                            AND c.relforcerowsecurity
+                            AND NOT c.relrowsecurity
+                          UNION ALL
+                          SELECT c.relname
+                          FROM pg_class AS c
+                          JOIN pg_namespace AS n ON n.oid = c.relnamespace
+                          WHERE n.nspname = 'public'
+                            AND c.relkind = 'r'
+                            AND c.relrowsecurity
+                            AND NOT EXISTS (
+                              SELECT 1 FROM pg_policy AS p WHERE p.polrelid = c.oid
+                            )
+                          """
+                      )
+                  ).scalars().all()
+                  if invalid:
+                      raise SystemExit(
+                          "RLS policy integrity check failed for " + ", ".join(invalid)
+                      )
+                  Path("artifacts/integration/rls-check.txt").write_text(
+                      f"Alembic revision: {current_head}\n"
+                      "RLS policy integrity: passed\n"
+                  )
+                  print("Migration head and RLS policy integrity checks passed")
+          finally:
+              engine.dispose()
+          PY
+
+      - name: Prepare disposable non-superuser for RLS isolation
+        run: |
+          set -euo pipefail
+          uv run python - <<'PY'
+          import os
+
+          from sqlalchemy import create_engine, inspect, text
+
+          engine = create_engine(os.environ["PANCHANG_TEST_POSTGRES_URL"])
+          try:
+              with engine.begin() as connection:
+                  exists = connection.execute(
+                      text("SELECT 1 FROM pg_roles WHERE rolname = 'rls_test'")
+                  ).scalar()
+                  if not exists:
+                      connection.execute(text("CREATE ROLE rls_test LOGIN PASSWORD 'rls_test_only'"))
+                  connection.execute(text("GRANT USAGE ON SCHEMA public TO rls_test"))
+                  connection.execute(
+                      text("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO rls_test")
+                  )
+                  for table in inspect(connection).get_table_names(schema="public"):
+                      connection.execute(
+                          text(f'ALTER TABLE "{table}" OWNER TO rls_test')
+                      )
+          finally:
+              engine.dispose()
+          PY
+
+      - name: Run RLS isolation tests
+        run: pnpm run test:rls -- --junitxml=artifacts/integration/rls.xml
+
+      - name: Upload integration reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-hosted-integration-${{ github.run_id }}
+          path: artifacts/integration/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  all-checks-pass:
+    name: All self-hosted checks pass
+    needs: [preflight, python, typescript-build, security, lighthouse, integration-rls]
+    if: always()
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 10
+    steps:
+      - name: Require every check to succeed
+        env:
+          PREFLIGHT_RESULT: ${{ needs.preflight.result }}
+          PYTHON_RESULT: ${{ needs.python.result }}
+          TYPESCRIPT_BUILD_RESULT: ${{ needs.typescript-build.result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
+          LIGHTHOUSE_RESULT: ${{ needs.lighthouse.result }}
+          INTEGRATION_RLS_RESULT: ${{ needs.integration-rls.result }}
+        run: |
+          set -euo pipefail
+          for result in \
+            "$PREFLIGHT_RESULT" \
+            "$PYTHON_RESULT" \
+            "$TYPESCRIPT_BUILD_RESULT" \
+            "$SECURITY_RESULT" \
+            "$LIGHTHOUSE_RESULT" \
+            "$INTEGRATION_RLS_RESULT"; do
+            if [ "$result" != success ]; then
+              echo "A required self-hosted check did not succeed: $result" >&2
+              exit 1
+            fi
+          done
+          echo "All self-hosted CI checks passed."

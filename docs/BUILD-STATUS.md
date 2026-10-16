@@ -65,6 +65,33 @@ reminders fail closed; and receipt reconciliation is no longer callable with a
 user JWT alone. These changes improve the provisional packages but do not close
 the S1/S2 stage gates.
 
+## CI and first-deploy readiness (2026-10-16)
+
+The branch adds a self-hosted GitHub Actions workflow at
+`.github/workflows/self-hosted-ci.yml`. It runs on pushes to `develop` and manual
+dispatches using `self-hosted`, `linux`, `x64` labels. Pull requests remain on
+GitHub-hosted CI so fork code is not executed on a private runner. The workflow
+covers Python and TypeScript checks, workspace builds, Docker build contracts,
+dependency/secret scans, disposable Postgres/Redis integration, RLS isolation,
+and an environment-gated Lighthouse audit.
+
+Local evidence on this branch:
+
+- `uv run pytest services/api/ tools/ tests/lighthouse -q` — 152 passed, 6 skipped;
+- Ruff lint/format and mypy — passed;
+- `uv run python tools/check_build_contract.py` — passed;
+- workflow YAML parse and `git diff --check` — passed;
+- production launch gate correctly blocks AGPL and passes only with the
+  explicitly supplied commercial licence setting.
+
+The code is **not ready for a public first production deploy**. The commercial
+Swiss Ephemeris licence, production secrets/managed configuration, live RLS and
+Postgres/Redis evidence, Lighthouse against a real staging URL, Docker image
+builds, external billing/Vault/CMS integrations, and the strict 500-day/10-location
+accuracy gate remain open. A controlled internal staging deploy is possible only
+after those environment-specific checks and credentials are supplied; the
+staging smoke check now fails closed when any endpoint remains unhealthy.
+
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,
 `uv run ruff format --check services/`, `uv run mypy services/ --config-file

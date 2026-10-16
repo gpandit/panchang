@@ -24,6 +24,10 @@ async def get_or_create_user(session: AsyncSession, claims: TokenClaims) -> User
         user = UserRow(id=str(uuid.uuid4()), auth_subject_ref=claims.sub, email_ref=claims.email)
         session.add(user)
         await session.flush()
+    # PostgreSQL RLS policies use a transaction-local subject.  SQLite has no
+    # equivalent setting, so keep the hook a no-op for the offline test path.
+    if session.bind is not None and session.bind.dialect.name == "postgresql":
+        await session.execute(select(func.set_config("app.user_id", user.id, True)))
     return user
 
 

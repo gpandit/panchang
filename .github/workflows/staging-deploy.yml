@@ -50,6 +50,10 @@ jobs:
             dockerfile: apps/admin/Dockerfile
             build_args: |
               VITE_API_URL=https://api.pandit.xyz/v1
+          - name: pandit-temple-admin
+            dockerfile: apps/temple-admin/Dockerfile
+            build_args: |
+              VITE_API_URL=https://api.pandit.xyz/v1
 
     steps:
       - name: Checkout
@@ -157,20 +161,29 @@ jobs:
 
       - name: Smoke check (healthz)
         run: |
+          set -euo pipefail
+          failed=0
           for url in \
             https://api.pandit.xyz/health \
             https://pandit.xyz/ \
             https://admin.pandit.xyz/healthz; do
             echo "Checking $url ..."
+            healthy=0
             for i in $(seq 1 10); do
               if curl -sf --max-time 5 "$url" > /dev/null; then
                 echo "  OK"
+                healthy=1
                 break
               fi
               echo "  Attempt $i failed, retrying in 10s..."
               sleep 10
             done
+            if [ "$healthy" -ne 1 ]; then
+              echo "  FAILED: $url did not become healthy" >&2
+              failed=1
+            fi
           done
+          exit "$failed"
 
       - name: Post deploy summary
         if: always()

@@ -149,6 +149,11 @@ async def method_not_allowed_handler(request: Request, exc: Exception) -> JSONRe
 
 
 @app.get("/health", tags=["meta"], include_in_schema=False)
+@app.get("/healthz", tags=["meta"], include_in_schema=False)
 async def health_check() -> dict[str, str]:
-    """Liveness probe — returns 200 if the process is alive."""
+    """Liveness probe — returns 200 if the process is alive.
+
+    ``/health`` is retained for existing callers; ``/healthz`` matches the
+    conventional Kubernetes/Docker probe name used by deployment checks.
+    """
     return {"status": "ok", "environment": settings.environment}
