@@ -92,6 +92,21 @@ accuracy gate remain open. A controlled internal staging deploy is possible only
 after those environment-specific checks and credentials are supplied; the
 staging smoke check now fails closed when any endpoint remains unhealthy.
 
+## Development deployment helper (2026-10-16)
+
+`./deploy.sh up` now provisions local infrastructure from `.env`, applies
+Alembic migrations, and starts the API and Panchang services with health checks.
+The development database is **PostgreSQL 16 with the PostGIS extension**,
+supplied by `postgis/postgis:16-3.4`; plain PostgreSQL is insufficient for the
+v3 geography migrations. API and PCS share the database, Redis database 0 is
+used by the API, Redis database 1 by PCS, and MinIO provides local S3-compatible
+object storage.
+
+The helper is development-only, preserves Docker volumes on `down`, and refuses
+non-development profiles. `bash -n deploy.sh`, `./deploy.sh --help`, and the
+build-contract checks pass locally; an actual run remains environment-gated
+because Docker is unavailable in this workspace.
+
 **S0 CI repair (2026-10-07):** Python 3.12 local checks passed after Ruff,
 format, mypy, and pytest import-path fixes: `uv run ruff check services/`,
 `uv run ruff format --check services/`, `uv run mypy services/ --config-file

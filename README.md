@@ -85,25 +85,34 @@ pre-commit install
 ### 2. Start local infrastructure
 
 ```bash
-# Copy environment variables
-cp .env.example .env
-
-# Start Postgres, Redis, MinIO
-docker compose -f infra/docker-compose.yml up -d
+# Start PostGIS-backed Postgres, Redis, MinIO, migrations, API, and PCS
+./deploy.sh up
 
 # Verify health
-docker compose -f infra/docker-compose.yml ps
+./deploy.sh status
 ```
 
 Services once running:
 
 | Service  | URL / port                             |
 |----------|----------------------------------------|
-| Postgres | `localhost:5432`  db=`pandit_dev`      |
+| PostgreSQL/PostGIS | `localhost:5432`  db=`pandit_dev`      |
 | Redis    | `localhost:6379`                       |
 | MinIO    | API `localhost:9000`, console `:9001`  |
 
-### 3. Run the Python services (dev)
+`API_DATABASE_URL` and `PANCHANG_DATABASE_URL` both point at the same local
+**PostgreSQL 16 + PostGIS** database. PostGIS is required by the v3 migrations
+and location/booking geography types; plain `postgres:16-alpine` is not enough.
+Redis uses database 0 for the API and database 1 for PCS. MinIO provides the
+local S3-compatible object-storage endpoint.
+
+To stop the development deployment while preserving Docker volumes:
+
+```bash
+./deploy.sh down
+```
+
+### 3. Run the Python services manually (optional)
 
 ```bash
 # API Gateway

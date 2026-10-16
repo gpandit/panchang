@@ -44,7 +44,7 @@ x-api-env: &api-env
 services:
   # ── Infrastructure ───────────────────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
+    image: postgis/postgis:16-3.4
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-pandit_staging}

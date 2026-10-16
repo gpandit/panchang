@@ -23,6 +23,10 @@ def assert_build_contract() -> None:
     admin = (ROOT / "apps/admin/Dockerfile").read_text()
     temple_admin = (ROOT / "apps/temple-admin/Dockerfile").read_text()
     staging_deploy = (ROOT / ".github/workflows/staging-deploy.yml").read_text()
+    deploy_script = (ROOT / "deploy.sh").read_text()
+    development_env = (ROOT / ".env.example").read_text()
+    development_compose = (ROOT / "infra/docker-compose.yml").read_text()
+    assert (ROOT / "deploy.sh").stat().st_mode & 0o111, "deploy.sh must be executable"
     assert "FROM python:3.12-slim" in api
     assert "FROM python:3.12-slim" in panchang
     assert "FROM node:20-alpine" in web
@@ -36,6 +40,28 @@ def assert_build_contract() -> None:
     assert "/health" in panchang
     assert "/healthz" in admin
     assert "/healthz" in temple_admin
+    assert "docker compose" in deploy_script
+    assert "alembic upgrade head" in deploy_script
+    assert "/healthz" in deploy_script
+    assert "PANCHANG_BUILD_PROFILE" in deploy_script
+    for key in (
+        "API_DATABASE_URL",
+        "API_REDIS_URL",
+        "API_PANCHANG_SERVICE_URL",
+        "API_SECRET_KEY",
+        "PANCHANG_DATABASE_URL",
+        "PANCHANG_REDIS_URL",
+        "PANCHANG_EPHEMERIS_PATH",
+        "PANCHANG_BUILD_PROFILE",
+        "POSTGRES_DB",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "REDIS_PORT",
+        "MINIO_ROOT_USER",
+        "MINIO_ROOT_PASSWORD",
+    ):
+        assert f"{key}=" in development_env, f".env.example is missing {key}"
+    assert "postgis/postgis:16-3.4" in development_compose
     for image in (
         "pandit-api",
         "pandit-panchang",
