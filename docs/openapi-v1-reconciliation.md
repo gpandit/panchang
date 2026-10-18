@@ -31,7 +31,7 @@ and currently return `501` or a not-found placeholder.
 | `/v1/profile/locations` | GET, POST | partial | Owned location persistence and IANA/coordinate validation are present. |
 | `/v1/profile/birth-details` | GET, PUT, DELETE | partial | Sensitive values use an opaque Vault reference; production Vault storage remains. |
 | `/v1/profile/birth-details/export` | GET | partial | Owner-only export is audited by the Vault boundary; production Vault storage remains. |
-| `/v1/me` | GET, PUT | partial | Canonical identity/profile surface backed by the persistent user service. |
+| `/v1/me` | GET, PUT, PATCH | partial | Canonical identity/profile surface backed by the persistent user service. |
 | `/v1/me` | DELETE | partial | Queues an idempotent deletion request and blocks subsequent canonical access. |
 | `/v1/me/locations` | GET, POST | partial | Canonical owner-scoped location operations with tier limits and outbox events. |
 | `/v1/me/locations/{location_id}` | DELETE | partial | Canonical owner-scoped location deletion with primary replacement. |

@@ -73,6 +73,10 @@ async def test_profile_and_location_persist_with_tier_limit(
     assert partial.status_code == 200
     assert partial.json()["data"]["display_name"] == "Asha"
 
+    patched = await client.patch("/v1/me", headers=headers, json={"display_name": "Asha Patel"})
+    assert patched.status_code == 200
+    assert patched.json()["data"]["display_name"] == "Asha Patel"
+
     location = await client.post(
         "/v1/me/locations",
         headers=headers,

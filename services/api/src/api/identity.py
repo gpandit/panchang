@@ -11,7 +11,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.db.v3_models import (
@@ -86,12 +87,15 @@ class IdentityService:
                 status="active",
             )
             self.session.add(user)
-            self.session.add(UserPreferenceRow(user_id=user.id))
             await self.session.flush()
         elif user.status != "active" and not (allow_deleting and user.status == "deleting"):
             code = "account_deleted" if user.status == "deleted" else "account_deletion_pending"
             status_code = 410 if user.status == "deleted" else 403
             raise IdentityError(code, "This account is not available.", status_code)
+        await self._set_rls_context(user.id)
+        if user is not None and await self.session.get(UserPreferenceRow, user.id) is None:
+            self.session.add(UserPreferenceRow(user_id=user.id))
+            await self.session.flush()
         return user
 
     async def profile(self, user: UserRow) -> ProfileOut:
@@ -136,6 +140,7 @@ class IdentityService:
         return [_location_out(row) for row in result.scalars().all()]
 
     async def add_location(self, user: UserRow, body: LocationIn) -> LocationOut:
+        user = await self._lock_user(user.id)
         result = await self.session.execute(
             select(LocationRow).where(LocationRow.user_id == user.id)
         )
@@ -180,6 +185,7 @@ class IdentityService:
         return _location_out(row)
 
     async def delete_location(self, user: UserRow, location_id: str) -> None:
+        user = await self._lock_user(user.id)
         result = await self.session.execute(
             select(LocationRow).where(LocationRow.id == location_id, LocationRow.user_id == user.id)
         )
@@ -244,6 +250,7 @@ class IdentityService:
         return await self._request_job(user, "export", "user.export_requested")
 
     async def request_deletion(self, user: UserRow) -> UserJobRow:
+        user = await self._lock_user(user.id)
         existing = await self._open_job(user, "deletion")
         if existing is not None:
             return existing
@@ -287,6 +294,22 @@ class IdentityService:
             await self.session.flush()
         return pref
 
+    async def _set_rls_context(self, user_id: str) -> None:
+        if self.session.bind is not None and self.session.bind.dialect.name == "postgresql":
+            await self.session.execute(select(func.set_config("app.user_id", user_id, True)))
+
+    async def _lock_user(self, user_id: str) -> UserRow:
+        result = await self.session.execute(
+            select(UserRow)
+            .where(UserRow.id == user_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise IdentityError("account_not_found", "Account not found.", 404)
+        return user
+
     async def _birth_ref(self, user_id: str) -> VaultRefRow | None:
         result = await self.session.execute(
             select(VaultRefRow).where(
@@ -311,19 +334,27 @@ class IdentityService:
         return result.scalar_one_or_none()
 
     async def _request_job(self, user: UserRow, kind: str, event_type: str) -> UserJobRow:
+        user = await self._lock_user(user.id)
         existing = await self._open_job(user, kind)
         if existing is not None:
             return existing
-        job = UserJobRow(id=str(uuid4()), user_id=user.id, kind=kind, status="queued")
-        self.session.add(job)
-        await self.session.flush()
-        await OutboxRepository(self.session).enqueue(
-            aggregate_type="user",
-            aggregate_id=user.id,
-            event_type=event_type,
-            payload_ref=f"user-{kind}://{job.id}",
-            dedupe_key=f"user:{user.id}:{kind}:{job.id}",
-        )
+        try:
+            async with self.session.begin_nested():
+                job = UserJobRow(id=str(uuid4()), user_id=user.id, kind=kind, status="queued")
+                self.session.add(job)
+                await self.session.flush()
+                await OutboxRepository(self.session).enqueue(
+                    aggregate_type="user",
+                    aggregate_id=user.id,
+                    event_type=event_type,
+                    payload_ref=f"user-{kind}://{job.id}",
+                    dedupe_key=f"user:{user.id}:{kind}:{job.id}",
+                )
+        except IntegrityError:
+            existing = await self._open_job(user, kind)
+            if existing is None:
+                raise
+            return existing
         return job
 
 

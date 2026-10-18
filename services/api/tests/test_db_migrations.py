@@ -74,3 +74,27 @@ def test_foundation_migration_does_not_backdate_later_tables() -> None:
     assert len(foundation._V3_TABLES) == 56
     assert foundation._V3_TABLES <= set(Base.metadata.tables)
     assert {"idempotency_keys", "outbox_events"}.isdisjoint(foundation._V3_TABLES)
+
+
+def test_identity_lifecycle_constraints_and_open_job_index_are_present(tmp_path: Path) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'identity-lifecycle.db'}")
+    try:
+        with engine.connect() as connection:
+            config = _alembic_config()
+            config.attributes["connection"] = connection
+            command.upgrade(config, "head")
+
+        inspector = inspect(engine)
+        users = {constraint["name"] for constraint in inspector.get_check_constraints("users")}
+        jobs = {index["name"] for index in inspector.get_indexes("user_jobs")}
+        assert "ck_users_status" in users
+        assert "uq_user_jobs_open" in jobs
+        with engine.begin() as connection:
+            columns = {
+                column["name"]: column for column in inspect(connection).get_columns("users")
+            }
+            assert columns["status"]["nullable"] is False
+            assert columns["deletion_requested_at"]["nullable"] is True
+            assert columns["deleted_at"]["nullable"] is True
+    finally:
+        engine.dispose()

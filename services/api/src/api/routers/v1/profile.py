@@ -290,6 +290,7 @@ async def get_me(
 
 
 @me_router.put("", response_model=ApiResponse[ProfileOut])
+@me_router.patch("", response_model=ApiResponse[ProfileOut])
 async def update_me(
     body: ProfileUpdateIn,
     user: Annotated[UserRow, Depends(require_user)],

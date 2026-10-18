@@ -230,6 +230,14 @@ class UserJobRow(Base):
             "status IN ('queued','processing','completed','failed')", name="ck_user_jobs_status"
         ),
         Index("ix_user_jobs_user_kind", "user_id", "kind", "created_at"),
+        Index(
+            "uq_user_jobs_open",
+            "user_id",
+            "kind",
+            unique=True,
+            sqlite_where=text("status IN ('queued', 'processing')"),
+            postgresql_where=text("status IN ('queued', 'processing')"),
+        ),
     )
 
 
