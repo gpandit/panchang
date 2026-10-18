@@ -104,9 +104,15 @@ class UserRow(Base):
     locale: Mapped[str] = mapped_column(String(16), nullable=False, server_default="en")
     tier: Mapped[str] = mapped_column(String(16), nullable=False, server_default="basic")
     roles: Mapped[list[str]] = mapped_column(JSON_VARIANT, nullable=False, default=list)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(UTC)
+    deleted_at: Mapped[datetime | None] = mapped_column(UTC)
     created_at = _created()
     updated_at = _updated()
-    __table_args__ = (CheckConstraint("tier IN ('basic','silver','gold')", name="ck_users_tier"),)
+    __table_args__ = (
+        CheckConstraint("tier IN ('basic','silver','gold')", name="ck_users_tier"),
+        CheckConstraint("status IN ('active','deleting','deleted')", name="ck_users_status"),
+    )
 
 
 class UserPreferenceRow(Base):
@@ -203,6 +209,28 @@ class VaultAccessLogRow(Base):
     purpose: Mapped[str] = mapped_column(String(128), nullable=False)
     occurred_at: Mapped[datetime] = mapped_column(UTC, nullable=False)
     __table_args__ = (Index("ix_vault_access_log_ref_time", "vault_ref_id", "occurred_at"),)
+
+
+class UserJobRow(Base):
+    """Durable export/deletion request state; artifacts remain outside ordinary tables."""
+
+    __tablename__ = "user_jobs"
+    id = _id()
+    user_id: Mapped[str] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="queued")
+    object_ref: Mapped[str | None] = mapped_column(String(512))
+    created_at = _created()
+    updated_at = _updated()
+    __table_args__ = (
+        CheckConstraint("kind IN ('export','deletion')", name="ck_user_jobs_kind"),
+        CheckConstraint(
+            "status IN ('queued','processing','completed','failed')", name="ck_user_jobs_status"
+        ),
+        Index("ix_user_jobs_user_kind", "user_id", "kind", "created_at"),
+    )
 
 
 class IdempotencyKeyRow(Base):

@@ -39,6 +39,9 @@ class ProfileOut(BaseModel):
     default_ayanamsa: str
     default_month_scheme: str
     locations: list[LocationOut]
+    tier: str = "basic"
+    roles: list[str] = Field(default_factory=list)
+    has_birth_details: bool = False
 
 
 class ProfileUpdateIn(BaseModel):
@@ -102,3 +105,9 @@ class BirthVaultRefOut(BaseModel):
     region: str
     purpose: str
     created_at: datetime
+
+
+class JobOut(BaseModel):
+    id: str
+    kind: str
+    status: str

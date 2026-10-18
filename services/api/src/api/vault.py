@@ -116,6 +116,7 @@ class VaultPort(Protocol):
         subject_id: str,
         region: str,
         purpose: str,
+        reference_id: str | None = None,
     ) -> VaultReference:
         """Store a value and return an opaque reference."""
 

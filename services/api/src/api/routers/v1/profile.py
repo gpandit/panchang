@@ -11,22 +11,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.db import get_session
 from api.db.v3_models import LocationRow, UserPreferenceRow, UserRow, VaultRefRow
-from api.dependencies import require_auth
+from api.dependencies import require_auth, require_user, require_user_for_deletion
+from api.identity import IdentityError, IdentityService, get_vault
 from api.models.auth import TokenClaims
 from api.models.common import ApiResponse
 from api.models.user import (
     BirthDetailsIn,
     BirthVaultRefOut,
+    JobOut,
     LocationIn,
     LocationOut,
     ProfileOut,
     ProfileUpdateIn,
 )
 from api.user_data import get_or_create_user
-from api.vault import InMemoryVault, VaultReference
+from api.vault import VaultReference
 
 router = APIRouter(prefix="/profile", tags=["profile"])
-_birth_vault = InMemoryVault()
+me_router = APIRouter(prefix="/me", tags=["profile"])
+_birth_vault = get_vault()
 _BIRTH_PURPOSE = "birth_details"
 
 
@@ -267,3 +270,107 @@ def _birth_ref_out(row: VaultRefRow) -> BirthVaultRefOut:
         purpose=row.purpose,
         created_at=row.created_at,
     )
+
+
+def _identity_error(exc: IdentityError) -> HTTPException:
+    return HTTPException(
+        status_code=exc.status_code, detail={"code": exc.code, "message": exc.message}
+    )
+
+
+@me_router.get("", response_model=ApiResponse[ProfileOut])
+async def get_me(
+    user: Annotated[UserRow, Depends(require_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ApiResponse[ProfileOut]:
+    try:
+        return ApiResponse(data=await IdentityService(session).profile(user))
+    except IdentityError as exc:
+        raise _identity_error(exc) from exc
+
+
+@me_router.put("", response_model=ApiResponse[ProfileOut])
+async def update_me(
+    body: ProfileUpdateIn,
+    user: Annotated[UserRow, Depends(require_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ApiResponse[ProfileOut]:
+    try:
+        return ApiResponse(data=await IdentityService(session).update_profile(user, body))
+    except IdentityError as exc:
+        raise _identity_error(exc) from exc
+
+
+@me_router.get("/locations", response_model=ApiResponse[list[LocationOut]])
+async def list_my_locations(
+    user: Annotated[UserRow, Depends(require_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ApiResponse[list[LocationOut]]:
+    return ApiResponse(data=await IdentityService(session).list_locations(user))
+
+
+@me_router.post(
+    "/locations", response_model=ApiResponse[LocationOut], status_code=status.HTTP_201_CREATED
+)
+async def add_my_location(
+    body: LocationIn,
+    user: Annotated[UserRow, Depends(require_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ApiResponse[LocationOut]:
+    try:
+        return ApiResponse(data=await IdentityService(session).add_location(user, body))
+    except IdentityError as exc:
+        raise _identity_error(exc) from exc
+
+
+@me_router.delete("/locations/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_location(
+    location_id: str,
+    user: Annotated[UserRow, Depends(require_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    try:
+        await IdentityService(session).delete_location(user, location_id)
+    except IdentityError as exc:
+        raise _identity_error(exc) from exc
+
+
+@me_router.put("/vault/birth-details", status_code=status.HTTP_204_NO_CONTENT)
+async def set_my_birth_details(
+    body: BirthDetailsIn,
+    user: Annotated[UserRow, Depends(require_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    try:
+        await IdentityService(session).set_birth_details(user, body)
+    except IdentityError as exc:
+        raise _identity_error(exc) from exc
+
+
+@me_router.delete("/vault/birth-details", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_birth_details(
+    user: Annotated[UserRow, Depends(require_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    try:
+        await IdentityService(session).delete_birth_details(user)
+    except IdentityError as exc:
+        raise _identity_error(exc) from exc
+
+
+@me_router.post("/export", response_model=ApiResponse[JobOut], status_code=status.HTTP_202_ACCEPTED)
+async def request_my_export(
+    user: Annotated[UserRow, Depends(require_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ApiResponse[JobOut]:
+    job = await IdentityService(session).request_export(user)
+    return ApiResponse(data=JobOut(id=job.id, kind=job.kind, status=job.status))
+
+
+@me_router.delete("", response_model=ApiResponse[JobOut], status_code=status.HTTP_202_ACCEPTED)
+async def request_my_deletion(
+    user: Annotated[UserRow, Depends(require_user_for_deletion)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ApiResponse[JobOut]:
+    job = await IdentityService(session).request_deletion(user)
+    return ApiResponse(data=JobOut(id=job.id, kind=job.kind, status=job.status))
