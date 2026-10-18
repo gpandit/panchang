@@ -1,15 +1,14 @@
 name: CI
 
 on:
-  # Push CI is the single validation run for feature/develop work. A pull
-  # request to develop therefore does not create a second copy of every job.
+  # Push CI validates branch updates. Pull requests to develop also run the
+  # complete hosted suite so branch protection has fresh PR-scoped checks.
   push:
     branches: ["**"]
-  # Promotion PRs are validated independently when develop is proposed for a
-  # release branch. The base-branch filter is intentional; ordinary feature
-  # PRs rely on the checks already produced by their latest push.
+  # Promotion PRs from develop continue to be validated when proposed for a
+  # release branch; ordinary PRs to develop receive the same full suite.
   pull_request:
-    branches: ["staging", "main"]
+    branches: ["develop", "staging", "main"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,7 +22,10 @@ jobs:
   # ── Python: lint, typecheck, test ──────────────────────────────────────────
   python-ci:
     name: Python (ruff · mypy · pytest)
-    if: github.event_name != 'pull_request' || github.head_ref == 'develop'
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.base_ref == 'develop' ||
+      github.head_ref == 'develop'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -71,7 +73,10 @@ jobs:
   # Separate from SQLite-only unit tests; these URLs point only at ephemeral CI services.
   real-services-integration:
     name: PostGIS and Redis integration
-    if: github.event_name != 'pull_request' || github.head_ref == 'develop'
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.base_ref == 'develop' ||
+      github.head_ref == 'develop'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -116,7 +121,10 @@ jobs:
   # ── TypeScript: lint, typecheck, test ─────────────────────────────────────
   typescript-ci:
     name: TypeScript (eslint · tsc · vitest)
-    if: github.event_name != 'pull_request' || github.head_ref == 'develop'
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.base_ref == 'develop' ||
+      github.head_ref == 'develop'
     runs-on: ubuntu-latest
 
     steps:
@@ -154,7 +162,10 @@ jobs:
   # regression. See tools/accuracy_harness/run.py.
   accuracy-harness:
     name: Panchang Accuracy Harness
-    if: github.event_name != 'pull_request' || github.head_ref == 'develop'
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.base_ref == 'develop' ||
+      github.head_ref == 'develop'
     runs-on: ubuntu-latest
 
     steps:
@@ -186,7 +197,9 @@ jobs:
     needs: [python-ci, real-services-integration, typescript-ci, accuracy-harness]
     if: >-
       always() &&
-      (github.event_name != 'pull_request' || github.head_ref == 'develop')
+      (github.event_name != 'pull_request' ||
+       github.base_ref == 'develop' ||
+       github.head_ref == 'develop')
     steps:
       - name: Check all jobs succeeded
         run: |

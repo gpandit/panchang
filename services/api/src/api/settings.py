@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     # workers. Client applications must never receive this value.
     subscription_adapter_token: str | None = None
 
+    # ── Sensitive Vault ────────────────────────────────────────────────────────
+    # The local provider is an explicit fake; staging/production must replace it
+    # with an encrypted, region-pinned provider before launch.
+    vault_region: str = "local"
+
     # ── CORS ──────────────────────────────────────────────────────────────────
     # Comma-separated list of allowed browser origins for staging/prod (ignored
     # when debug=True, which allows "*" for local development).

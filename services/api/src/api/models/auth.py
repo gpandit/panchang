@@ -1,4 +1,4 @@
-"""JWT token payload model and subscription tier enum."""
+"""JWT token payload, account-role, and subscription-tier models."""
 
 from __future__ import annotations
 
@@ -17,6 +17,17 @@ class SubscriptionTier(StrEnum):
     def meets(self, required: SubscriptionTier) -> bool:
         order = [SubscriptionTier.BASIC, SubscriptionTier.SILVER, SubscriptionTier.GOLD]
         return order.index(self) >= order.index(required)
+
+
+class AccountRole(StrEnum):
+    """Application roles resolved from the server-side user record."""
+
+    PATRON = "patron"
+    PANDIT = "pandit"
+    SELLER = "seller"
+    ADMIN = "admin"
+    OPS = "ops"
+    EDITOR = "editor"
 
 
 class TokenClaims(BaseModel):

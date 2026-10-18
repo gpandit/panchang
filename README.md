@@ -163,16 +163,18 @@ pnpm run py:format
 
 ## CI
 
-GitHub Actions runs once for each push and runs a separate full validation for
-promotion pull requests targeting `staging` or `main` (`.github/workflows/ci.yml`):
+GitHub Actions runs once for each push and runs the complete hosted validation
+suite for every pull request targeting `develop`, `staging`, or `main`
+(`.github/workflows/ci.yml`).
 
-The self-hosted workflow is manual-only and is not part of automatic push or
-pull-request validation.
+The separate self-hosted workflow runs only after pushes to `develop` or by
+manual dispatch; it is not part of pull-request validation.
 
 1. **python-ci** — ruff lint/format-check, mypy, pytest across `services/`
 2. **typescript-ci** — ESLint, Prettier check, tsc, Vitest across `packages/` and `apps/`
-3. **accuracy-harness** — *skipped placeholder* (enabled in Step 1.3; will gate all merges)
-4. **all-checks-pass** — aggregated gate for branch protection rules
+3. **PostGIS and Redis integration** — disposable service readback/cache/lock checks
+4. **accuracy-harness** — curated Panchang regression checks
+5. **all-checks-pass** — aggregated gate for branch protection rules
 
 ---
 

@@ -15,14 +15,18 @@ Usage in routers:
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth import decode_token
-from api.models.auth import SubscriptionTier, TokenClaims
+from api.db import get_session
+from api.db.v3_models import UserRow
+from api.identity import IdentityError, IdentityService
+from api.models.auth import AccountRole, SubscriptionTier, TokenClaims
 
 _bearer = HTTPBearer(auto_error=True)
 
@@ -53,5 +57,49 @@ def require_tier(
                 },
             )
         return claims
+
+    return _check
+
+
+async def require_user(
+    claims: Annotated[TokenClaims, Depends(require_auth)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> UserRow:
+    """Resolve the authenticated subject to an active, persisted user."""
+    try:
+        return await IdentityService(session).resolve(claims)
+    except IdentityError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={"code": exc.code, "message": exc.message},
+        ) from exc
+
+
+async def require_user_for_deletion(
+    claims: Annotated[TokenClaims, Depends(require_auth)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> UserRow:
+    """Resolve an account while allowing an existing deletion request to replay."""
+    try:
+        return await IdentityService(session).resolve(claims, allow_deleting=True)
+    except IdentityError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={"code": exc.code, "message": exc.message},
+        ) from exc
+
+
+def require_role(
+    role: AccountRole,
+) -> Callable[..., Awaitable[UserRow]]:
+    """Return a dependency enforcing a role from the persisted account record."""
+
+    async def _check(user: Annotated[UserRow, Depends(require_user)]) -> UserRow:
+        if role.value not in (user.roles or []):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"code": "insufficient_role", "message": "This role is required."},
+            )
+        return user
 
     return _check

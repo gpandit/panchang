@@ -38,6 +38,7 @@ EXPECTED_POLICIES = {
     "calendar_jobs",
     "subscriptions",
     "provider_accounts",
+    "user_jobs",
 }
 
 
@@ -106,7 +107,7 @@ def test_rls_contract_lists_only_explicit_user_owned_tables() -> None:
     assert spec is not None and spec.loader is not None
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
-    assert {table for table, _column in module._OWNED_TABLES} == EXPECTED_POLICIES
+    assert {table for table, _column in module._OWNED_TABLES} == EXPECTED_POLICIES - {"user_jobs"}
     assert {column for _table, column in module._OWNED_TABLES} >= {
         "user_id",
         "owner_user_id",

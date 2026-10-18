@@ -69,11 +69,13 @@ the S1/S2 stage gates.
 
 The branch adds a self-hosted GitHub Actions workflow at
 `.github/workflows/self-hosted-ci.yml`. It runs on pushes to `develop` and manual
-dispatches using `self-hosted`, `linux`, `x64` labels. Pull requests remain on
-GitHub-hosted CI so fork code is not executed on a private runner. The workflow
-covers Python and TypeScript checks, workspace builds, Docker build contracts,
-dependency/secret scans, disposable Postgres/Redis integration, RLS isolation,
-and an environment-gated Lighthouse audit.
+dispatches using `self-hosted`, `linux`, `x64` labels. Every pull request
+targeting `develop`, `staging`, or `main` runs the full GitHub-hosted CI suite so
+fork code is not executed on a private runner. The hosted suite covers Python,
+TypeScript, disposable Postgres/Redis integration, Panchang accuracy, and the
+aggregate required-status gate. The self-hosted workflow additionally covers
+workspace builds, Docker build contracts, dependency/secret scans, RLS
+isolation, and an environment-gated Lighthouse audit.
 
 Local evidence on this branch:
 

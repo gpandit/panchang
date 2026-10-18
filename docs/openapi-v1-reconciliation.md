@@ -31,6 +31,12 @@ and currently return `501` or a not-found placeholder.
 | `/v1/profile/locations` | GET, POST | partial | Owned location persistence and IANA/coordinate validation are present. |
 | `/v1/profile/birth-details` | GET, PUT, DELETE | partial | Sensitive values use an opaque Vault reference; production Vault storage remains. |
 | `/v1/profile/birth-details/export` | GET | partial | Owner-only export is audited by the Vault boundary; production Vault storage remains. |
+| `/v1/me` | GET, PUT, PATCH | partial | Canonical identity/profile surface backed by the persistent user service. |
+| `/v1/me` | DELETE | partial | Queues an idempotent deletion request and blocks subsequent canonical access. |
+| `/v1/me/locations` | GET, POST | partial | Canonical owner-scoped location operations with tier limits and outbox events. |
+| `/v1/me/locations/{location_id}` | DELETE | partial | Canonical owner-scoped location deletion with primary replacement. |
+| `/v1/me/vault/birth-details` | PUT, DELETE | partial | Canonical Vault lifecycle operations; local fake only until production provider wiring. |
+| `/v1/me/export` | POST | partial | Queues a durable reference-only export request; artifact worker remains. |
 | `/v1/subscription` | GET | partial | Reads the authoritative durable entitlement row, falling back to basic. |
 | `/v1/subscription/receipts` | POST | partial | Trusted adapter credential and replay guard are present; vendor verification adapters remain. |
 | `/v1/subscription/verify-receipt` | POST | partial | Trusted adapter credential and replay guard are present; vendor verification adapters remain. |
@@ -45,10 +51,11 @@ intentionally not part of the public v1 contract above and are not substituted f
 ## Planned surface
 
 Every path/operation in the aspirational YAML that is not listed in the runtime table above is
-**planned**, including its marketplace, auth, calendar, user `/me`, webhook, internal PCS, and
+**planned**, including its marketplace, auth, calendar, webhook, internal PCS, and
 `/v1/admin/*` paths. In particular, the aspirational `/v1/panchang/day` and
 `/v1/panchang/range` paths are not aliases for the shipped `/v1/panchang/daily` and
-`/v1/panchang/month` paths. Likewise, `/v1/me/*` is not an alias for `/v1/profile/*`, and
+`/v1/panchang/month` paths. The implemented `/v1/me/*` routes deliberately expose the canonical
+identity surface while retaining the established `/v1/profile/*` routes, and
 `/v1/calendar-jobs` is not an alias for `/v1/pdf/jobs`.
 
 `docs/openapi.json` is a historical runtime snapshot and is marked non-canonical until it is
