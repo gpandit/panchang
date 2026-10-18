@@ -11,7 +11,8 @@ The workflow runs automatically for:
 - pushes to `develop`;
 - a manual `workflow_dispatch` run.
 
-Pull requests continue to use the GitHub-hosted workflow. This avoids running
+Pull requests targeting `develop`, `staging`, or `main` use the GitHub-hosted
+workflow. This avoids running
 untrusted fork code on a self-hosted machine.
 
 It targets the standard runner labels:
@@ -55,5 +56,7 @@ manual `lighthouse_url` input, to audit a deployed staging URL. Without a URL,
 the workflow validates the Lighthouse budget file and records the audit as an
 environment-gated skip.
 
-The GitHub-hosted workflow remains responsible for pull-request validation and
-the existing accuracy-harness job.
+The GitHub-hosted workflow runs the complete Python, TypeScript, PostGIS/Redis,
+accuracy-harness, and aggregate checks for every pull request targeting
+`develop`. It also validates promotion pull requests from `develop` into
+`staging` or `main`.
