@@ -26,6 +26,7 @@ tools/
 # Docs
 docs/
 **/*.md
+!**/README.md
 prompts/
 
 # IDE
